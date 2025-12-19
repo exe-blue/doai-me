@@ -264,6 +264,93 @@ class APIClient {
       body: JSON.stringify({ notes }),
     });
   }
+
+  // ==================== 검색 분석 ====================
+
+  async analyzeKeywords(keywords: string[]) {
+    return this.request<{
+      keywords: Array<{
+        keyword: string;
+        videos: any[];
+        searched_at: string;
+      }>;
+      ai_insights: any;
+      analyzed_at: string;
+    }>('/api/analysis/search', {
+      method: 'POST',
+      body: JSON.stringify({ keywords }),
+    });
+  }
+
+  async getSearchHistory(limit = 10) {
+    return this.request<{ history: any[] }>(`/api/analysis/search/history?limit=${limit}`);
+  }
+
+  // ==================== 트렌드 분석 ====================
+
+  async getTrendingVideos(params?: { category?: string; region?: string }) {
+    const query = params ? new URLSearchParams(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, String(v)])
+    ).toString() : '';
+    return this.request<{ videos: any[] }>(`/api/analysis/trending${query ? `?${query}` : ''}`);
+  }
+
+  async getTrendReport(period: 'daily' | 'weekly' | 'monthly' = 'weekly') {
+    return this.request<any>(`/api/analysis/trends/report?period=${period}`);
+  }
+
+  // ==================== 경쟁사 분석 ====================
+
+  async getCompetitors() {
+    return this.request<{ competitors: any[] }>('/api/analysis/competitors');
+  }
+
+  async addCompetitor(channelId: string) {
+    return this.request<any>('/api/analysis/competitors', {
+      method: 'POST',
+      body: JSON.stringify({ channel_id: channelId }),
+    });
+  }
+
+  async analyzeCompetitor(channelId: string) {
+    return this.request<any>(`/api/analysis/competitors/${channelId}/analyze`);
+  }
+
+  // ==================== 아이디어 생성 ====================
+
+  async generateIdeas(params: {
+    topic: string;
+    style?: string;
+    count?: number;
+  }) {
+    return this.request<{ ideas: any[] }>('/api/analysis/ideas/generate', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async generateTitles(params: {
+    topic: string;
+    keywords?: string[];
+    count?: number;
+  }) {
+    return this.request<{ titles: string[] }>('/api/analysis/ideas/titles', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async generateThumbnailConcepts(params: {
+    title: string;
+    style?: string;
+  }) {
+    return this.request<{ concepts: any[] }>('/api/analysis/ideas/thumbnails', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
 }
 
 export const api = new APIClient(API_URL);

@@ -256,6 +256,90 @@ export interface DashboardStats {
   };
 }
 
+// ==================== 검색 분석 ====================
+export interface SearchVideoResult {
+  video_id: string;
+  title: string;
+  title_length: number;
+  thumbnail_url: string;
+  channel_name: string;
+  channel_id: string;
+  subscriber_count: number;
+  view_count: number;
+  like_count: number;
+  comment_count: number;
+  published_at: string;
+  duration: number;              // 초
+  duration_formatted: string;    // "10:30"
+}
+
+export interface KeywordSearchResult {
+  keyword: string;
+  videos: SearchVideoResult[];
+  searched_at: string;
+}
+
+export interface TitlePattern {
+  avg_length: number;
+  number_usage_rate: number;     // 숫자 사용률 %
+  emoji_usage_rate: number;      // 이모지 사용률 %
+  common_keywords: string[];     // 공통 키워드
+  hook_patterns: string[];       // 후킹 패턴
+}
+
+export interface ChannelCharacteristics {
+  subscriber_distribution: {
+    under_1k: number;
+    under_10k: number;
+    under_100k: number;
+    under_1m: number;
+    over_1m: number;
+  };
+  avg_subscriber_count: number;
+  top_channels: Array<{
+    name: string;
+    subscribers: number;
+    video_count: number;
+  }>;
+}
+
+export interface PerformanceMetrics {
+  avg_view_count: number;
+  median_view_count: number;
+  avg_like_ratio: number;        // 좋아요/조회수 비율 %
+  avg_comment_ratio: number;     // 댓글/조회수 비율 %
+  optimal_duration: {
+    min: number;
+    max: number;
+    avg: number;
+  };
+  best_upload_time: string[];
+}
+
+export interface ThumbnailAnalysis {
+  face_exposure_rate: number;    // 얼굴 노출률 %
+  text_inclusion_rate: number;   // 텍스트 포함률 %
+  dominant_colors: string[];     // 주요 색상
+  common_elements: string[];     // 공통 요소
+}
+
+export interface AIInsights {
+  title_pattern: TitlePattern;
+  channel_characteristics: ChannelCharacteristics;
+  performance_metrics: PerformanceMetrics;
+  thumbnail_analysis: ThumbnailAnalysis;
+  competition_score: number;     // 경쟁 난이도 (1-100)
+  opportunity_score: number;     // 기회 점수 (1-100)
+  entry_difficulty: 'easy' | 'medium' | 'hard' | 'very_hard';
+  recommended_strategies: string[];
+}
+
+export interface SearchAnalysisResult {
+  keywords: KeywordSearchResult[];
+  ai_insights: AIInsights;
+  analyzed_at: string;
+}
+
 // ==================== API 응답 타입 ====================
 export interface ApiResponse<T> {
   data?: T;

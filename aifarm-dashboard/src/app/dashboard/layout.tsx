@@ -25,6 +25,10 @@ import {
   Menu,
   X,
   ChevronDown,
+  Search,
+  TrendingUp,
+  Users,
+  Lightbulb,
 } from 'lucide-react';
 
 // 아이콘 매핑
@@ -40,9 +44,13 @@ const iconMap = {
   Settings2,
   Bell,
   Settings,
+  Search,
+  TrendingUp,
+  Users,
+  Lightbulb,
 };
 
-// 네비게이션 구조 (3대 카테고리)
+// 네비게이션 구조 (4대 카테고리)
 const navCategories = [
   {
     id: 'management',
@@ -60,6 +68,16 @@ const navCategories = [
       { href: '/dashboard/watch', icon: 'PlayCircle', label: '시청 요청', description: '영상 시청 요청', highlight: true, badge: 'MAIN' },
       { href: '/dashboard/uploads', icon: 'Upload', label: '업로드 관리', description: '업로드 스케줄' },
       { href: '/dashboard/logs', icon: 'History', label: '작업 로그', description: '작업 히스토리' },
+    ],
+  },
+  {
+    id: 'analysis',
+    label: '분석',
+    items: [
+      { href: '/dashboard/analysis/search', icon: 'Search', label: '검색 분석', description: '키워드 경쟁 분석', badge: 'NEW' },
+      { href: '/dashboard/analysis/trends', icon: 'TrendingUp', label: '트렌드 리포트', description: '트렌드 분석' },
+      { href: '/dashboard/analysis/competitors', icon: 'Users', label: '경쟁사 분석', description: '경쟁 채널 분석' },
+      { href: '/dashboard/analysis/ideas', icon: 'Lightbulb', label: '아이디어 생성', description: 'AI 콘텐츠 아이디어' },
     ],
   },
   {
@@ -85,7 +103,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['management', 'tasks', 'idle']);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(['management', 'tasks', 'analysis', 'idle']);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 
