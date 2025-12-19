@@ -282,9 +282,17 @@ export const mockUnifiedLogs: UnifiedLog[] = [
     sourceId: req.id,
     activityType: req.type,
     description: `[DO] ${req.title} - ${req.keyword}`,
-    status: req.status === 'completed' ? 'success' as const :
-            req.status === 'in_progress' ? 'in_progress' as const :
-            req.status === 'failed' ? 'failed' as const : 'pending' as const,
+    status: (() => {
+      switch (req.status) {
+        case 'completed': return 'success' as const;
+        case 'in_progress': return 'in_progress' as const;
+        case 'failed': return 'failed' as const;
+        case 'scheduled': return 'scheduled' as const;
+        case 'cancelled': return 'cancelled' as const;
+        case 'pending': return 'pending' as const;
+        default: return 'pending' as const;
+      }
+    })(),
     timestamp: req.createdAt,
     metadata: {
       agentRange: req.agentRange,

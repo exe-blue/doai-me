@@ -184,7 +184,7 @@ export interface UnifiedLog {
   deviceId?: number;
   activityType: DORequestType | BEActivityType;
   description: string;
-  status: 'success' | 'partial' | 'failed' | 'pending' | 'in_progress';
+  status: 'success' | 'partial' | 'failed' | 'pending' | 'in_progress' | 'scheduled' | 'cancelled';
   
   // 타임스탬프
   timestamp: string;

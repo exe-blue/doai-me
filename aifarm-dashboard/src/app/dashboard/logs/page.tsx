@@ -18,6 +18,8 @@ import {
   Play,
   Smartphone,
   RefreshCw,
+  Ban,
+  CalendarClock,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +51,8 @@ export default function LogsPage() {
       failed: <XCircle className="w-4 h-4 text-red-400" />,
       pending: <Clock className="w-4 h-4 text-gray-400" />,
       in_progress: <Play className="w-4 h-4 text-yellow-400" />,
+      scheduled: <CalendarClock className="w-4 h-4 text-blue-400" />,
+      cancelled: <Ban className="w-4 h-4 text-gray-500" />,
     };
     return icons[status];
   };
@@ -252,6 +256,14 @@ export default function LogsPage() {
         <div className="flex items-center gap-2">
           <Play className="w-3 h-3 text-yellow-400" />
           <span>진행중</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <CalendarClock className="w-3 h-3 text-blue-400" />
+          <span>예약됨</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Ban className="w-3 h-3 text-gray-500" />
+          <span>취소됨</span>
         </div>
       </div>
     </div>
