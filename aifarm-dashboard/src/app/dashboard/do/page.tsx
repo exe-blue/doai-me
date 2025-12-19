@@ -42,6 +42,41 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
+// 상태 배지 렌더링 함수 (컴포넌트 외부로 이동하여 매 렌더링마다 재생성 방지)
+function getStatusBadge(status: DORequestStatus, showIcon: boolean = true) {
+  const styles: Record<DORequestStatus, { color: string; icon: React.ReactNode; label: string }> = {
+    pending: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: <Clock className="w-3 h-3" />, label: '대기' },
+    scheduled: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: <Clock className="w-3 h-3" />, label: '예약' },
+    in_progress: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: <Play className="w-3 h-3" />, label: '진행중' },
+    completed: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: <CheckCircle className="w-3 h-3" />, label: '완료' },
+    failed: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: <XCircle className="w-3 h-3" />, label: '실패' },
+    cancelled: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: <XCircle className="w-3 h-3" />, label: '취소' },
+  };
+
+  const style = styles[status];
+  return (
+    <Badge variant="outline" className={`${style.color} flex items-center gap-1`}>
+      {showIcon && style.icon}
+      {style.label}
+    </Badge>
+  );
+}
+
+// 우선순위 배지 렌더링 함수 (컴포넌트 외부로 이동하여 매 렌더링마다 재생성 방지)
+function getPriorityBadge(priority: 1 | 2 | 3, showFullLabel: boolean = false) {
+  const styles = {
+    1: { color: 'bg-red-500/20 text-red-400 border-red-500/30', label: 'P1', fullLabel: 'P1 긴급' },
+    2: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', label: 'P2', fullLabel: 'P2 일반' },
+    3: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', label: 'P3', fullLabel: 'P3 낮음' },
+  };
+  const style = styles[priority];
+  return (
+    <Badge variant="outline" className={style.color}>
+      {showFullLabel ? style.fullLabel : style.label}
+    </Badge>
+  );
+}
+
 export default function DORequestsPage() {
   const [requests, setRequests] = useState<DORequest[]>(mockDORequests);
   const [selectedRequest, setSelectedRequest] = useState<DORequest | null>(null);
@@ -52,39 +87,6 @@ export default function DORequestsPage() {
   const filteredRequests = filterStatus === 'all' 
     ? requests 
     : requests.filter(r => r.status === filterStatus);
-
-  const getStatusBadge = (status: DORequestStatus) => {
-    const styles: Record<DORequestStatus, { color: string; icon: React.ReactNode; label: string }> = {
-      pending: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: <Clock className="w-3 h-3" />, label: '대기' },
-      scheduled: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: <Clock className="w-3 h-3" />, label: '예약' },
-      in_progress: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: <Play className="w-3 h-3" />, label: '진행중' },
-      completed: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: <CheckCircle className="w-3 h-3" />, label: '완료' },
-      failed: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: <XCircle className="w-3 h-3" />, label: '실패' },
-      cancelled: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: <XCircle className="w-3 h-3" />, label: '취소' },
-    };
-
-    const style = styles[status];
-    return (
-      <Badge variant="outline" className={`${style.color} flex items-center gap-1`}>
-        {style.icon}
-        {style.label}
-      </Badge>
-    );
-  };
-
-  const getPriorityBadge = (priority: 1 | 2 | 3) => {
-    const styles = {
-      1: { color: 'bg-red-500/20 text-red-400 border-red-500/30', label: 'P1' },
-      2: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', label: 'P2' },
-      3: { color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', label: 'P3' },
-    };
-    const style = styles[priority];
-    return (
-      <Badge variant="outline" className={style.color}>
-        {style.label}
-      </Badge>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -261,8 +263,8 @@ function DORequestDetail({ request }: { request: DORequest }) {
       <div className="space-y-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            {getStatusBadgeStatic(request.status)}
-            {getPriorityBadgeStatic(request.priority)}
+            {getStatusBadge(request.status, false)}
+            {getPriorityBadge(request.priority, true)}
           </div>
           <h2 className="text-lg font-bold">{request.title}</h2>
           {request.description && (
@@ -370,27 +372,6 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function getStatusBadgeStatic(status: DORequestStatus) {
-  const styles: Record<DORequestStatus, { color: string; label: string }> = {
-    pending: { color: 'bg-gray-500/20 text-gray-400', label: '대기' },
-    scheduled: { color: 'bg-blue-500/20 text-blue-400', label: '예약' },
-    in_progress: { color: 'bg-yellow-500/20 text-yellow-400', label: '진행중' },
-    completed: { color: 'bg-green-500/20 text-green-400', label: '완료' },
-    failed: { color: 'bg-red-500/20 text-red-400', label: '실패' },
-    cancelled: { color: 'bg-gray-500/20 text-gray-400', label: '취소' },
-  };
-  return <Badge className={styles[status].color}>{styles[status].label}</Badge>;
-}
-
-function getPriorityBadgeStatic(priority: 1 | 2 | 3) {
-  const styles = {
-    1: { color: 'bg-red-500/20 text-red-400', label: 'P1 긴급' },
-    2: { color: 'bg-yellow-500/20 text-yellow-400', label: 'P2 일반' },
-    3: { color: 'bg-gray-500/20 text-gray-400', label: 'P3 낮음' },
-  };
-  return <Badge className={styles[priority].color}>{styles[priority].label}</Badge>;
-}
-
 // 유효성 검증 에러 타입 정의
 interface ValidationErrors {
   agentRange?: string;
@@ -483,8 +464,7 @@ function DORequestForm({ onSubmit, onCancel }: { onSubmit: () => void; onCancel:
       return;
     }
     
-    console.log('Submit DO Request:', formData);
-    // TODO: API 호출
+    // TODO: API 호출 - formData를 서버에 전송
     onSubmit();
   };
 
@@ -563,10 +543,17 @@ function DORequestForm({ onSubmit, onCancel }: { onSubmit: () => void; onCancel:
             value={formData.agentEnd || 100}
             onChange={(e) => handleFieldChange('agentEnd', clampValue(Number(e.target.value), 1, 600))}
           />
-          {validationErrors.agentRange && (
-            <p className="text-xs text-red-500 mt-1 col-span-2">{validationErrors.agentRange}</p>
-          )}
         </div>
+
+        {/* 에이전트 범위 에러 메시지 - 두 필드 아래에 표시 */}
+        {validationErrors.agentRange && (
+          <div className="col-span-2">
+            <p className="text-xs text-red-500 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {validationErrors.agentRange}
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium mb-1">좋아요 확률 (%)</label>
@@ -655,10 +642,55 @@ function DORequestForm({ onSubmit, onCancel }: { onSubmit: () => void; onCancel:
             value={formData.watchTimeMax || 180}
             onChange={(e) => handleFieldChange('watchTimeMax', clampValue(Number(e.target.value), 10, 600))}
           />
-          {validationErrors.watchTime && (
-            <p className="text-xs text-red-500 mt-1 col-span-2">{validationErrors.watchTime}</p>
-          )}
         </div>
+
+        {/* 시청 시간 에러 메시지 - 두 필드 아래에 표시 */}
+        {validationErrors.watchTime && (
+          <div className="col-span-2">
+            <p className="text-xs text-red-500 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {validationErrors.watchTime}
+            </p>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium mb-1">최소 시청 비율 (%)</label>
+          <input
+            type="number"
+            className={`w-full p-2 rounded-lg bg-background border outline-none ${
+              validationErrors.watchPercent ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-cyan-500'
+            }`}
+            min={0}
+            max={100}
+            value={formData.watchPercentMin || 40}
+            onChange={(e) => handleFieldChange('watchPercentMin', clampValue(Number(e.target.value), 0, 100))}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">최대 시청 비율 (%)</label>
+          <input
+            type="number"
+            className={`w-full p-2 rounded-lg bg-background border outline-none ${
+              validationErrors.watchPercent ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-cyan-500'
+            }`}
+            min={0}
+            max={100}
+            value={formData.watchPercentMax || 90}
+            onChange={(e) => handleFieldChange('watchPercentMax', clampValue(Number(e.target.value), 0, 100))}
+          />
+        </div>
+
+        {/* 시청 비율 에러 메시지 - 두 필드 아래에 표시 */}
+        {validationErrors.watchPercent && (
+          <div className="col-span-2">
+            <p className="text-xs text-red-500 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              {validationErrors.watchPercent}
+            </p>
+          </div>
+        )}
 
         <div className="col-span-2">
           <label className="block text-sm font-medium mb-1">메모</label>
