@@ -7,6 +7,9 @@ pyyaml>=6.0.1
 aiohttp>=3.9.0
 python-dotenv>=1.0.0
 
+# Web UI
+jinja2>=3.1.2
+
 # Google Sheets
 gspread>=5.12.0
 google-auth>=2.25.0
@@ -14,5 +17,11 @@ google-auth>=2.25.0
 # Supabase
 supabase>=2.0.0
 
+# OpenAI (댓글 생성용)
+openai>=1.6.0
+
 # Utilities
 tenacity>=8.2.3
+
+# Image Processing (화면 캡처용)
+Pillow>=10.0.0

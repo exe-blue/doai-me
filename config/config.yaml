@@ -69,3 +69,27 @@ supabase:
   # url: "https://YOUR_PROJECT.supabase.co"
   # key: "YOUR_ANON_KEY"
   daemon_interval: 30  # seconds
+
+# xinhui (touping) Settings
+xinhui:
+  install_path: "C:\\Program Files (x86)\\xinhui"
+  control_port: 10039       # 디바이스 제어 API
+  stream_port: 22222        # 화면 스트리밍
+  aux_port: 32991           # 보조 통신
+  timeout: 5.0              # 명령 타임아웃 (초)
+  prefer_hid: true          # HID 입력 우선 사용
+  
+  # HID 제스처 설정
+  gesture:
+    tap_duration_min: 50    # 최소 탭 지속시간 (ms)
+    tap_duration_max: 150   # 최대 탭 지속시간 (ms)
+    swipe_duration_min: 200 # 최소 스와이프 지속시간 (ms)
+    swipe_duration_max: 500 # 최대 스와이프 지속시간 (ms)
+    position_jitter: 5      # 위치 랜덤 오프셋 (픽셀)
+  
+  # 화면 캡처 설정
+  capture:
+    format: "jpeg"          # jpeg 또는 png
+    quality: 80             # JPEG 품질 (1-100)
+    scale: 1.0              # 스케일
+    stream_fps: 15          # 스트리밍 FPS

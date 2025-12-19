@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AIFarm Dashboard - 600대 에이전트 실시간 모니터링">
+    <title>AIFarm - 대시보드</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/dashboard.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-content">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <a href="/" style="text-decoration: none; color: inherit;">
+                    <h1 style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 32px;">📊</span>
+                        <span>AIFarm 대시보드</span>
+                    </h1>
+                </a>
+            </div>
+            <div class="header-right">
+                <div class="time-intensity">
+                    <span class="intensity-label">활동 강도</span>
+                    <div class="intensity-bar">
+                        <div class="intensity-fill" style="width: 75%"></div>
+                    </div>
+                    <span class="intensity-value">75%</span>
+                </div>
+                <div class="live-indicator">
+                    <div class="pulse"></div>
+                    <span>LIVE</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Stats Overview -->
+        <section class="stats-overview">
+            <div class="stat-card primary">
+                <div class="stat-icon"><i class="fas fa-mobile-alt"></i></div>
+                <div class="stat-content">
+                    <span id="stat-total-devices" class="stat-value">600</span>
+                    <span class="stat-label">전체 디바이스</span>
+                </div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                <div class="stat-content">
+                    <span id="stat-active" class="stat-value">500</span>
+                    <span class="stat-label">활성</span>
+                </div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-icon"><i class="fas fa-pause-circle"></i></div>
+                <div class="stat-content">
+                    <span id="stat-reserve" class="stat-value">60</span>
+                    <span class="stat-label">예비</span>
+                </div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-icon"><i class="fas fa-tools"></i></div>
+                <div class="stat-content">
+                    <span id="stat-maintenance" class="stat-value">40</span>
+                    <span class="stat-label">점검중</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Main Grid -->
+        <section class="dashboard-grid">
+            <!-- Activity Distribution -->
+            <div class="dashboard-card activity-chart-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-pie"></i> 활동 분포</h3>
+                    <span id="total-active-activities" class="card-badge">450대 활동중</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="activity-chart"></canvas>
+                    <div id="activity-legend" class="activity-legend">
+                        <!-- Legend items will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Board Health -->
+            <div class="dashboard-card board-health-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-server"></i> 폰보드 상태</h3>
+                    <div class="health-legend">
+                        <span class="legend-item good">정상</span>
+                        <span class="legend-item warning">주의</span>
+                        <span class="legend-item critical">위험</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="board-grid" class="board-grid">
+                        <!-- Board cells will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leaderboard -->
+            <div class="dashboard-card leaderboard-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-trophy"></i> 에이전트 순위</h3>
+                </div>
+                <div class="card-body">
+                    <div class="leaderboard-tabs">
+                        <button class="tab-btn active" data-tab="tasks">완료 태스크</button>
+                        <button class="tab-btn" data-tab="watchTime">시청 시간</button>
+                    </div>
+                    <div id="leaderboard-content" class="leaderboard-content">
+                        <!-- Leaderboard items will be inserted here -->
+                    </div>
+                    <div class="error-free-count">
+                        <span class="label">24시간 무오류 디바이스</span>
+                        <span id="error-free-count" class="count">523대</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Discovery Feed -->
+            <div class="dashboard-card discovery-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-satellite-dish"></i> 실시간 발견</h3>
+                    <span class="card-badge live">LIVE</span>
+                </div>
+                <div class="card-body">
+                    <div id="discovery-feed" class="discovery-feed">
+                        <div class="discovery-empty">
+                            <i class="fas fa-satellite-dish"></i>
+                            <p>발견물을 기다리는 중...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Bottom Section -->
+        <section class="dashboard-bottom">
+            <!-- Timeline -->
+            <div class="dashboard-card timeline-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-area"></i> 24시간 활동 타임라인</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Alerts -->
+            <div class="dashboard-card alerts-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bell"></i> 최근 알림</h3>
+                    <button class="card-badge" onclick="clearAlerts()" style="cursor: pointer;">지우기</button>
+                </div>
+                <div class="card-body">
+                    <div id="alerts-list" class="alerts-list">
+                        <div class="alert-item info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>대시보드가 로드되었습니다</span>
+                            <time>방금</time>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Connection Status -->
+        <footer id="connection-status" class="connection-status">
+            <div class="status-dot connecting"></div>
+            <span>연결 중...</span>
+        </footer>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

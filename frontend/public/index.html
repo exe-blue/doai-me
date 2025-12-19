@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AIFarm - 600대 스마트폰 에이전트 자동화 시스템">
+    <title>AIFarm - 인트라넷</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🤖</div>
+                    <span class="logo-text">AIFarm</span>
+                </a>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/dashboard.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>대시보드</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/tasks.html" class="nav-link active">
+                        <i class="fab fa-youtube"></i>
+                        <span>YouTube 태스크</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>디바이스 관리</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-history"></i>
+                        <span>활동 로그</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>설정</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div id="api-status" class="connection-status">
+                <div class="status-dot connecting"></div>
+                <span>API 연결 중...</span>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">YouTube 태스크 관리</h1>
+                <p class="page-subtitle">영상 시청 요청을 등록하고 관리합니다</p>
+            </div>
+            
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-total">0</h3>
+                        <p>전체 태스크</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-pending">0</h3>
+                        <p>대기 중</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-completed">0</h3>
+                        <p>완료</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stat-failed">0</h3>
+                        <p>실패</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Batch Submit Card -->
+            <div class="card batch-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-layer-group"></i>
+                        배치 제출 (5개 단위)
+                    </h2>
+                    <div class="batch-controls">
+                        <span class="batch-count">
+                            <strong id="batch-item-count">0</strong> / 5
+                        </span>
+                        <button class="btn btn-sm btn-secondary" onclick="clearBatch()">
+                            <i class="fas fa-trash"></i> 초기화
+                        </button>
+                        <button id="submit-batch-btn" class="btn btn-sm btn-success" onclick="submitBatch()" disabled>
+                            <i class="fas fa-paper-plane"></i> 배치 제출
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="batch-items" class="batch-items">
+                    <div class="batch-empty">
+                        <i class="fas fa-inbox"></i>
+                        <p>배치에 추가된 태스크가 없습니다.<br>아래에서 태스크를 생성하여 배치에 추가하세요.</p>
+                    </div>
+                </div>
+                
+                <div class="batch-hint">
+                    <i class="fas fa-info-circle"></i>
+                    <span>에이전트 병목 현상을 줄이기 위해 <strong>5개 단위</strong>로 태스크를 제출합니다. 배치 내에서 랜덤 순서로 배정됩니다.</span>
+                </div>
+            </div>
+            
+            <!-- Task List -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">태스크 목록</h2>
+                    <div class="header-buttons">
+                        <button class="btn btn-secondary" onclick="openNewTaskModal(true)">
+                            <i class="fas fa-plus"></i> 배치에 추가
+                        </button>
+                        <button class="btn btn-primary" onclick="openNewTaskModal(false)">
+                            <i class="fas fa-plus"></i> 새 태스크
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>상태</th>
+                                <th>키워드</th>
+                                <th>제목</th>
+                                <th>예약 시간</th>
+                                <th>에이전트</th>
+                                <th>좋아요</th>
+                                <th>댓글</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-table-body">
+                            <tr>
+                                <td colspan="8">
+                                    <div class="empty-state">
+                                        <i class="fab fa-youtube"></i>
+                                        <h3>등록된 태스크가 없습니다</h3>
+                                        <p>새 YouTube 태스크를 추가해보세요</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title">새 YouTube 태스크</h3>
+                <button class="modal-close" onclick="closeModal('task-modal')">&times;</button>
+            </div>
+            
+            <form id="task-form" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="keyword">
+                            키워드 <span class="required">*</span>
+                        </label>
+                        <input type="text" id="keyword" class="form-input" placeholder="검색 키워드" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="title">
+                            제목 <span class="required">*</span>
+                        </label>
+                        <input type="text" id="title" class="form-input" placeholder="영상 제목" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="scheduled-time">
+                            실행 시간 <span class="required">*</span>
+                        </label>
+                        <input type="text" id="scheduled-time" class="form-input" placeholder="예: 즉시, 30분뒤, 1시간뒤" value="즉시" required>
+                        <span class="form-hint">상대 시간 또는 "즉시" 입력</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="channel-name">채널명</label>
+                        <input type="text" id="channel-name" class="form-input" placeholder="채널명 (선택사항)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="video-url">YouTube URL</label>
+                        <input type="url" id="video-url" class="form-input" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="video-id">Video ID</label>
+                        <input type="text" id="video-id" class="form-input" placeholder="자동 추출됨" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">에이전트 범위</label>
+                        <div class="number-group">
+                            <input type="number" id="agent-start" class="form-input" value="1" min="1" max="600">
+                            <span class="number-separator">~</span>
+                            <input type="number" id="agent-end" class="form-input" value="600" min="1" max="600">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">시청 시간 (초)</label>
+                        <div class="number-group">
+                            <input type="number" id="watch-min" class="form-input" value="30" min="10">
+                            <span class="number-separator">~</span>
+                            <input type="number" id="watch-max" class="form-input" value="180" min="10">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-grid cols-3">
+                    <div class="form-group">
+                        <label class="form-label">좋아요 확률</label>
+                        <div class="range-group">
+                            <input type="range" id="like-probability" class="range-input" min="0" max="100" value="30">
+                            <span id="like-value" class="range-value">30%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">댓글 확률</label>
+                        <div class="range-group">
+                            <input type="range" id="comment-probability" class="range-input" min="0" max="100" value="10">
+                            <span id="comment-value" class="range-value">10%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">구독 확률</label>
+                        <div class="range-group">
+                            <input type="range" id="subscribe-probability" class="range-input" min="0" max="100" value="5">
+                            <span id="subscribe-value" class="range-value">5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="toggle-group">
+                        <label class="toggle">
+                            <input type="checkbox" id="use-ai-comment" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">AI 댓글 생성 사용</span>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="form-label" for="memo">메모</label>
+                    <textarea id="memo" class="form-textarea" placeholder="추가 메모 (선택사항)"></textarea>
+                </div>
+            </form>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('task-modal')">취소</button>
+                <button class="btn btn-primary" onclick="saveTask()">
+                    <i class="fas fa-save"></i> 저장
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
