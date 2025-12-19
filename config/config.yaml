@@ -1,7 +1,11 @@
 # AIFarm Configuration
+# =====================
+# 모든 디바이스 연결은 ADB over TCP (WiFi) 전용입니다.
+# USB 연결은 최초 세팅 시에만 사용됩니다.
 
-# Device Network Settings
+# Device Network Settings (TCP 전용)
 network:
+  # WiFi 대역별 IP 범위
   base_ips:
     - subnet: "10.0.10"
       range: [1, 254]  # 254 devices
@@ -9,15 +13,29 @@ network:
       range: [1, 254]  # 254 devices
     - subnet: "10.0.12"
       range: [1, 93]   # 92 devices
+  
+  # ADB over TCP 포트 (고정값, 변경 불가)
   port: 5555
+  
+  # 연결 설정
   connection_timeout: 5
   max_workers: 50
+  
+  # WiFi 전용 모드 (true로 고정)
+  wifi_only: true
 
 # ADB Settings
 adb:
-  path: "adb"  # Use system ADB or specify full path
+  # ADB 실행 파일 경로
+  path: "C:\\Program Files (x86)\\xinhui\\tools\\adb.exe"
+  
+  # TCP 연결 전용 설정
+  tcp_port: 5555  # 고정값
   connect_timeout: 10
   command_timeout: 30
+  
+  # USB 연결 거부 (true로 고정)
+  reject_usb: true
 
 # Automation Settings
 automation:

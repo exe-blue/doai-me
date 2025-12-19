@@ -1,11 +1,22 @@
-"""디바이스 연결 및 관리"""
+"""
+디바이스 연결 및 관리 (ADB over TCP 전용)
+모든 연결은 WiFi(TCP)로만 이루어집니다.
+포트: 5555 고정
+"""
 
 import uiautomator2 as u2
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Optional, Callable, Any
 import logging
+import re
 
-from src.utils.ip_generator import generate_ips, format_device_address
+from src.utils.ip_generator import generate_ips
+from src.controller.adb_controller import (
+    ADBController, 
+    ADB_TCP_PORT,
+    ConnectionType,
+    USBConnectionError
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,43 +51,120 @@ def get_hybrid():
     return _hybrid_controller
 
 
-class DeviceManager:
-    """디바이스 연결 및 관리 클래스"""
+def validate_tcp_address(device_id: str) -> str:
+    """
+    TCP 주소 형식 검증 및 정규화
     
-    def __init__(self, port: int = 5555, wait_timeout: int = 5):
+    Args:
+        device_id: 디바이스 ID
+        
+    Returns:
+        정규화된 TCP 주소 (IP:5555)
+        
+    Raises:
+        USBConnectionError: USB 형식 감지 시
+        ValueError: 잘못된 형식
+    """
+    # IP:PORT 형식
+    tcp_match = re.match(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d+))?$', device_id)
+    if tcp_match:
+        ip = tcp_match.group(1)
+        port = tcp_match.group(2) or str(ADB_TCP_PORT)
+        return f"{ip}:{port}"
+    
+    # IP만 있는 경우
+    ip_only = re.match(r'^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$', device_id)
+    if ip_only:
+        return f"{device_id}:{ADB_TCP_PORT}"
+    
+    # USB 시리얼 형식 (영숫자만)
+    if re.match(r'^[a-zA-Z0-9]+$', device_id):
+        raise USBConnectionError(
+            f"USB 연결 감지: {device_id}\n"
+            f"WiFi(TCP) 연결만 허용됩니다. IP:5555 형식을 사용하세요."
+        )
+    
+    raise ValueError(f"잘못된 디바이스 형식: {device_id}")
+
+
+def format_device_address(ip: str, port: int = ADB_TCP_PORT) -> str:
+    """
+    디바이스 TCP 주소 포맷팅
+    
+    Args:
+        ip: IP 주소
+        port: 포트 번호 (기본값 5555)
+        
+    Returns:
+        IP:PORT 형식 문자열
+    """
+    return f"{ip}:{port}"
+
+
+class DeviceManager:
+    """
+    디바이스 연결 및 관리 클래스 (TCP 전용)
+    
+    특징:
+    - 모든 연결은 WiFi(TCP)로만 이루어짐
+    - USB 연결 시도 시 오류 발생
+    - 포트는 5555 고정
+    """
+    
+    def __init__(self, wait_timeout: int = 5):
         """
         Args:
-            port: ADB 포트 번호
             wait_timeout: 대기 타임아웃 (초)
         """
-        self.port = port
+        self.port = ADB_TCP_PORT  # 5555 고정
         self.wait_timeout = wait_timeout
-        self.connections: Dict[str, u2.Device] = {}
+        self.connections: Dict[str, u2.Device] = {}  # ip -> Device
+        self.adb = ADBController()  # ADB 컨트롤러
+    
+    def _get_tcp_address(self, ip: str) -> str:
+        """IP를 TCP 주소로 변환"""
+        return format_device_address(ip, self.port)
     
     def connect_device(self, ip: str) -> bool:
         """
-        단일 디바이스 연결
+        단일 디바이스 TCP 연결
         
         Args:
-            ip: 디바이스 IP 주소
+            ip: 디바이스 IP 주소 (예: 192.168.200.104)
             
         Returns:
             연결 성공 여부
+            
+        Raises:
+            USBConnectionError: USB 형식 입력 시
         """
         try:
-            address = format_device_address(ip, self.port)
+            # TCP 주소 검증
+            address = validate_tcp_address(ip)
+            ip_only = address.split(":")[0]
+            
+            # uiautomator2 연결
             device = u2.connect(address)
             device.settings["wait_timeout"] = self.wait_timeout
-            self.connections[ip] = device
-            logger.info(f"✓ {ip} 연결 성공")
+            
+            self.connections[ip_only] = device
+            logger.info(f"✓ {address} TCP 연결 성공")
             return True
+            
+        except USBConnectionError as e:
+            logger.error(f"✗ USB 연결 오류: {e}")
+            raise
         except Exception as e:
-            logger.error(f"✗ {ip} 연결 실패: {e}")
+            logger.error(f"✗ {ip}:{self.port} TCP 연결 실패: {e}")
             return False
     
-    def connect_all(self, ips: Optional[List[str]] = None, max_workers: int = 50) -> Dict[str, bool]:
+    def connect_all(
+        self, 
+        ips: Optional[List[str]] = None, 
+        max_workers: int = 50
+    ) -> Dict[str, bool]:
         """
-        전체 디바이스 병렬 연결
+        전체 디바이스 병렬 TCP 연결
         
         Args:
             ips: IP 주소 리스트 (None이면 기본 600대 생성)
@@ -88,18 +176,28 @@ class DeviceManager:
         if ips is None:
             ips = generate_ips()
         
-        results = {}
+        logger.info(f"🔌 {len(ips)}대 디바이스 TCP 연결 시작 (포트: {self.port})")
         
+        results = {}
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self.connect_device, ip): ip for ip in ips}
+            futures = {executor.submit(self._safe_connect, ip): ip for ip in ips}
             for future in futures:
                 ip = futures[future]
                 results[ip] = future.result()
         
         success_count = sum(results.values())
-        logger.info(f"\n=== 연결 완료: {success_count}/{len(ips)} ===")
+        logger.info(f"\n=== TCP 연결 완료: {success_count}/{len(ips)} ===")
         
         return results
+    
+    def _safe_connect(self, ip: str) -> bool:
+        """안전한 연결 (예외 처리 포함)"""
+        try:
+            return self.connect_device(ip)
+        except USBConnectionError:
+            return False
+        except Exception:
+            return False
     
     def disconnect_device(self, ip: str) -> bool:
         """
@@ -113,7 +211,7 @@ class DeviceManager:
         """
         if ip in self.connections:
             del self.connections[ip]
-            logger.info(f"✓ {ip} 연결 해제")
+            logger.info(f"✓ {ip}:{self.port} 연결 해제")
             return True
         return False
     
@@ -143,6 +241,10 @@ class DeviceManager:
         """
         return list(self.connections.keys())
     
+    def get_device_id(self, ip: str) -> str:
+        """디바이스 ID 형식으로 변환 (IP:5555)"""
+        return self._get_tcp_address(ip)
+    
     def execute_on_device(self, ip: str, action: Callable[[u2.Device], any]) -> bool:
         """
         단일 디바이스에 액션 실행
@@ -166,7 +268,11 @@ class DeviceManager:
             logger.error(f"✗ {ip} 실행 실패: {e}")
             return False
     
-    def execute_on_all(self, action: Callable[[u2.Device], any], max_workers: int = 50) -> Dict[str, bool]:
+    def execute_on_all(
+        self, 
+        action: Callable[[u2.Device], any], 
+        max_workers: int = 50
+    ) -> Dict[str, bool]:
         """
         전체 디바이스에 액션 실행
         
@@ -194,7 +300,11 @@ class DeviceManager:
         
         return results
     
-    def execute_batch(self, action: Callable[[u2.Device], any], batch_size: int = 50) -> Dict[str, bool]:
+    def execute_batch(
+        self, 
+        action: Callable[[u2.Device], any], 
+        batch_size: int = 50
+    ) -> Dict[str, bool]:
         """
         배치 단위로 액션 실행
         
@@ -214,7 +324,10 @@ class DeviceManager:
             
             batch_results = {}
             with ThreadPoolExecutor(max_workers=batch_size) as executor:
-                futures = {executor.submit(self.execute_on_device, ip, action): ip for ip in batch}
+                futures = {
+                    executor.submit(self.execute_on_device, ip, action): ip 
+                    for ip in batch
+                }
                 for future in futures:
                     ip = futures[future]
                     batch_results[ip] = future.result()
@@ -225,11 +338,48 @@ class DeviceManager:
         
         return all_results
     
-    # ==================== xinhui 연동 메서드 ====================
+    # ==================== ADB 명령 메서드 (TCP 전용) ====================
     
-    def get_device_id(self, ip: str) -> str:
-        """디바이스 ID 형식으로 변환 (xinhui용)"""
-        return format_device_address(ip, self.port)
+    def adb_command(self, ip: str, command: str) -> Optional[str]:
+        """
+        ADB shell 명령 실행
+        
+        Args:
+            ip: 디바이스 IP
+            command: shell 명령어
+            
+        Returns:
+            명령 결과 또는 None
+        """
+        return self.adb.execute_command(ip, command)
+    
+    def adb_tap(self, ip: str, x: int, y: int) -> bool:
+        """ADB로 화면 탭"""
+        return self.adb.tap(ip, x, y)
+    
+    def adb_swipe(
+        self, 
+        ip: str, 
+        x1: int, y1: int, 
+        x2: int, y2: int, 
+        duration_ms: int = 300
+    ) -> bool:
+        """ADB로 화면 스와이프"""
+        return self.adb.swipe(ip, x1, y1, x2, y2, duration_ms)
+    
+    def adb_input_text(self, ip: str, text: str) -> bool:
+        """ADB로 텍스트 입력"""
+        return self.adb.input_text(ip, text)
+    
+    def adb_press_key(self, ip: str, keycode: str) -> bool:
+        """ADB로 키 입력"""
+        return self.adb.press_key(ip, keycode)
+    
+    def adb_screenshot(self, ip: str, save_path: str) -> bool:
+        """ADB로 스크린샷"""
+        return self.adb.screenshot(ip, save_path)
+    
+    # ==================== xinhui 연동 메서드 ====================
     
     def hid_tap(self, ip: str, x: int, y: int, use_xinhui: bool = True) -> bool:
         """
@@ -397,4 +547,3 @@ class DeviceManager:
         logger.info(f"=== HID 실행 완료: {success_count}/{len(ips)} ===")
         
         return results
-
