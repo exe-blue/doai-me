@@ -1,0 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Cyber-Gaming Aesthetic Theme for WithB.io */
+@theme inline {
+  --color-background: oklch(0.08 0.01 260);
+  --color-foreground: oklch(0.95 0.01 260);
+  --color-card: oklch(0.12 0.015 260);
+  --color-card-foreground: oklch(0.95 0.01 260);
+  --color-popover: oklch(0.12 0.015 260);
+  --color-popover-foreground: oklch(0.95 0.01 260);
+  
+  /* Neon Accent Colors */
+  --color-primary: oklch(0.75 0.2 165);
+  --color-primary-foreground: oklch(0.1 0.02 165);
+  --color-secondary: oklch(0.18 0.02 260);
+  --color-secondary-foreground: oklch(0.9 0.01 260);
+  --color-muted: oklch(0.2 0.015 260);
+  --color-muted-foreground: oklch(0.6 0.02 260);
+  --color-accent: oklch(0.7 0.22 330);
+  --color-accent-foreground: oklch(0.1 0.02 330);
+  --color-destructive: oklch(0.65 0.25 25);
+  --color-destructive-foreground: oklch(0.98 0.01 0);
+  
+  --color-border: oklch(0.25 0.02 260);
+  --color-input: oklch(0.2 0.02 260);
+  --color-ring: oklch(0.75 0.2 165);
+  --color-chart-1: oklch(0.75 0.2 165);
+  --color-chart-2: oklch(0.7 0.22 330);
+  --color-chart-3: oklch(0.75 0.2 85);
+  --color-chart-4: oklch(0.7 0.22 290);
+  --color-chart-5: oklch(0.75 0.2 35);
+  --color-sidebar: oklch(0.1 0.015 260);
+  --color-sidebar-foreground: oklch(0.95 0.01 260);
+  --color-sidebar-primary: oklch(0.75 0.2 165);
+  --color-sidebar-primary-foreground: oklch(0.1 0.02 165);
+  --color-sidebar-accent: oklch(0.18 0.02 260);
+  --color-sidebar-accent-foreground: oklch(0.9 0.01 260);
+  --color-sidebar-border: oklch(0.2 0.02 260);
+  --color-sidebar-ring: oklch(0.75 0.2 165);
+  
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+  
+  --font-display: 'Orbitron', 'Rajdhani', system-ui, sans-serif;
+  --font-body: 'Rajdhani', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    background: 
+      radial-gradient(ellipse at 20% 0%, oklch(0.15 0.05 260 / 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, oklch(0.12 0.04 330 / 0.2) 0%, transparent 50%),
+      linear-gradient(180deg, oklch(0.06 0.01 260) 0%, oklch(0.08 0.01 260) 100%);
+    min-height: 100vh;
+  }
+}
+
+.neon-text {
+  text-shadow: 
+    0 0 10px oklch(0.75 0.2 165 / 0.8),
+    0 0 20px oklch(0.75 0.2 165 / 0.6),
+    0 0 40px oklch(0.75 0.2 165 / 0.4);
+}
+
+.neon-text-pink {
+  text-shadow: 
+    0 0 10px oklch(0.7 0.22 330 / 0.8),
+    0 0 20px oklch(0.7 0.22 330 / 0.6),
+    0 0 40px oklch(0.7 0.22 330 / 0.4);
+}
+
+.neon-border {
+  box-shadow: 
+    0 0 5px oklch(0.75 0.2 165 / 0.5),
+    0 0 15px oklch(0.75 0.2 165 / 0.3),
+    inset 0 0 10px oklch(0.75 0.2 165 / 0.1);
+}
+
+.neon-border-pink {
+  box-shadow: 
+    0 0 5px oklch(0.7 0.22 330 / 0.5),
+    0 0 15px oklch(0.7 0.22 330 / 0.3),
+    inset 0 0 10px oklch(0.7 0.22 330 / 0.1);
+}
+
+.grid-pattern {
+  background-image: 
+    linear-gradient(oklch(0.25 0.02 260 / 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.25 0.02 260 / 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.grid-pattern-subtle {
+  background-image: 
+    linear-gradient(oklch(0.2 0.02 260 / 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.2 0.02 260 / 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, oklch(0.75 0.2 165 / 0.5), transparent);
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes stat-fill {
+  from { width: 0; }
+}
+
+.stat-bar {
+  animation: stat-fill 1s ease-out;
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 10px 40px oklch(0 0 0 / 0.3),
+    0 0 20px oklch(0.75 0.2 165 / 0.2);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.1 0.01 260);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0.02 260);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.75 0.2 165 / 0.6);
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-up {
+  animation: count-up 0.5s ease-out;
+}
+
+@keyframes glitch {
+  0%, 90%, 100% { transform: translate(0); }
+  92% { transform: translate(-2px, 2px); }
+  94% { transform: translate(2px, -2px); }
+  96% { transform: translate(-2px, -2px); }
+  98% { transform: translate(2px, 2px); }
+}
+
+.glitch:hover {
+  animation: glitch 0.3s ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.stat-hp { color: oklch(0.65 0.25 25); }
+.stat-mp { color: oklch(0.65 0.2 250); }
+.stat-atk { color: oklch(0.75 0.2 35); }
+.stat-def { color: oklch(0.7 0.2 145); }
+.stat-spd { color: oklch(0.75 0.2 85); }
+.stat-int { color: oklch(0.7 0.22 290); }
+
+.level-badge {
+  background: linear-gradient(135deg, oklch(0.75 0.2 85) 0%, oklch(0.6 0.2 85) 100%);
+  box-shadow: 0 0 15px oklch(0.75 0.2 85 / 0.5);
+}
+
+.rank-1 { color: oklch(0.85 0.15 85); text-shadow: 0 0 10px oklch(0.85 0.15 85 / 0.5); }
+.rank-2 { color: oklch(0.75 0.01 260); text-shadow: 0 0 10px oklch(0.75 0.01 260 / 0.5); }
+.rank-3 { color: oklch(0.65 0.15 55); text-shadow: 0 0 10px oklch(0.65 0.15 55 / 0.5); }
+
+.status-active { 
+  background: oklch(0.65 0.2 145); 
+  box-shadow: 0 0 10px oklch(0.65 0.2 145 / 0.5);
+}
+.status-idle { 
+  background: oklch(0.6 0.15 85); 
+}
+.status-error { 
+  background: oklch(0.65 0.25 25); 
+  box-shadow: 0 0 10px oklch(0.65 0.25 25 / 0.5);
+}
+.status-maintenance { 
+  background: oklch(0.6 0.15 60); 
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes border-pulse {
+  0%, 100% { border-color: oklch(0.75 0.2 165 / 0.5); }
+  50% { border-color: oklch(0.75 0.2 165 / 1); }
+}
+
+.border-pulse {
+  animation: border-pulse 2s ease-in-out infinite;
+}
