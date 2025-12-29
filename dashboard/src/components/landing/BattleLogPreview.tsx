@@ -1,11 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { mockBattleLog } from '@/data/mock';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingUp, TrendingDown, Flame, Target, Trophy, Swords } from 'lucide-react';
+import { useBattleLog } from '@/hooks/useBattleLog';
 
 const eventIcons = {
   viral_hit: Flame,
@@ -26,6 +26,8 @@ const eventColors = {
 };
 
 export function BattleLogPreview() {
+  const { data: battleLog = [] } = useBattleLog();
+
   return (
     <section className="relative py-24 px-6">
       <div className="max-w-4xl mx-auto">
@@ -69,46 +71,52 @@ export function BattleLogPreview() {
               <span className="text-sm font-medium">LIVE FEED</span>
             </div>
             <span className="text-xs text-muted-foreground">
-              {mockBattleLog.length} events today
+              {battleLog.length} events today
             </span>
           </div>
 
           {/* Log Entries */}
           <ScrollArea className="h-[400px]">
             <div className="p-4 space-y-3">
-              {mockBattleLog.map((entry, index) => {
-                const Icon = eventIcons[entry.eventType];
-                const colorClass = eventColors[entry.eventType];
-                
-                return (
-                  <motion.div
-                    key={entry.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className={`flex items-start gap-4 p-3 rounded-lg border ${colorClass}`}
-                  >
-                    <div className="mt-0.5">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm">{entry.description}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(entry.createdAt), { 
-                            addSuffix: true,
-                            locale: ko 
-                          })}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-background/50">
-                          Impact: {entry.impactScore}
-                        </span>
+              {battleLog.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  아직 기록된 이벤트가 없습니다
+                </div>
+              ) : (
+                battleLog.map((entry, index) => {
+                  const Icon = eventIcons[entry.eventType as keyof typeof eventIcons] || Flame;
+                  const colorClass = eventColors[entry.eventType as keyof typeof eventColors] || eventColors.viral_hit;
+                  
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className={`flex items-start gap-4 p-3 rounded-lg border ${colorClass}`}
+                    >
+                      <div className="mt-0.5">
+                        <Icon className="w-5 h-5" />
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">{entry.description}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(entry.createdAt), { 
+                              addSuffix: true,
+                              locale: ko 
+                            })}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-background/50">
+                            Impact: {entry.impactScore}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
             </div>
           </ScrollArea>
         </motion.div>

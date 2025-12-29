@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "WithB.io - YouTube Intelligence System",
+  title: "AIFarm - YouTube Intelligence System",
   description: "600 디바이스 기반 YouTube 콘텐츠 인텔리전스 시스템",
 };
 
@@ -23,7 +24,9 @@ export default function RootLayout({
         <meta charSet="utf-8" />
       </head>
       <body className="antialiased">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

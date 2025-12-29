@@ -1,12 +1,11 @@
 'use client';
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
-import { mockBattleLog } from '@/data/mock';
-import { formatDistanceToNow, format } from 'date-fns';
+import { useBattleLog } from '@/hooks/useBattleLog';
+import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -14,8 +13,7 @@ import {
   Target, 
   Trophy, 
   Swords,
-  Zap,
-  Filter
+  Zap
 } from 'lucide-react';
 
 const eventConfig = {
@@ -52,24 +50,12 @@ const eventConfig = {
 };
 
 export default function BattlePage() {
-  // Generate more mock data
-  const extendedLog = [
-    ...mockBattleLog,
-    ...Array.from({ length: 20 }, (_, i) => ({
-      id: `gen-${i}`,
-      eventType: Object.keys(eventConfig)[Math.floor(Math.random() * 6)] as keyof typeof eventConfig,
-      ourChannelName: ['게임마스터TV', '뷰티퀸소희', '테크리뷰현우'][Math.floor(Math.random() * 3)],
-      description: [
-        '🎯 새로운 트렌드 발견! 콘텐츠 기획 추천',
-        '✅ 일일 퀘스트 완료! +100 EXP',
-        '📈 카테고리 순위 1단계 상승',
-        '🔥 영상 조회수 100K 돌파!',
-        '🏅 챌린지 참여 시작',
-      ][Math.floor(Math.random() * 5)],
-      impactScore: Math.floor(Math.random() * 50) + 50,
-      createdAt: new Date(Date.now() - (i + 6) * 1000 * 60 * 30).toISOString(),
-    })),
-  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const { data: battleLog = [] } = useBattleLog();
+  
+  // 데이터 정렬
+  const extendedLog = [...battleLog].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   return (
     <div className="space-y-6">

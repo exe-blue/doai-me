@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
-import { mockDORequests, mockDOStats } from '@/data/do-mock';
+import { useDORequests } from '@/hooks/useDORequests';
 import type { DORequest, DORequestCreateInput, DORequestStatus } from '@/types/do-request';
 import { 
   Plus, 
@@ -77,15 +77,27 @@ function getPriorityBadge(priority: 1 | 2 | 3, showFullLabel: boolean = false) {
 }
 
 export default function DORequestsPage() {
-  const [requests, setRequests] = useState<DORequest[]>(mockDORequests);
+  const { data: requestsData = [] } = useDORequests();
   const [selectedRequest, setSelectedRequest] = useState<DORequest | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<DORequestStatus | 'all'>('all');
-  const stats = mockDOStats;
+  
+  // 통계 계산
+  const stats = {
+    total: requestsData.length,
+    pending: requestsData.filter(r => r.status === 'pending').length,
+    scheduled: requestsData.filter(r => r.status === 'scheduled').length,
+    inProgress: requestsData.filter(r => r.status === 'in_progress').length,
+    completed: requestsData.filter(r => r.status === 'completed').length,
+    failed: requestsData.filter(r => r.status === 'failed').length,
+    successRate: requestsData.length > 0 
+      ? Math.round((requestsData.filter(r => r.status === 'completed').length / requestsData.length) * 100) 
+      : 0,
+  };
 
   const filteredRequests = filterStatus === 'all' 
-    ? requests 
-    : requests.filter(r => r.status === filterStatus);
+    ? requestsData 
+    : requestsData.filter(r => r.status === filterStatus);
 
   return (
     <div className="space-y-6">

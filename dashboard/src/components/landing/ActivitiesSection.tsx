@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
-import { mockActivities } from '@/data/mock';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
+import { useActivities } from '@/hooks/useActivities';
 
 const activityDetails = [
   {
@@ -57,6 +57,8 @@ const activityDetails = [
 ];
 
 export function ActivitiesSection() {
+  const { data: activities = [] } = useActivities();
+
   return (
     <section className="relative py-24 px-6">
       <div className="max-w-7xl mx-auto">
@@ -83,7 +85,7 @@ export function ActivitiesSection() {
         {/* Activities Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activityDetails.map((activity, index) => {
-            const mockActivity = mockActivities.find(a => a.id === activity.id);
+            const dbActivity = activities.find(a => a.id === activity.id);
             
             return (
               <motion.div
@@ -114,29 +116,27 @@ export function ActivitiesSection() {
                         ))}
                       </ul>
 
-                      {/* Stats */}
-                      {mockActivity && (
-                        <div className="flex items-center gap-4 pt-3 border-t border-border/50">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-cyan-400">
-                              <AnimatedNumber value={mockActivity.activeDevices} />
-                            </div>
-                            <div className="text-[10px] text-muted-foreground uppercase">Devices</div>
+                      {/* Stats - 실제 데이터 또는 기본값 0 */}
+                      <div className="flex items-center gap-4 pt-3 border-t border-border/50">
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-cyan-400">
+                            <AnimatedNumber value={dbActivity?.activeDevices ?? 0} />
                           </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-pink-400">
-                              <AnimatedNumber value={mockActivity.itemsProcessedToday} format="compact" />
-                            </div>
-                            <div className="text-[10px] text-muted-foreground uppercase">Today</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-green-400">
-                              <AnimatedNumber value={mockActivity.successRate} format="percent" />
-                            </div>
-                            <div className="text-[10px] text-muted-foreground uppercase">Success</div>
-                          </div>
+                          <div className="text-[10px] text-muted-foreground uppercase">Devices</div>
                         </div>
-                      )}
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-pink-400">
+                            <AnimatedNumber value={dbActivity?.itemsProcessedToday ?? 0} format="compact" />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground uppercase">Today</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-green-400">
+                            <AnimatedNumber value={dbActivity?.successRate ?? 0} format="percent" />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground uppercase">Success</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </GlowCard>

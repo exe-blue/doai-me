@@ -5,15 +5,11 @@ export const dynamic = 'force-dynamic';
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
-import { ActivityIcon, getActivityName } from '@/components/common/ActivityIcon';
 import { LevelBadge } from '@/components/common/LevelBadge';
-import { mockDashboardStats, mockActivities, mockChannels, mockBattleLog, mockNotifications } from '@/data/mock';
 import { 
   Smartphone, 
-  Activity, 
   TrendingUp, 
   Lightbulb, 
-  Target,
   MessageSquare,
   Trophy,
   Zap,
@@ -27,9 +23,34 @@ import { Progress } from '@/components/ui/progress';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
+import { useStats } from '@/hooks/useStats';
+import { useActivities } from '@/hooks/useActivities';
+import { useChannels } from '@/hooks/useChannels';
+import { useBattleLog } from '@/hooks/useBattleLog';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function DashboardPage() {
-  const stats = mockDashboardStats;
+  const { data: statsData } = useStats();
+  const { data: activities = [] } = useActivities();
+  const { data: channels = [] } = useChannels();
+  const { data: battleLog = [] } = useBattleLog();
+  const { data: notifications = [] } = useNotifications();
+
+  // 기본값 설정
+  const stats = statsData ?? {
+    totalDevices: 0,
+    activeDevices: 0,
+    idleDevices: 0,
+    errorDevices: 0,
+    totalChannels: 0,
+    avgChannelLevel: 0,
+    totalQuestsActive: 0,
+    questsCompletedToday: 0,
+    trendsDetectedToday: 0,
+    remixIdeasToday: 0,
+    challengesTracked: 0,
+    commentsPostedToday: 0,
+  };
 
   return (
     <div className="space-y-6">
@@ -96,7 +117,7 @@ export default function DashboardPage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {mockActivities.map((activity, i) => (
+              {activities.map((activity, i) => (
                 <motion.div
                   key={activity.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -130,12 +151,12 @@ export default function DashboardPage() {
                 알림
               </h2>
               <Badge variant="secondary" className="text-xs">
-                {mockNotifications.filter(n => !n.isRead).length} new
+                {notifications.filter(n => !n.isRead).length} new
               </Badge>
             </div>
             <ScrollArea className="h-[240px]">
               <div className="space-y-2">
-                {mockNotifications.map((notification, i) => (
+                {notifications.map((notification, i) => (
                   <motion.div
                     key={notification.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -172,7 +193,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-3">
-            {mockChannels.slice(0, 4).map((channel, i) => (
+            {channels.slice(0, 4).map((channel, i) => (
               <motion.div
                 key={channel.id}
                 initial={{ opacity: 0, x: -10 }}
@@ -208,7 +229,7 @@ export default function DashboardPage() {
           </div>
           <ScrollArea className="h-[200px]">
             <div className="space-y-2">
-              {mockBattleLog.slice(0, 5).map((entry, i) => (
+              {battleLog.slice(0, 5).map((entry, i) => (
                 <motion.div
                   key={entry.id}
                   initial={{ opacity: 0, y: 10 }}

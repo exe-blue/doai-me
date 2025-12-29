@@ -2,11 +2,28 @@
 
 import { motion } from 'framer-motion';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
-import { mockDashboardStats, mockDevices } from '@/data/mock';
 import { Smartphone, Activity, AlertTriangle, Moon } from 'lucide-react';
+import { useStats } from '@/hooks/useStats';
+import { useDevices } from '@/hooks/useDevices';
 
 export function DeviceVisualization() {
-  const stats = mockDashboardStats;
+  const { data: statsData } = useStats();
+  const { data: devicesData = [] } = useDevices();
+  
+  // 기본값 설정
+  const stats = statsData ?? {
+    totalDevices: 0,
+    activeDevices: 0,
+    idleDevices: 0,
+    errorDevices: 0,
+  };
+  
+  // 디바이스 목록 (없으면 빈 배열 사용)
+  const devices = devicesData.length > 0 ? devicesData : Array.from({ length: 600 }, (_, i) => ({
+    id: i + 1,
+    phoneBoardId: Math.floor(i / 20) + 1,
+    status: 'idle' as const,
+  }));
   
   return (
     <section className="relative py-24 px-6 overflow-hidden">
@@ -73,7 +90,7 @@ export function DeviceVisualization() {
 
             {/* Device Grid */}
             <div className="grid grid-cols-30 gap-[2px] max-w-4xl mx-auto">
-              {mockDevices.slice(0, 600).map((device, i) => (
+              {devices.slice(0, 600).map((device, i) => (
                 <motion.div
                   key={device.id}
                   className={`w-2 h-2 rounded-sm ${
@@ -132,7 +149,7 @@ export function DeviceVisualization() {
           </h3>
           <div className="grid grid-cols-5 md:grid-cols-10 lg:grid-cols-15 gap-2 max-w-4xl mx-auto">
             {Array.from({ length: 30 }, (_, i) => {
-              const boardDevices = mockDevices.filter(d => d.phoneBoardId === i + 1);
+              const boardDevices = devices.filter(d => d.phoneBoardId === i + 1);
               const activeCount = boardDevices.filter(d => d.status === 'active').length;
               const errorCount = boardDevices.filter(d => d.status === 'error').length;
               

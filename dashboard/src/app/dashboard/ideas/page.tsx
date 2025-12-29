@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
-import { mockRemixIdeas, mockTrendingShorts } from '@/data/mock';
+import { useTrending } from '@/hooks/useTrending';
 import { Badge } from '@/components/ui/badge';
+import type { RemixIdea, TrendingShorts } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,7 +39,13 @@ const directionLabels = {
 };
 
 export default function IdeasPage() {
-  const [selectedIdea, setSelectedIdea] = useState(mockRemixIdeas[0]);
+  const { data: trendingData } = useTrending();
+  
+  // 빈 배열 기본값
+  const remixIdeas: RemixIdea[] = trendingData?.remixIdeas ?? [];
+  const trendingShorts: TrendingShorts[] = trendingData?.trendingShorts ?? [];
+  
+  const [selectedIdea, setSelectedIdea] = useState<RemixIdea | null>(remixIdeas[0] ?? null);
 
   return (
     <div className="space-y-6">
@@ -53,7 +60,7 @@ export default function IdeasPage() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-cyan-400 border-cyan-500/30">
-            <AnimatedNumber value={mockRemixIdeas.length} /> Ideas Today
+            <AnimatedNumber value={remixIdeas.length} /> Ideas Today
           </Badge>
         </div>
       </div>
@@ -62,25 +69,25 @@ export default function IdeasPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <GlowCard glowColor="yellow" className="!p-4">
           <div className="text-2xl font-bold text-yellow-400">
-            <AnimatedNumber value={mockRemixIdeas.filter(i => i.status === 'pending').length} />
+            <AnimatedNumber value={remixIdeas.filter(i => i.status === 'pending').length} />
           </div>
           <div className="text-xs text-muted-foreground">Pending Review</div>
         </GlowCard>
         <GlowCard glowColor="green" className="!p-4">
           <div className="text-2xl font-bold text-green-400">
-            <AnimatedNumber value={mockRemixIdeas.filter(i => i.status === 'approved').length} />
+            <AnimatedNumber value={remixIdeas.filter(i => i.status === 'approved').length} />
           </div>
           <div className="text-xs text-muted-foreground">Approved</div>
         </GlowCard>
         <GlowCard glowColor="cyan" className="!p-4">
           <div className="text-2xl font-bold text-cyan-400">
-            <AnimatedNumber value={mockRemixIdeas.filter(i => i.status === 'in_production').length} />
+            <AnimatedNumber value={remixIdeas.filter(i => i.status === 'in_production').length} />
           </div>
           <div className="text-xs text-muted-foreground">In Production</div>
         </GlowCard>
         <GlowCard glowColor="purple" className="!p-4">
           <div className="text-2xl font-bold text-purple-400">
-            <AnimatedNumber value={mockRemixIdeas.filter(i => i.status === 'published').length} />
+            <AnimatedNumber value={remixIdeas.filter(i => i.status === 'published').length} />
           </div>
           <div className="text-xs text-muted-foreground">Published</div>
         </GlowCard>
@@ -95,14 +102,18 @@ export default function IdeasPage() {
             </h2>
             <ScrollArea className="h-[500px]">
               <div className="space-y-3 pr-4">
-                {mockRemixIdeas.map((idea, i) => (
+                {remixIdeas.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    아직 생성된 아이디어가 없습니다
+                  </div>
+                ) : remixIdeas.map((idea, i) => (
                   <motion.div
                     key={idea.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
                     className={`p-3 rounded-lg cursor-pointer transition-all ${
-                      selectedIdea.id === idea.id 
+                      selectedIdea?.id === idea.id 
                         ? 'bg-primary/10 border border-primary/30' 
                         : 'bg-background/50 hover:bg-background/70'
                     }`}
@@ -128,6 +139,7 @@ export default function IdeasPage() {
 
         {/* Idea Detail */}
         <div className="lg:col-span-2">
+          {selectedIdea ? (
           <motion.div
             key={selectedIdea.id}
             initial={{ opacity: 0, y: 20 }}
@@ -218,6 +230,13 @@ export default function IdeasPage() {
               </div>
             </GlowCard>
           </motion.div>
+          ) : (
+            <GlowCard glowColor="cyan" hover={false}>
+              <div className="text-center py-8 text-muted-foreground">
+                아이디어를 선택해주세요
+              </div>
+            </GlowCard>
+          )}
         </div>
       </div>
 
@@ -228,10 +247,14 @@ export default function IdeasPage() {
             <TrendingUp className="w-5 h-5 text-pink-400" />
             Trending Shorts
           </h2>
-          <Badge variant="secondary">{mockTrendingShorts.length} detected</Badge>
+          <Badge variant="secondary">{trendingShorts.length} detected</Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {mockTrendingShorts.map((shorts, i) => (
+          {trendingShorts.length === 0 ? (
+            <div className="col-span-3 text-center py-8 text-muted-foreground">
+              감지된 트렌딩 쇼츠가 없습니다
+            </div>
+          ) : trendingShorts.map((shorts, i) => (
             <motion.div
               key={shorts.id}
               initial={{ opacity: 0, y: 20 }}

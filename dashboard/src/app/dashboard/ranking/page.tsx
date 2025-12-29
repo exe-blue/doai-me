@@ -5,15 +5,12 @@ export const dynamic = 'force-dynamic';
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
-import { AnimatedNumber } from '@/components/common/AnimatedNumber';
 import { LevelBadge } from '@/components/common/LevelBadge';
-import { mockChannels, mockCompetitors } from '@/data/mock';
+import { useChannels } from '@/hooks/useChannels';
 import { Badge } from '@/components/ui/badge';
 import { 
   Trophy,
   TrendingUp,
-  TrendingDown,
-  Minus,
   Crown,
   Medal,
   Award
@@ -27,14 +24,14 @@ function generateLevel(id: string, index: number): number {
 }
 
 export default function RankingPage() {
-  // Memoize to prevent recalculation on every render and ensure SSR/client consistency
+  const { data: channelsData = [] } = useChannels();
+  
+  // Memoize to prevent recalculation on every render
   const allChannels = useMemo(() => {
-    return [...mockChannels, ...mockCompetitors.map((c, i) => ({
-      ...c,
-      level: generateLevel(c.id, i),
-      isCompetitor: true,
-    }))].sort((a, b) => (a.categoryRank || 999) - (b.categoryRank || 999));
-  }, []);
+    return channelsData
+      .map(c => ({ ...c, isCompetitor: false }))
+      .sort((a, b) => (a.categoryRank || 999) - (b.categoryRank || 999));
+  }, [channelsData]);
 
   const categories = [...new Set(allChannels.map(c => c.category))];
 
@@ -57,7 +54,11 @@ export default function RankingPage() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mockChannels.slice(0, 6).map((channel, i) => (
+          {channelsData.length === 0 ? (
+            <div className="col-span-3 text-center py-8 text-muted-foreground">
+              등록된 채널이 없습니다
+            </div>
+          ) : channelsData.slice(0, 6).map((channel, i) => (
             <motion.div
               key={channel.id}
               initial={{ opacity: 0, y: 20 }}

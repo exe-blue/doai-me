@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
-import { mockActivities } from '@/data/mock';
+import { useActivities } from '@/hooks/useActivities';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +93,11 @@ const activityDetails: Record<string, {
 };
 
 export default function ActivitiesPage() {
-  const [selectedActivity, setSelectedActivity] = useState(mockActivities[0].id);
+  const { data: activities = [] } = useActivities();
+  const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
+  
+  // 첫 번째 활동을 기본 선택으로 설정
+  const activeSelection = selectedActivity ?? (activities.length > 0 ? activities[0].id : null);
 
   return (
     <div className="space-y-6">
@@ -107,9 +111,9 @@ export default function ActivitiesPage() {
 
       {/* Activity Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockActivities.map((activity, i) => {
+        {activities.map((activity, i) => {
           const details = activityDetails[activity.id];
-          const isSelected = selectedActivity === activity.id;
+          const isSelected = activeSelection === activity.id;
           
           return (
             <motion.div
@@ -183,14 +187,14 @@ export default function ActivitiesPage() {
       </div>
 
       {/* Activity Detail */}
-      {selectedActivity && <ActivityDetail selectedActivity={selectedActivity} />}
+      {activeSelection && <ActivityDetail selectedActivity={activeSelection} activities={activities} />}
     </div>
   );
 }
 
 // Separate component to handle activity detail with memoized random values
-function ActivityDetail({ selectedActivity }: { selectedActivity: string }) {
-  const activity = mockActivities.find(a => a.id === selectedActivity);
+function ActivityDetail({ selectedActivity, activities }: { selectedActivity: string; activities: Array<{ id: string; icon: string; name: string; description: string; activeDevices: number; allocatedDevices: number; itemsProcessedToday: number; successRate: number; color: string }> }) {
+  const activity = activities.find(a => a.id === selectedActivity);
   const details = activityDetails[selectedActivity];
   
   // Memoize random values to prevent re-computation on every render

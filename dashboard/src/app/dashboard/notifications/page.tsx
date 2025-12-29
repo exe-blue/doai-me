@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import { GlowCard } from '@/components/common/GlowCard';
-import { mockNotifications } from '@/data/mock';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,7 +26,8 @@ const typeConfig = {
 };
 
 export default function NotificationsPage() {
-  const unreadCount = mockNotifications.filter(n => !n.isRead).length;
+  const { data: notifications = [] } = useNotifications();
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <div className="space-y-6">
@@ -66,7 +67,7 @@ export default function NotificationsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <GlowCard glowColor="cyan" className="!p-4">
-          <div className="text-2xl font-bold text-cyan-400">{mockNotifications.length}</div>
+          <div className="text-2xl font-bold text-cyan-400">{notifications.length}</div>
           <div className="text-xs text-muted-foreground">Total</div>
         </GlowCard>
         <GlowCard glowColor="pink" className="!p-4">
@@ -75,13 +76,13 @@ export default function NotificationsPage() {
         </GlowCard>
         <GlowCard glowColor="green" className="!p-4">
           <div className="text-2xl font-bold text-green-400">
-            {mockNotifications.filter(n => n.type === 'success').length}
+            {notifications.filter(n => n.type === 'success').length}
           </div>
           <div className="text-xs text-muted-foreground">Success</div>
         </GlowCard>
         <GlowCard glowColor="yellow" className="!p-4">
           <div className="text-2xl font-bold text-yellow-400">
-            {mockNotifications.filter(n => n.type === 'warning' || n.type === 'error').length}
+            {notifications.filter(n => n.type === 'warning' || n.type === 'error').length}
           </div>
           <div className="text-xs text-muted-foreground">Alerts</div>
         </GlowCard>
@@ -91,7 +92,7 @@ export default function NotificationsPage() {
       <GlowCard glowColor="cyan" hover={false}>
         <ScrollArea className="h-[600px]">
           <div className="space-y-3">
-            {mockNotifications.map((notification, i) => {
+            {notifications.map((notification, i) => {
               const config = typeConfig[notification.type];
               const Icon = config.icon;
               

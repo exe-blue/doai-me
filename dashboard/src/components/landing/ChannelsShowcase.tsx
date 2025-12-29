@@ -5,11 +5,12 @@ import { GlowCard } from '@/components/common/GlowCard';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { StatBar } from '@/components/common/StatBar';
 import { AnimatedNumber } from '@/components/common/AnimatedNumber';
-import { mockChannels } from '@/data/mock';
-import { TrendingUp, Users, Eye, Trophy } from 'lucide-react';
+import { TrendingUp, Users, Trophy } from 'lucide-react';
+import { useChannels } from '@/hooks/useChannels';
 
 export function ChannelsShowcase() {
-  const topChannels = mockChannels.slice(0, 3);
+  const { data: channels = [] } = useChannels();
+  const topChannels = channels.slice(0, 3);
 
   return (
     <section className="relative py-24 px-6 overflow-hidden">
