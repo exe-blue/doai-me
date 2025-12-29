@@ -34,6 +34,15 @@ const DEVICE_STATUS = {
     ERROR: 'ERROR'
 };
 
+/**
+ * 재연결 설정
+ */
+const RECONNECT_CONFIG = {
+    maxAttempts: 3,        // 최대 재연결 시도 횟수
+    intervalMs: 10000,     // 재연결 간격 (10초)
+    backoffMultiplier: 1.5 // 백오프 배수
+};
+
 class DiscoveryManager extends EventEmitter {
     /**
      * @param {Object} logger - Logger 인스턴스
@@ -48,6 +57,9 @@ class DiscoveryManager extends EventEmitter {
         
         // 디바이스 레지스트리
         this.registry = new Map();
+        
+        // 재연결 상태 추적
+        this.reconnectAttempts = new Map(); // serial -> { attempts, timer }
         
         // 타이머
         this.scanTimer = null;
@@ -442,11 +454,18 @@ class DiscoveryManager extends EventEmitter {
                 // 신규 디바이스
                 this.registry.set(device.serial, device);
                 this.emit('device:added', device);
+                this.cancelReconnect(device.serial); // 재연결 시도 취소
                 added++;
             } else if (existing.status !== device.status) {
                 // 상태 변경
                 this.registry.set(device.serial, { ...existing, ...device });
                 this.emit('device:changed', device);
+                
+                // ONLINE으로 변경되면 재연결 시도 취소
+                if (device.status === DEVICE_STATUS.ONLINE) {
+                    this.cancelReconnect(device.serial);
+                }
+                
                 updated++;
             } else {
                 // lastSeenAt 업데이트
@@ -454,16 +473,135 @@ class DiscoveryManager extends EventEmitter {
             }
         }
 
-        // 사라진 디바이스
+        // 사라진 디바이스 - 재연결 시도 시작
         for (const [serial, device] of this.registry) {
             if (!scannedSerials.has(serial) && device.status === DEVICE_STATUS.ONLINE) {
                 device.status = DEVICE_STATUS.OFFLINE;
                 this.emit('device:removed', device);
                 removed++;
+                
+                // WiFi/LAN 디바이스만 재연결 시도 (USB는 물리적 분리)
+                if (device.connectionType !== CONNECTION_TYPES.USB) {
+                    this.scheduleReconnect(device);
+                }
             }
         }
 
         this.logger.debug('[Discovery] 레지스트리 업데이트', { added, removed, updated });
+    }
+    
+    /**
+     * 디바이스 재연결 스케줄링
+     * @param {Object} device - 재연결할 디바이스
+     */
+    scheduleReconnect(device) {
+        const serial = device.serial;
+        
+        // 이미 재연결 중이면 무시
+        if (this.reconnectAttempts.has(serial)) {
+            return;
+        }
+        
+        this.logger.info(`[Discovery] 재연결 스케줄링: ${serial}`);
+        
+        const state = {
+            attempts: 0,
+            timer: null,
+            device
+        };
+        
+        this.reconnectAttempts.set(serial, state);
+        
+        // 즉시 첫 번째 재연결 시도
+        this.attemptReconnect(serial);
+    }
+    
+    /**
+     * 재연결 시도 실행
+     * @param {string} serial - 디바이스 시리얼
+     */
+    async attemptReconnect(serial) {
+        const state = this.reconnectAttempts.get(serial);
+        if (!state) return;
+        
+        state.attempts++;
+        
+        this.logger.info(`[Discovery] 재연결 시도 ${state.attempts}/${RECONNECT_CONFIG.maxAttempts}: ${serial}`);
+        
+        try {
+            // ADB 연결 시도
+            const result = await this.connectSingleDevice(serial);
+            
+            if (result) {
+                // 성공
+                this.logger.info(`[Discovery] 재연결 성공: ${serial}`);
+                this.cancelReconnect(serial);
+                
+                // 레지스트리 업데이트 - 재연결은 'changed'로 emit (중복 초기화 방지)
+                this.registry.set(serial, result);
+                this.emit('device:changed', result);
+                this.emit('device:reconnected', result);
+                return;
+            }
+        } catch (e) {
+            this.logger.warn(`[Discovery] 재연결 실패: ${serial}`, { error: e.message });
+        }
+        
+        // 실패 - 다음 시도 스케줄링
+        if (state.attempts < RECONNECT_CONFIG.maxAttempts) {
+            const delay = RECONNECT_CONFIG.intervalMs * Math.pow(RECONNECT_CONFIG.backoffMultiplier, state.attempts - 1);
+            this.logger.info(`[Discovery] 다음 재연결 ${Math.round(delay / 1000)}초 후: ${serial}`);
+            
+            state.timer = setTimeout(() => {
+                this.attemptReconnect(serial);
+            }, delay);
+        } else {
+            // 최대 시도 횟수 초과
+            this.logger.warn(`[Discovery] 재연결 포기 (최대 시도 초과): ${serial}`);
+            this.reconnectAttempts.delete(serial);
+            
+            // 디바이스를 ERROR 상태로 변경
+            const device = this.registry.get(serial);
+            if (device) {
+                device.status = DEVICE_STATUS.ERROR;
+                device.errorMessage = '재연결 실패 (3회 시도 후 포기)';
+                this.emit('device:error', device);
+            }
+        }
+    }
+    
+    /**
+     * 재연결 시도 취소
+     * @param {string} serial - 디바이스 시리얼
+     */
+    cancelReconnect(serial) {
+        const state = this.reconnectAttempts.get(serial);
+        if (state) {
+            if (state.timer) {
+                clearTimeout(state.timer);
+            }
+            this.reconnectAttempts.delete(serial);
+            this.logger.debug(`[Discovery] 재연결 취소: ${serial}`);
+        }
+    }
+    
+    /**
+     * 수동 재연결 요청
+     * @param {string} serial - 디바이스 시리얼
+     */
+    async manualReconnect(serial) {
+        const device = this.registry.get(serial);
+        if (!device) {
+            throw new Error(`디바이스를 찾을 수 없음: ${serial}`);
+        }
+        
+        // 기존 재연결 시도 취소
+        this.cancelReconnect(serial);
+        
+        // 새로운 재연결 시도
+        this.scheduleReconnect(device);
+        
+        return { message: '재연결 시도 시작됨', serial };
     }
 
     /**

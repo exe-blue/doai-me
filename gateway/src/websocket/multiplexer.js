@@ -73,6 +73,7 @@ class WebSocketMultiplexer {
      * 초기화
      */
     initialize(server) {
+        // 메인 Multiplexer WebSocket (/ws)
         this.wss = new WebSocket.Server({ 
             server,
             path: '/ws'
@@ -80,6 +81,16 @@ class WebSocketMultiplexer {
 
         this.wss.on('connection', (ws, req) => {
             this._handleConnection(ws, req);
+        });
+        
+        // 개별 디바이스 스트림 WebSocket (/ws/stream/:deviceId)
+        this.streamWss = new WebSocket.Server({ 
+            server,
+            path: /^\/ws\/stream\/(.+)$/
+        });
+        
+        this.streamWss.on('connection', (ws, req) => {
+            this._handleStreamConnection(ws, req);
         });
 
         // Discovery 이벤트 리스닝
@@ -127,6 +138,163 @@ class WebSocketMultiplexer {
 
         // 초기 디바이스 목록 전송
         this._sendDeviceList(ws);
+    }
+    
+    /**
+     * 개별 디바이스 스트림 WebSocket 연결 처리
+     * 경로: /ws/stream/:deviceId
+     */
+    _handleStreamConnection(ws, req) {
+        // URL에서 deviceId 추출
+        const match = req.url.match(/^\/ws\/stream\/(.+)$/);
+        if (!match) {
+            ws.close(4000, 'Invalid path');
+            return;
+        }
+        
+        const deviceId = decodeURIComponent(match[1]);
+        const clientId = this._generateClientId();
+        
+        ws.clientId = clientId;
+        ws.deviceId = deviceId;
+        ws.isDedicatedStream = true;
+        
+        this.clients.add(ws);
+        this.logger.info('[WSMultiplexer] 스트림 전용 연결', { clientId, deviceId });
+        
+        ws.on('message', async (data) => {
+            try {
+                const message = JSON.parse(data.toString());
+                
+                // stream:subscribe는 자동 처리
+                if (message.type === MESSAGE_TYPES.STREAM_SUBSCRIBE) {
+                    const quality = message.quality || {};
+                    const qualityPreset = QUALITY_PRESETS[quality.resolution] || QUALITY_PRESETS.MEDIUM;
+                    
+                    await this._subscribeToDeviceStream(ws, deviceId, qualityPreset);
+                    return;
+                }
+                
+                // stream:quality 업데이트
+                if (message.type === 'stream:quality') {
+                    const quality = message.quality || {};
+                    const qualityPreset = QUALITY_PRESETS[quality.resolution] || QUALITY_PRESETS.MEDIUM;
+                    
+                    // 기존 스트림 재시작
+                    await this._stopClientStream(ws, deviceId);
+                    await this._subscribeToDeviceStream(ws, deviceId, qualityPreset);
+                    return;
+                }
+                
+                // 터치/키 컨트롤
+                if (message.type === MESSAGE_TYPES.CONTROL_TOUCH) {
+                    await this._handleTouchControl(ws, { ...message, deviceId });
+                    return;
+                }
+                
+                if (message.type === MESSAGE_TYPES.CONTROL_KEY) {
+                    await this._handleKeyControl(ws, { ...message, deviceId });
+                    return;
+                }
+                
+            } catch (e) {
+                this.logger.warn('[WSMultiplexer] 스트림 메시지 오류', { error: e.message });
+            }
+        });
+        
+        ws.on('close', () => {
+            this._handleStreamDisconnect(ws);
+        });
+        
+        ws.on('error', (err) => {
+            this.logger.warn('[WSMultiplexer] 스트림 오류', { 
+                clientId, 
+                deviceId,
+                error: err.message 
+            });
+        });
+        
+        // 디바이스 존재 여부 확인
+        const device = this.discoveryManager.getDevice(deviceId);
+        if (!device) {
+            ws.send(JSON.stringify({
+                type: 'stream:error',
+                message: `디바이스를 찾을 수 없음: ${deviceId}`
+            }));
+        } else if (device.status !== 'ONLINE') {
+            ws.send(JSON.stringify({
+                type: 'stream:error', 
+                message: `디바이스가 오프라인: ${deviceId}`
+            }));
+        }
+    }
+    
+    /**
+     * 스트림 전용 연결 해제 처리
+     */
+    _handleStreamDisconnect(ws) {
+        const { clientId, deviceId } = ws;
+        
+        this.logger.info('[WSMultiplexer] 스트림 연결 해제', { clientId, deviceId });
+        
+        // 클라이언트가 구독 중인 스트림 해제
+        if (deviceId) {
+            this._stopClientStream(ws, deviceId);
+        }
+        
+        this.clients.delete(ws);
+    }
+    
+    /**
+     * 특정 클라이언트의 디바이스 스트림 구독 해제
+     */
+    _stopClientStream(ws, deviceId) {
+        const stream = this.streams.get(deviceId);
+        if (!stream) return;
+        
+        stream.subscribers.delete(ws);
+        
+        // 구독자가 없으면 스트림 종료
+        if (stream.subscribers.size === 0) {
+            this._stopDeviceStream(deviceId);
+        }
+    }
+    
+    /**
+     * 디바이스 스트림 구독 (내부용)
+     */
+    async _subscribeToDeviceStream(ws, deviceId, qualityPreset) {
+        // 디바이스 확인
+        const device = this.discoveryManager.getDevice(deviceId);
+        if (!device || device.status !== 'ONLINE') {
+            ws.send(JSON.stringify({
+                type: 'stream:error',
+                message: `디바이스 사용 불가: ${deviceId}`
+            }));
+            return;
+        }
+        
+        // 기존 스트림이 있으면 구독만 추가
+        let stream = this.streams.get(deviceId);
+        if (stream) {
+            stream.subscribers.add(ws);
+            this.logger.debug('[WSMultiplexer] 기존 스트림 구독', { deviceId, subscribers: stream.subscribers.size });
+            return;
+        }
+        
+        // 새 스트림 시작
+        this.logger.info('[WSMultiplexer] 스트림 시작', { deviceId, quality: qualityPreset });
+        
+        stream = await this._startDeviceStream(deviceId, qualityPreset);
+        if (stream) {
+            stream.subscribers = new Set([ws]);
+            this.streams.set(deviceId, stream);
+        } else {
+            ws.send(JSON.stringify({
+                type: 'stream:error',
+                message: `스트림 시작 실패: ${deviceId}`
+            }));
+        }
     }
 
     /**
@@ -306,12 +474,17 @@ class WebSocketMultiplexer {
 
     /**
      * 디바이스 스트림 시작
+     * @returns {Object|null} 생성된 세션 객체 또는 null
      */
     async _startDeviceStream(deviceId, quality) {
-        if (this.streams.has(deviceId)) return;
+        if (this.streams.has(deviceId)) {
+            return this.streams.get(deviceId);
+        }
 
         const device = this.discoveryManager.getDevice(deviceId);
-        if (!device) return;
+        if (!device) {
+            return null;
+        }
 
         const session = {
             deviceId,
@@ -365,12 +538,15 @@ class WebSocketMultiplexer {
 
             this.streams.set(deviceId, session);
             this.logger.info('[WSMultiplexer] 스트림 시작', { deviceId, quality });
+            
+            return session;
 
         } catch (e) {
             this.logger.error('[WSMultiplexer] 스트림 시작 실패', { 
                 deviceId, 
                 error: e.message 
             });
+            return null;
         }
     }
 

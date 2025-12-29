@@ -114,10 +114,15 @@ app.use(cors({
 app.use(express.json());
 
 // 정적 파일
-app.use('/stream', express.static('public/stream'));
+app.use('/stream', express.static(path.join(__dirname, '../public/stream')));
 
 // React 클라이언트 (빌드된 파일)
-app.use(express.static(path.join(__dirname, '../client/dist')));
+const clientDistPath = path.join(__dirname, '../client/dist');
+const clientPublicPath = path.join(__dirname, '../client/public');
+
+// 빌드된 클라이언트가 있으면 서빙
+app.use(express.static(clientDistPath));
+app.use(express.static(clientPublicPath));
 
 // 컨텍스트 주입
 app.use((req, res, next) => {
@@ -150,12 +155,106 @@ app.use('/api/discovery', discoveryRouter);  // v3.0
 app.use('/stream', streamRouter);
 
 // React SPA 라우팅 (클라이언트 사이드 라우팅 지원)
+const fs = require('fs');
 app.get('*', (req, res, next) => {
     // API 경로는 제외
-    if (req.path.startsWith('/api/') || req.path.startsWith('/stream/') || req.path.startsWith('/ws')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/stream/') || req.path.startsWith('/ws') || req.path.startsWith('/health')) {
         return next();
     }
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    
+    // 빌드된 index.html 확인
+    const indexPath = path.join(__dirname, '../client/dist/index.html');
+    if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+    }
+    
+    // 빌드가 없으면 기본 HTML (개발 안내)
+    res.send(`
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoAi.Me Control Room</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(230, 184, 77, 0.3);
+        }
+        .logo { font-size: 48px; margin-bottom: 20px; }
+        h1 { color: #E6B84D; margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 20px; }
+        .status { 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            border-radius: 20px;
+            color: #22c55e;
+            font-size: 14px;
+        }
+        .dot { 
+            width: 8px; height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .links { margin-top: 30px; }
+        a {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 20px;
+            background: #E6B84D;
+            color: #0a0a0f;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        a:hover { background: #d4a53d; }
+        .api-link { background: #333; color: #fff; }
+        .api-link:hover { background: #444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎭</div>
+        <h1>DoAi.Me Control Room</h1>
+        <p>Gateway v2.0 - Dynamic Device Architecture</p>
+        <div class="status">
+            <span class="dot"></span>
+            Server Running
+        </div>
+        <div class="links">
+            <a href="/api/devices">📱 Devices API</a>
+            <a href="/api/discovery/status" class="api-link">🔍 Discovery Status</a>
+            <a href="/health" class="api-link">💚 Health Check</a>
+        </div>
+        <p style="margin-top: 30px; font-size: 12px; color: #666;">
+            Client not built. Run: <code style="background:#333;padding:2px 6px;border-radius:4px;">cd client && npm run build</code>
+        </p>
+    </div>
+</body>
+</html>
+    `);
 });
 
 // 에러 핸들러

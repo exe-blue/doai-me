@@ -5,13 +5,26 @@
 /* DoAi.Me Control Room - Global Styles */
 
 :root {
+  /* DoAi.Me 브랜드 컬러 (RGB) */
+  --doai-300: 240 200 92;
+  --doai-400: 230 184 77;
+  --doai-500: 212 165 61;
+  
+  /* Control Room 배경 컬러 (RGB) */
+  --room-500: 58 58 77;
+  --room-600: 42 42 61;
+  --room-700: 26 26 46;
+  --room-800: 18 18 28;
+  --room-900: 10 10 15;
+  
+  /* 레거시 CSS 변수 (기존 코드 호환) */
   --doai-yellow: #E6B84D;
   --room-bg: #0a0a0f;
 }
 
 body {
   @apply bg-room-900 text-gray-100 font-display antialiased;
-  background: linear-gradient(180deg, #0a0a0f 0%, #111118 100%);
+  background: linear-gradient(180deg, rgb(var(--room-900)) 0%, #111118 100%);
 }
 
 /* 커스텀 스크롤바 */
@@ -34,7 +47,7 @@ body {
 
 /* 글로우 효과 */
 .doai-glow {
-  box-shadow: 0 0 10px var(--doai-yellow), 0 0 20px var(--doai-yellow);
+  box-shadow: 0 0 10px rgb(var(--doai-400)), 0 0 20px rgb(var(--doai-400));
 }
 
 /* 디바이스 카드 스타일 */
@@ -45,7 +58,7 @@ body {
   
   .device-card:hover {
     @apply border-doai-400 shadow-lg;
-    box-shadow: 0 0 15px rgba(230, 184, 77, 0.2);
+    box-shadow: 0 0 15px rgb(var(--doai-400) / 0.2);
   }
   
   .device-card.online {
@@ -63,7 +76,7 @@ body {
   
   .btn-doai:hover {
     @apply bg-doai-300 shadow-lg;
-    box-shadow: 0 0 10px var(--doai-yellow);
+    box-shadow: 0 0 10px rgb(var(--doai-400));
   }
   
   .btn-danger {
