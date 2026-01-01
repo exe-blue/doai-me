@@ -76,7 +76,7 @@ def supabase_post(path: str, rows: List[Dict], prefer: str = "return=minimal") -
 def supabase_patch(path: str, match: Dict, update: Dict) -> None:
     """단순 PATCH 헬퍼 (WHERE 조건은 eq= 로만 간단 처리)."""
     url = f"{REST_URL}/{path}"
-    params = {f"{k}.eq": v for k, v in match.items()}
+    params = {k: f"eq.{v}" for k, v in match.items()}
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",

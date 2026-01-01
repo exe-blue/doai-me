@@ -77,6 +77,27 @@ def supabase_post(path: str, rows: List[Dict[str, Any]], prefer: str = "return=r
     return []
 
 
+
+
+def supabase_patch(path: str, match: Dict[str, Any], update: Dict[str, Any], prefer: str = "return=representation") -> List[Dict[str, Any]]:
+    """PATCH 헬퍼 (업데이트용)."""
+    url = f"{REST_URL}/{path}"
+    # PostgREST 형식: ?id=eq.value (올바름)
+    # 잘못된 형식: ?id.eq=value (X)
+    params = {k: f"eq.{v}" for k, v in match.items()}
+    headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": prefer,
+    }
+    resp = requests.patch(url, headers=headers, params=params, json=update)
+    if not resp.ok:
+        raise RuntimeError(f"Supabase PATCH 실패: {resp.status_code} {resp.text}")
+    if resp.text:
+        return resp.json()
+    return []
+
 def ensure_video_row(row: Dict[str, Any]) -> Dict[str, Any]:
     """Google Sheets row 기준으로 Supabase videos row 를 upsert 하고 반환.
 
@@ -107,16 +128,14 @@ def ensure_video_row(row: Dict[str, Any]) -> Dict[str, Any]:
     if existing:
         video = existing[0]
         video_id = video["id"]
-        # 필요 시 url/target_device_count 를 업데이트
-        supabase_post(
-            f"{VIDEOS_TABLE}?id=eq.{video_id}",
-            [
-                {
-                    "id": video_id,
-                    "url": url,
-                    "target_device_count": target_device_count,
-                }
-            ],
+        # 필요 시 url/target_device_count 를 업데이트 (PATCH 사용)
+        supabase_patch(
+            VIDEOS_TABLE,
+            {"id": video_id},  # match 조건
+            {
+                "url": url,
+                "target_device_count": target_device_count,
+            },
             prefer="return=representation",
         )
         # 다시 읽어 최신 상태 반환
