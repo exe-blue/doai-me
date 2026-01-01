@@ -1,7 +1,7 @@
 {
   "server": {
     "host": "withb.io",
-    "port": 8000,
+    "port": 3100,
     "protocol": "https"
   },
   "device": {

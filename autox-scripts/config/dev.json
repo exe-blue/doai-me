@@ -1,7 +1,7 @@
 {
   "server": {
     "host": "192.168.0.100",
-    "port": 8000,
+    "port": 3100,
     "protocol": "http"
   },
   "device": {
