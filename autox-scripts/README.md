@@ -116,7 +116,7 @@ python main.py
 ```json
 {
   "server": {
-    "host": "withb.io",           // 도메인
+    "host": "doai.me",            // 도메인
     "port": 8000,
     "protocol": "https"           // HTTPS 사용
   },
