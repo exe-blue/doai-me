@@ -81,23 +81,19 @@
 /* 철학적 타이포그래피 */
 @layer components {
   .philosophy-title {
-    @apply text-4xl md:text-6xl font-light tracking-tight leading-tight;
-    font-family: 'Noto Serif KR', serif;
+    @apply text-4xl md:text-6xl font-light tracking-tight leading-tight font-serif;
   }
   
   .philosophy-subtitle {
-    @apply text-xl md:text-2xl font-light text-muted-foreground;
-    font-family: 'Noto Sans KR', sans-serif;
+    @apply text-xl md:text-2xl font-light text-ethereal-dim;
   }
   
   .philosophy-body {
-    @apply text-base md:text-lg leading-relaxed;
-    font-family: 'Noto Sans KR', sans-serif;
+    @apply text-base md:text-lg leading-relaxed text-ethereal-dim;
   }
   
   .philosophy-quote {
-    @apply text-lg md:text-xl italic text-muted-foreground border-l-2 border-primary pl-6 my-8;
-    font-family: 'Noto Serif KR', serif;
+    @apply text-lg md:text-xl italic text-ethereal-muted border-l-2 border-doai pl-6 my-8 font-serif;
   }
   
   /* 부드러운 페이드인 애니메이션 */

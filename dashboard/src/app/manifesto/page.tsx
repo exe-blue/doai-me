@@ -20,7 +20,7 @@ export default function ManifestoPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground smooth-scroll minimal-scrollbar">
+    <div className="min-h-screen bg-void text-ethereal smooth-scroll minimal-scrollbar">
       {/* 헤로 섹션 */}
       <section className="min-h-screen flex items-center justify-center px-6 py-20">
         <div className="max-w-4xl mx-auto text-center fade-in">
