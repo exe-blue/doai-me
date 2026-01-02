@@ -1,0 +1,27 @@
+{
+  "name": "doai-archive",
+  "version": "1.0.0",
+  "description": "DoAi.Me Archive - Sanity Studio",
+  "main": "package.json",
+  "author": "DoAi.Me Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "sanity dev",
+    "start": "sanity start",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "deploy-graphql": "sanity graphql deploy"
+  },
+  "keywords": [
+    "sanity"
+  ],
+  "dependencies": {
+    "sanity": "^3.22.0",
+    "styled-components": "^6.1.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@sanity/eslint-config-studio": "^3.0.1"
+  }
+}
