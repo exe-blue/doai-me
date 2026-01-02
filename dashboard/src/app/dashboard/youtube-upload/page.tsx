@@ -21,8 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/lib/supabase";
 import { Loader2, Plus, RefreshCw, ExternalLink } from "lucide-react";
 
 /**
@@ -80,7 +79,7 @@ export default function YouTubeUploadPage() {
       setVideos(data || []);
     } catch (error: any) {
       console.error("영상 조회 실패:", error);
-      toast.error(`조회 실패: ${error.message}`);
+      console.error('조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -96,15 +95,15 @@ export default function YouTubeUploadPage() {
 
     // 유효성 검사
     if (!formData.subject.trim()) {
-      toast.error("제목을 입력하세요");
+      alert("제목을 입력하세요");
       return;
     }
     if (!formData.url.trim()) {
-      toast.error("URL을 입력하세요");
+      alert("URL을 입력하세요");
       return;
     }
     if (!formData.url.includes("youtube.com") && !formData.url.includes("youtu.be")) {
-      toast.error("올바른 YouTube URL을 입력하세요");
+      alert("올바른 YouTube URL을 입력하세요");
       return;
     }
 
@@ -128,7 +127,7 @@ export default function YouTubeUploadPage() {
 
       if (error) throw error;
 
-      toast.success(`영상 등록 완료! No.${data.no}`);
+      console.log('영상 등록 완료:', data.no);
 
       // 폼 초기화
       setFormData({
@@ -143,7 +142,7 @@ export default function YouTubeUploadPage() {
       fetchVideos();
     } catch (error: any) {
       console.error("등록 실패:", error);
-      toast.error(`등록 실패: ${error.message}`);
+      console.error('등록 실패:', error);
     } finally {
       setSubmitting(false);
     }
@@ -152,7 +151,7 @@ export default function YouTubeUploadPage() {
   // 600대 디바이스에 할당
   const assignToDevices = async (videoId: string) => {
     try {
-      toast.info("디바이스 할당 중...");
+      console.log("디바이스 할당 중...");
 
       // RPC 함수 호출 (Supabase에서 디바이스 목록 조회 후 할당)
       const { data: devices, error: devicesError } = await supabase
@@ -173,11 +172,11 @@ export default function YouTubeUploadPage() {
 
       if (error) throw error;
 
-      toast.success(`${data}대 디바이스에 할당 완료!`);
+      console.log('디바이스 할당 완료:', data);
       fetchVideos();
     } catch (error: any) {
       console.error("할당 실패:", error);
-      toast.error(`할당 실패: ${error.message}`);
+      console.error('할당 실패:', error);
     }
   };
 
