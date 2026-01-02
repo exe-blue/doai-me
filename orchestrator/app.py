@@ -58,12 +58,13 @@ def get_logger():
 app = FastAPI(title="DoAi.Me Orchestrator", version="1.0.0-P0")
 
 # CORS (Dashboard 접속용)
-app.use(CORSMiddleware(
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-))
+    allow_headers=["*"]
+)
 
 # 상태 관리
 state = StateManager()
