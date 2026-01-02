@@ -63,8 +63,10 @@ CREATE TYPE ops_trigger_type AS ENUM (
     'ESCALATION'          -- 에스컬레이션: 하위 시스템의 상위 요청
 );
 
--- 이벤트 상태
-CREATE TYPE ops_event_status AS ENUM (
+-- 이벤트 상태 (Migration 010의 ops_event_status 재사용)
+-- ops_event_status는 이미 010에서 정의됨: pending, awaiting_confirm, executing, success, failed, timeout, cancelled
+-- 012에서는 추가 상태가 필요하므로 별도 타입 정의
+CREATE TYPE ops_audit_status AS ENUM (
     'PENDING',            -- 대기: 실행 전 (승인 대기 포함)
     'APPROVAL_REQUIRED',  -- 승인 필요: 위험 작업, 승인 대기
     'APPROVED',           -- 승인됨: 승인 완료, 실행 대기
@@ -117,7 +119,7 @@ CREATE TABLE ops_events_audit (
     approval_comment TEXT,
     
     -- Status
-    status ops_event_status NOT NULL DEFAULT 'PENDING',
+    status ops_audit_status NOT NULL DEFAULT 'PENDING',
     severity ops_severity NOT NULL DEFAULT 'INFO',
     
     -- Timing
@@ -286,12 +288,12 @@ CREATE OR REPLACE FUNCTION create_ops_event_audit(
 ) RETURNS TABLE (
     event_id UUID,
     requires_approval BOOLEAN,
-    status ops_event_status
+    status ops_audit_status
 ) AS $$
 DECLARE
     v_event_id UUID;
     v_requires_approval BOOLEAN;
-    v_initial_status ops_event_status;
+    v_initial_status ops_audit_status;
 BEGIN
     -- 승인 필요 여부 확인
     SELECT oar.requires_approval INTO v_requires_approval
@@ -389,7 +391,7 @@ CREATE OR REPLACE FUNCTION complete_ops_event_audit(
 ) RETURNS BOOLEAN AS $$
 DECLARE
     v_started_at TIMESTAMPTZ;
-    v_new_status ops_event_status;
+    v_new_status ops_audit_status;
 BEGIN
     SELECT started_at INTO v_started_at
     FROM ops_events_audit WHERE event_id = p_event_id;
@@ -400,7 +402,7 @@ BEGIN
     SET 
         status = v_new_status,
         completed_at = NOW(),
-        duration_ms = EXTRACT(MILLISECONDS FROM (NOW() - COALESCE(v_started_at, NOW())))::INTEGER,
+        duration_ms = (EXTRACT(EPOCH FROM (NOW() - COALESCE(v_started_at, NOW()))) * 1000)::INTEGER,
         result = p_result,
         error_code = p_error_code,
         error_message = p_error_message
