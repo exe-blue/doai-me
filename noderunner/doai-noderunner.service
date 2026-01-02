@@ -1,0 +1,37 @@
+[Unit]
+Description=DoAi.Me NodeRunner (The Muscle)
+Documentation=https://github.com/exe-blue/doai-me
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=doai
+Group=doai
+WorkingDirectory=/opt/doai/noderunner
+
+# 환경 변수
+Environment="NODE_ID=TITAN-01"
+Environment="WSS_SERVER_URL=wss://doai.me:8443/node"
+Environment="HEARTBEAT_INTERVAL=10"
+Environment="PYTHONUNBUFFERED=1"
+
+# 실행
+ExecStart=/opt/doai/noderunner/venv/bin/python3 /opt/doai/noderunner/main.py
+
+# 재시작 정책
+Restart=always
+RestartSec=10s
+StartLimitInterval=5min
+StartLimitBurst=3
+
+# 로그
+StandardOutput=append:/opt/doai/logs/noderunner.log
+StandardError=append:/opt/doai/logs/noderunner-error.log
+
+# 보안
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
