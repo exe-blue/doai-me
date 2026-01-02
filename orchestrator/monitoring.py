@@ -16,6 +16,8 @@ from typing import Dict, List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from auth import require_admin
+
 router = APIRouter(prefix="/monitoring", tags=["monitoring"])
 
 
@@ -44,7 +46,7 @@ class NodeMetrics(BaseModel):
 # ==================== Endpoints ====================
 
 @router.get("/nodes")
-async def get_node_metrics(supabase=None):
+async def get_node_metrics(token: str = Depends(require_admin), supabase=None):
     """
     노드별 상세 메트릭
     
@@ -107,7 +109,7 @@ async def get_node_metrics(supabase=None):
 
 
 @router.get("/network")
-async def get_network_mesh(supabase=None):
+async def get_network_mesh(token: str = Depends(require_admin), supabase=None):
     """
     전체 네트워크 상태 집계
     
@@ -140,7 +142,7 @@ async def get_network_mesh(supabase=None):
 
 
 @router.get("/jobs")
-async def get_job_metrics(supabase=None):
+async def get_job_metrics(token: str = Depends(require_admin), supabase=None):
     """
     작업 큐 메트릭
     
@@ -173,7 +175,7 @@ async def get_job_metrics(supabase=None):
 
 
 @router.get("/devices")
-async def get_device_distribution(supabase=None):
+async def get_device_distribution(token: str = Depends(require_admin), supabase=None):
     """
     디바이스 분포 및 허브/포트 라벨링
     
@@ -233,7 +235,7 @@ async def get_device_distribution(supabase=None):
 
 
 @router.get("/alerts")
-async def get_recent_alerts(supabase=None, hours: int = 24):
+async def get_recent_alerts(token: str = Depends(require_admin), supabase=None, hours: int = 24):
     """
     최근 알림 조회
     

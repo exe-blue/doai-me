@@ -26,6 +26,7 @@ import uvicorn
 
 from state import StateManager
 from policy import PolicyEngine
+from auth import require_admin
 
 # Bug Fix 1: Supabase client (TODO: 실제 구현 필요)
 try:
@@ -221,7 +222,7 @@ async def health_check():
 
 
 @app.get("/nodes")
-async def get_nodes():
+async def get_nodes(token: str = Depends(require_admin)):
     """
     현재 노드 상태 조회
     
@@ -243,7 +244,7 @@ async def get_nodes():
 
 
 @app.post("/jobs")
-async def create_job(job_data: dict):
+async def create_job(job_data: dict, token: str = Depends(require_admin)):
     """
     Job 생성 및 할당
     
@@ -305,12 +306,14 @@ async def create_job(job_data: dict):
 
 # ==================== 라우터 등록 (Bug Fix 1 & 3) ====================
 
-# ops 라우터 등록
+# 라우터 등록
 try:
     from ops import router as ops_router, execute_recovery
     from auto_recovery import AutoRecoveryEngine
+    from monitoring import router as monitoring_router
     
     app.include_router(ops_router)
+    app.include_router(monitoring_router)
     
     # Bug Fix 3: execute_recovery 주입 (순환 import 방지)
     auto_recovery_engine = AutoRecoveryEngine(

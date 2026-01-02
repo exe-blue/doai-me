@@ -19,6 +19,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
+from auth import require_admin
+
 # ==================== 라우터 ====================
 router = APIRouter(prefix="/ops/emergency", tags=["ops"])
 
@@ -72,6 +74,7 @@ def get_logger():
 @router.post("/request")
 async def request_recovery(
     request: EmergencyRequest,
+    token: str = Depends(require_admin),
     supabase=Depends(get_supabase),
     logger=Depends(get_logger)
 ):
@@ -135,6 +138,7 @@ async def request_recovery(
 @router.post("/confirm")
 async def confirm_recovery(
     request: ConfirmRequest,
+    token: str = Depends(require_admin),
     supabase=Depends(get_supabase),
     logger=Depends(get_logger)
 ):
@@ -180,7 +184,11 @@ async def confirm_recovery(
 
 
 @router.get("/{event_id}")
-async def get_event_status(event_id: str, supabase=Depends(get_supabase)):
+async def get_event_status(
+    event_id: str,
+    token: str = Depends(require_admin),
+    supabase=Depends(get_supabase)
+):
     """
     이벤트 상태 조회
     
