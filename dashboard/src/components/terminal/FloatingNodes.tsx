@@ -51,6 +51,9 @@ export const FloatingNodes = ({
     const nodes = nodesRef.current;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
+    
+    // Animation frame ID 저장
+    let animationFrameId: number;
 
     const animate = () => {
       ctx.fillStyle = "rgba(5, 5, 5, 0.1)";
@@ -100,13 +103,18 @@ export const FloatingNodes = ({
         ctx.fill();
       });
 
-      requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
     };
 
     animate();
 
     window.addEventListener("resize", setCanvasSize);
-    return () => window.removeEventListener("resize", setCanvasSize);
+    
+    // Cleanup: animation frame과 resize 이벤트 모두 취소
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", setCanvasSize);
+    };
   }, [count, isListening]);
 
   // 랜덤 노드 활동 시뮬레이션
