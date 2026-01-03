@@ -30,6 +30,9 @@ const ContentExplorer = require('./modules/content-explorer.js');
 const OpenAIHelper = require('./modules/openai-helper.js');
 const InteractionEngine = require('./modules/interaction.js');
 const Scheduler = require('./modules/scheduler.js');
+const Validator = require('./modules/validation.js');
+const ErrorHandler = require('./modules/error-handler.js');
+const ResourceManager = require('./modules/resource-manager.js');
 
 // ==================== 설정 로드 ====================
 const ENV = 'dev';
@@ -40,12 +43,27 @@ try {
     config = JSON.parse(files.read(`./config/persona.json`));
     
     // 변수 파일 로드 (덮어쓰기)
-    const variables = JSON.parse(files.read(`./config/variables.json`));
-    config.behavior = variables.behavior;
-    config.timing = variables.timing;
-    config.openai = { ...config.openai, ...variables.openai };
-    config.persona = { ...config.persona, ...variables.persona };
-    config.exploration = variables.exploration;
+    let variables;
+    try {
+        variables = JSON.parse(files.read(`./config/variables.json`));
+        
+        // 입력 검증
+        const validation = Validator.validateVariables(variables);
+        if (!validation.valid) {
+            console.warn('⚠️  설정 검증 경고:', validation.errors);
+            variables = validation.correctedVariables;  // 수정된 값 사용
+        }
+        
+        config.behavior = variables.behavior;
+        config.timing = variables.timing;
+        config.openai = { ...config.openai, ...variables.openai };
+        config.persona = { ...config.persona, ...variables.persona };
+        config.exploration = variables.exploration;
+        
+    } catch (varErr) {
+        console.error('변수 파일 로드 실패, 기본값 사용:', varErr.message);
+        // variables.json 없어도 계속 진행 (persona.json의 기본값 사용)
+    }
     
 } catch (e) {
     console.error('설정 파일 로드 실패:', e.message);
@@ -80,10 +98,14 @@ const contentExplorer = new ContentExplorer(config, logger, youtube);
 const openaiHelper = new OpenAIHelper(config, logger);
 const interaction = new InteractionEngine(config, logger, youtube, openaiHelper);
 const scheduler = new Scheduler(config, logger);
+const errorHandler = new ErrorHandler(logger);
+const resourceManager = new ResourceManager(logger);
 
 // ==================== 전역 변수 ====================
 let isRunning = true;
 let currentPersona = null;
+let startTime = Date.now();
+const maxRuntime = 86400000;  // 24시간 최대 실행
 
 // ==================== 메인 프로세스 ====================
 
@@ -107,28 +129,78 @@ async function mainLoop() {
         aidentityVersion: currentPersona.aidentity_version
     });
     
+    // 리소스 관리 시작
+    const cleanupHandle = resourceManager.startPeriodicCleanup();
+    
     // 주기적 지시 체크 시작 (60초마다)
-    commandFetcher.startPeriodicCheck(async (commands) => {
-        for (const command of commands) {
+    const checkHandle = commandFetcher.startPeriodicCheck(async (commands) => {
+        // Lock 획득 (동시 실행 방지)
+        if (!resourceManager.acquireCommandLock()) {
+            logger.warn('⚠️  지시 실행 중, 새 지시 스킵');
+            return;
+        }
+        
+        try {
+            // 한 번에 1개만 실행
+            const command = commands[0];
             await executeCommand(command);
             commandFetcher.markExecuted(command.video_id);
+        } finally {
+            resourceManager.releaseCommandLock();
         }
     });
     
     // 메인 루프 시작 (평시 행동)
     while (isRunning) {
         try {
-            // 자율 탐색
-            await autonomousExploration();
+            // 최대 실행 시간 체크 (24시간)
+            if (Date.now() - startTime > maxRuntime) {
+                logger.info('⏰ 최대 실행 시간 도달 (24시간), 정상 종료');
+                isRunning = false;
+                break;
+            }
+            
+            // 연속 에러 체크
+            if (errorHandler.shouldTerminate()) {
+                logger.error('🛑 연속 에러 초과, 비정상 종료');
+                isRunning = false;
+                break;
+            }
+            
+            // Lock 획득 (자율 탐색)
+            if (!resourceManager.acquireExplorationLock()) {
+                logger.debug('⚠️  탐색 중, 대기');
+                sleep(10000);
+                continue;
+            }
+            
+            try {
+                // 자율 탐색 (Circuit Breaker로 보호)
+                await errorHandler.withCircuitBreaker(
+                    () => autonomousExploration(),
+                    'autonomousExploration'
+                );
+            } finally {
+                resourceManager.releaseExplorationLock();
+            }
             
             // 슬립
             await randomSleep();
             
         } catch (e) {
-            logger.error('❌ 메인 루프 에러', { error: e.message });
+            logger.error('❌ 메인 루프 에러', { 
+                error: e.message,
+                consecutiveErrors: errorHandler.consecutiveErrors
+            });
             sleep(60000);  // 에러 시 1분 대기
         }
     }
+    
+    // Cleanup
+    logger.info('🧹 정리 시작');
+    checkHandle();
+    cleanupHandle();
+    logger.info('✅ 정상 종료');
 }
 
 // ==================== 핵심 함수 ====================
@@ -177,6 +249,12 @@ async function initializePersona() {
  * 지시 실행
  */
 async function executeCommand(video) {
+    // Null 체크
+    if (!video || !video.video_id || !video.url) {
+        logger.error('❌ 잘못된 video 객체', { video });
+        return;
+    }
+    
     logger.info('🎬 지시 실행', { 
         videoId: video.video_id,
         title: video.subject,
@@ -187,10 +265,17 @@ async function executeCommand(video) {
     const startTime = Date.now();
     
     try {
-        // 1. YouTube 앱 실행
-        if (!youtube.launchYouTube()) {
-            throw new Error('YouTube 앱 실행 실패');
-        }
+        // 1. YouTube 앱 실행 (재시도 3회)
+        const launchSuccess = await errorHandler.withRetry(
+            () => {
+                if (!youtube.launchYouTube()) {
+                    throw new Error('YouTube 앱 실행 실패');
+                }
+                return true;
+            },
+            3,
+            2000
+        );
         
         // 2. URL 열기
         if (!youtube.openByUrl(video.url)) {
