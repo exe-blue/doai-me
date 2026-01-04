@@ -214,39 +214,63 @@ class H264StreamSession extends EventEmitter {
  * H264 WebSocket Stream Server
  * 
  * WebSocket 클라이언트에게 H.264 스트림 전송
+ * 
+ * EventEmitter를 상속하여 이벤트 기반 통신 지원
  */
-class H264StreamServer {
+class H264StreamServer extends EventEmitter {
     /**
      * @param {Object} options
      * @param {Object} options.logger - 로거
      * @param {Object} options.deviceTracker - 기기 추적기
      */
     constructor(options = {}) {
+        // EventEmitter 초기화 (반드시 super() 호출 필요)
+        super();
+        
         this.logger = options.logger || console;
         this.deviceTracker = options.deviceTracker;
         
         this._wss = null;
         this._sessions = new Map();  // serial -> { session, clients }
+        this._basePath = '/ws/stream';
     }
     
     /**
      * WebSocket 서버 초기화
      * 
+     * noServer 모드 사용: HTTP 서버의 upgrade 이벤트를 직접 처리
+     * 이렇게 해야 /ws/stream/{deviceId} 같은 동적 경로를 지원할 수 있음
+     * 
      * @param {http.Server} httpServer - HTTP 서버
-     * @param {string} path - WebSocket 경로 (기본: /ws/stream)
+     * @param {string} basePath - WebSocket 기본 경로 (기본: /ws/stream)
      */
-    initialize(httpServer, path = '/ws/stream') {
+    initialize(httpServer, basePath = '/ws/stream') {
+        this._basePath = basePath;
+        
+        // noServer 모드로 WebSocket 서버 생성
         this._wss = new WebSocket.Server({
-            server: httpServer,
-            path,
+            noServer: true,
             perMessageDeflate: false  // 실시간 스트리밍에는 압축 비활성화
+        });
+        
+        // HTTP upgrade 이벤트 직접 처리
+        httpServer.on('upgrade', (request, socket, head) => {
+            const pathname = request.url.split('?')[0];  // 쿼리스트링 제거
+            
+            // /ws/stream/{deviceId} 경로 매칭
+            if (pathname.startsWith(this._basePath + '/')) {
+                this._wss.handleUpgrade(request, socket, head, (ws) => {
+                    this._wss.emit('connection', ws, request);
+                });
+            }
+            // 다른 경로는 무시 (다른 WebSocket 서버가 처리)
         });
         
         this._wss.on('connection', (ws, req) => {
             this._handleConnection(ws, req);
         });
         
-        this.logger.info(`[H264Server] WebSocket 서버 초기화: ${path}`);
+        this.logger.info(`[H264Server] WebSocket 서버 초기화: ${basePath}/{deviceId}`);
     }
     
     /**

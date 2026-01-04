@@ -1,24 +1,36 @@
 /**
- * JMuxer Type Definitions
- * H.264 Video Decoder for Browser
+ * jmuxer 타입 선언
+ * @see https://github.com/niclegend/jmuxer
  */
-
 declare module 'jmuxer' {
-  export interface JMuxerOptions {
-    node: HTMLCanvasElement | HTMLVideoElement | string;
+  interface Feeder {
+    video?: Uint8Array;
+    audio?: Uint8Array;
+    duration?: number;
+  }
+
+  interface JMuxerOptions {
+    node: HTMLVideoElement | string;
     mode?: 'video' | 'audio' | 'both';
     flushingTime?: number;
     fps?: number;
     debug?: boolean;
-    maxDelay?: number;
     clearBuffer?: boolean;
+    
+    // 추가 옵션들
+    videoCodec?: string;
+    maxDelay?: number;
+    readFpsFromTrack?: boolean;
+    
+    // 콜백 함수들
     onReady?: () => void;
-    onError?: (error: any) => void;
-    onMissingVideoFrames?: (data: any) => void;
-    onMissingAudioFrames?: (data: any) => void;
+    onError?: (data: unknown) => void;  // upstream API에 맞춤: any 대신 unknown 사용
+    onMissingVideoFrames?: (data: Feeder) => void;
+    onMissingAudioFrames?: (data: Feeder) => void;
+    onData?: (data: Uint8Array) => void;
   }
 
-  export interface FeedData {
+  interface FeedData {
     video?: Uint8Array;
     audio?: Uint8Array;
     duration?: number;
@@ -28,7 +40,5 @@ declare module 'jmuxer' {
     constructor(options: JMuxerOptions);
     feed(data: FeedData): void;
     destroy(): void;
-    reset(): void;
   }
 }
-

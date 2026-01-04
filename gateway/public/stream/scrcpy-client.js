@@ -1,437 +1,329 @@
 /**
- * Scrcpy Client - Lightweight H.264 Decoder
+ * Scrcpy/H.264 WebSocket Client
  * 
- * Aria 명세서 (2025-01-15) - Appsmith Integration
+ * JMuxer를 사용한 H.264 디코딩 및 Canvas 렌더링
  * 
- * WebCodecs API를 사용한 하드웨어 가속 H.264 디코딩
- * 의존성 없음 (Vanilla JS)
+ * 사용법:
+ *   initScrcpyClient('canvas', 'ws://localhost:3100/ws/stream/device123', 'status');
  * 
  * @author Axon (Tech Lead)
  * @version 1.0.0
- * @size ~10KB (minified)
  */
 
-/**
- * Scrcpy 클라이언트 초기화
- * @param {string} canvasId - Canvas 엘리먼트 ID
- * @param {string} wsUrl - WebSocket URL
- * @param {string} statusId - Status 엘리먼트 ID
- */
-function initScrcpyClient(canvasId, wsUrl, statusId) {
-    const canvas = document.getElementById(canvasId);
-    const ctx = canvas.getContext('2d');
-    const statusEl = document.getElementById(statusId);
-
-    // 상태 관리
-    let ws = null;
-    let decoder = null;
-    let frameCount = 0;
-    let lastFpsTime = Date.now();
-    let currentFps = 0;
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 5;
-    const RECONNECT_DELAY = 3000;
-
-    // NAL Unit 파서 상태
-    let nalBuffer = new Uint8Array(0);
-
+(function(global) {
+    'use strict';
+    
+    // JMuxer CDN (없으면 동적 로드)
+    const JMUXER_CDN = 'https://cdn.jsdelivr.net/npm/jmuxer@2.0.5/dist/jmuxer.min.js';
+    
     /**
-     * WebSocket 연결
+     * JMuxer 동적 로드
      */
-    function connect() {
-        updateStatus('Connecting...', 'connecting');
-
-        ws = new WebSocket(wsUrl);
-        ws.binaryType = 'arraybuffer';
-
-        ws.onopen = () => {
-            updateStatus('Connected', 'connected');
-            reconnectAttempts = 0;
-            initDecoder();
-        };
-
-        ws.onmessage = (event) => {
-            if (typeof event.data === 'string') {
-                // JSON 상태 업데이트
-                handleStatusMessage(JSON.parse(event.data));
-            } else {
-                // Binary H.264 프레임
-                handleBinaryFrame(new Uint8Array(event.data));
+    function loadJMuxer() {
+        return new Promise((resolve, reject) => {
+            if (global.JMuxer) {
+                resolve(global.JMuxer);
+                return;
             }
-        };
-
-        ws.onclose = (event) => {
-            updateStatus('Disconnected', 'disconnected');
-            cleanupDecoder();
-            scheduleReconnect();
-        };
-
-        ws.onerror = (err) => {
-            console.error('[ScrcpyClient] WebSocket error:', err);
-            updateStatus('Connection Error', 'error');
-        };
-    }
-
-    /**
-     * 재연결 스케줄링
-     */
-    function scheduleReconnect() {
-        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            showOfflineMessage('연결 재시도 한계 초과');
-            return;
-        }
-
-        reconnectAttempts++;
-        const delay = RECONNECT_DELAY * reconnectAttempts;
-        
-        updateStatus(`Reconnecting in ${delay/1000}s...`, 'reconnecting');
-        setTimeout(connect, delay);
-    }
-
-    /**
-     * VideoDecoder 초기화 (WebCodecs API)
-     */
-    function initDecoder() {
-        // WebCodecs 지원 확인
-        if (typeof VideoDecoder === 'undefined') {
-            console.warn('[ScrcpyClient] WebCodecs not supported, using fallback');
-            initFallbackDecoder();
-            return;
-        }
-
-        try {
-            decoder = new VideoDecoder({
-                output: (frame) => renderFrame(frame),
-                error: (e) => {
-                    console.error('[ScrcpyClient] Decoder error:', e);
-                    // 디코더 재초기화 시도
-                    cleanupDecoder();
-                    setTimeout(initDecoder, 1000);
-                }
-            });
-
-            decoder.configure({
-                codec: 'avc1.42E01E', // H.264 Baseline Profile
-                optimizeForLatency: true
-            });
-
-            console.log('[ScrcpyClient] VideoDecoder initialized');
-        } catch (e) {
-            console.error('[ScrcpyClient] Failed to init decoder:', e);
-            initFallbackDecoder();
-        }
-    }
-
-    /**
-     * Fallback 디코더 (Broadway.js 또는 이미지 기반)
-     */
-    function initFallbackDecoder() {
-        console.log('[ScrcpyClient] Using image fallback decoder');
-        decoder = {
-            type: 'fallback',
-            decode: (data) => {
-                // PNG/JPEG 이미지로 가정
-                const blob = new Blob([data], { type: 'image/png' });
-                const url = URL.createObjectURL(blob);
-                const img = new Image();
-                img.onload = () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    URL.revokeObjectURL(url);
-                    updateFps();
-                };
-                img.src = url;
-            }
-        };
-    }
-
-    /**
-     * Binary H.264 프레임 처리
-     */
-    function handleBinaryFrame(data) {
-        // Fallback 디코더인 경우
-        if (decoder && decoder.type === 'fallback') {
-            decoder.decode(data);
-            return;
-        }
-
-        // NAL Unit 추출 및 디코딩
-        const nalUnits = extractNalUnits(data);
-        
-        for (const nal of nalUnits) {
-            if (decoder && decoder.state === 'configured') {
-                try {
-                    const chunk = new EncodedVideoChunk({
-                        type: isKeyFrame(nal) ? 'key' : 'delta',
-                        timestamp: performance.now() * 1000,
-                        data: nal
-                    });
-                    decoder.decode(chunk);
-                } catch (e) {
-                    console.warn('[ScrcpyClient] Decode error:', e);
-                }
-            }
-        }
-    }
-
-    /**
-     * NAL Unit 추출
-     * H.264 스트림에서 NAL Unit 분리
-     */
-    function extractNalUnits(data) {
-        const nalUnits = [];
-        
-        // 기존 버퍼와 합치기
-        const combined = new Uint8Array(nalBuffer.length + data.length);
-        combined.set(nalBuffer);
-        combined.set(data, nalBuffer.length);
-        
-        // NAL 시작 코드 찾기 (0x00 0x00 0x00 0x01 또는 0x00 0x00 0x01)
-        let start = -1;
-        for (let i = 0; i < combined.length - 4; i++) {
-            if (combined[i] === 0 && combined[i+1] === 0) {
-                if (combined[i+2] === 0 && combined[i+3] === 1) {
-                    if (start >= 0) {
-                        nalUnits.push(combined.slice(start, i));
-                    }
-                    start = i;
-                    i += 3;
-                } else if (combined[i+2] === 1) {
-                    if (start >= 0) {
-                        nalUnits.push(combined.slice(start, i));
-                    }
-                    start = i;
-                    i += 2;
-                }
-            }
-        }
-        
-        // 남은 데이터는 버퍼에 저장
-        if (start >= 0) {
-            nalBuffer = combined.slice(start);
-        } else {
-            nalBuffer = combined;
-        }
-        
-        return nalUnits;
-    }
-
-    /**
-     * Key Frame 확인
-     * NAL Unit Type 5 (IDR) = Key Frame
-     */
-    function isKeyFrame(nalUnit) {
-        // NAL 시작 코드 건너뛰기
-        let offset = 0;
-        if (nalUnit[0] === 0 && nalUnit[1] === 0) {
-            if (nalUnit[2] === 0 && nalUnit[3] === 1) {
-                offset = 4;
-            } else if (nalUnit[2] === 1) {
-                offset = 3;
-            }
-        }
-        
-        // NAL Unit Type 추출 (하위 5비트)
-        const nalType = nalUnit[offset] & 0x1F;
-        
-        // Type 5 = IDR, Type 7 = SPS, Type 8 = PPS
-        return nalType === 5 || nalType === 7 || nalType === 8;
-    }
-
-    /**
-     * 프레임 렌더링
-     */
-    function renderFrame(frame) {
-        // Canvas 크기 조정
-        if (canvas.width !== frame.displayWidth || canvas.height !== frame.displayHeight) {
-            canvas.width = frame.displayWidth;
-            canvas.height = frame.displayHeight;
-        }
-        
-        ctx.drawImage(frame, 0, 0);
-        frame.close();
-        
-        updateFps();
-    }
-
-    /**
-     * FPS 업데이트
-     */
-    function updateFps() {
-        frameCount++;
-        const now = Date.now();
-        const elapsed = now - lastFpsTime;
-        
-        if (elapsed >= 1000) {
-            currentFps = Math.round(frameCount * 1000 / elapsed);
-            frameCount = 0;
-            lastFpsTime = now;
             
-            if (statusEl && statusEl.dataset.showFps !== 'false') {
-                statusEl.textContent = `${currentFps} fps`;
-            }
-        }
-    }
-
-    /**
-     * 상태 메시지 처리
-     */
-    function handleStatusMessage(status) {
-        console.log('[ScrcpyClient] Status:', status);
-        
-        if (status.type === 'status') {
-            if (statusEl) {
-                const fpsInfo = status.fps ? ` | ${status.fps}fps` : '';
-                const bitrateInfo = status.bitrate ? ` | ${Math.round(status.bitrate/1000)}kbps` : '';
-                statusEl.textContent = `${status.status}${fpsInfo}${bitrateInfo}`;
-            }
-        }
-    }
-
-    /**
-     * 상태 업데이트
-     */
-    function updateStatus(message, state) {
-        if (statusEl) {
-            statusEl.textContent = message;
-            statusEl.className = `status ${state}`;
-        }
-    }
-
-    /**
-     * 오프라인 메시지 표시
-     */
-    function showOfflineMessage(reason) {
-        const container = canvas.parentElement;
-        container.innerHTML = `
-            <div class="offline">
-                <div class="offline-icon">📴</div>
-                <div>${reason || 'Device Offline'}</div>
-                <button onclick="location.reload()">Retry</button>
-            </div>
-        `;
-    }
-
-    /**
-     * 디코더 정리
-     */
-    function cleanupDecoder() {
-        if (decoder && decoder.close) {
-            try {
-                decoder.close();
-            } catch (e) {
-                // 무시
-            }
-        }
-        decoder = null;
-        nalBuffer = new Uint8Array(0);
-    }
-
-    /**
-     * 터치 이벤트 설정
-     */
-    function setupTouchHandling() {
-        if (canvas.dataset.touchable !== 'true') return;
-
-        // 클릭 → 터치
-        canvas.addEventListener('click', (e) => {
-            if (!ws || ws.readyState !== WebSocket.OPEN) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width;
-            const y = (e.clientY - rect.top) / rect.height;
-            
-            ws.send(JSON.stringify({
-                type: 'touch',
-                action: 'tap',
-                x: Math.max(0, Math.min(1, x)),
-                y: Math.max(0, Math.min(1, y))
-            }));
+            const script = document.createElement('script');
+            script.src = JMUXER_CDN;
+            script.onload = () => resolve(global.JMuxer);
+            script.onerror = reject;
+            document.head.appendChild(script);
         });
-
-        // 터치 이벤트 (모바일)
-        let touchStartPos = null;
-        
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            touchStartPos = {
-                x: (touch.clientX - rect.left) / rect.width,
-                y: (touch.clientY - rect.top) / rect.height
+    }
+    
+    /**
+     * Scrcpy Client 클래스
+     */
+    class ScrcpyClient {
+        /**
+         * @param {string|HTMLCanvasElement} canvas - Canvas 요소 또는 ID
+         * @param {string} wsUrl - WebSocket URL
+         * @param {string|HTMLElement} statusElement - 상태 표시 요소 (선택)
+         */
+        constructor(canvas, wsUrl, statusElement) {
+            this.canvas = typeof canvas === 'string' 
+                ? document.getElementById(canvas) 
+                : canvas;
+            this.wsUrl = wsUrl;
+            this.statusElement = typeof statusElement === 'string'
+                ? document.getElementById(statusElement)
+                : statusElement;
+            
+            this.ws = null;
+            this.jmuxer = null;
+            this.isConnected = false;
+            
+            // 통계
+            this.stats = {
+                bytesReceived: 0,
+                framesDecoded: 0,
+                errors: 0,
+                connectTime: null,
+                lastFrameTime: null
             };
             
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'touch',
-                    action: 'down',
-                    x: touchStartPos.x,
-                    y: touchStartPos.y
-                }));
+            // FPS 계산용
+            this._frameCount = 0;
+            this._lastFpsTime = Date.now();
+            this._currentFps = 0;
+        }
+        
+        /**
+         * 연결 시작
+         */
+        async connect() {
+            try {
+                // JMuxer 로드
+                this._updateStatus('JMuxer 로딩 중...');
+                const JMuxer = await loadJMuxer();
+                
+                // JMuxer 초기화
+                this._updateStatus('디코더 초기화 중...');
+                this.jmuxer = new JMuxer({
+                    node: this.canvas,
+                    mode: 'video',
+                    flushingTime: 0,  // 최소 지연
+                    fps: 30,
+                    debug: false,
+                    onReady: () => {
+                        console.log('[ScrcpyClient] JMuxer ready');
+                    },
+                    onError: (err) => {
+                        console.error('[ScrcpyClient] JMuxer error:', err);
+                        this.stats.errors++;
+                    }
+                });
+                
+                // WebSocket 연결
+                this._updateStatus('서버 연결 중...');
+                await this._connectWebSocket();
+                
+            } catch (err) {
+                console.error('[ScrcpyClient] 연결 실패:', err);
+                this._updateStatus(`오류: ${err.message}`, true);
+                throw err;
             }
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (!touchStartPos) return;
-            
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = (touch.clientX - rect.left) / rect.width;
-            const y = (touch.clientY - rect.top) / rect.height;
-            
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'touch',
-                    action: 'move',
-                    x: Math.max(0, Math.min(1, x)),
-                    y: Math.max(0, Math.min(1, y))
-                }));
+        }
+        
+        /**
+         * WebSocket 연결
+         */
+        _connectWebSocket() {
+            return new Promise((resolve, reject) => {
+                this.ws = new WebSocket(this.wsUrl);
+                this.ws.binaryType = 'arraybuffer';
+                
+                const timeout = setTimeout(() => {
+                    reject(new Error('연결 타임아웃'));
+                    this.ws.close();
+                }, 10000);
+                
+                this.ws.onopen = () => {
+                    clearTimeout(timeout);
+                    console.log('[ScrcpyClient] WebSocket 연결됨');
+                    this.isConnected = true;
+                    this.stats.connectTime = Date.now();
+                    resolve();
+                };
+                
+                this.ws.onmessage = (event) => {
+                    this._handleMessage(event);
+                };
+                
+                this.ws.onclose = (event) => {
+                    clearTimeout(timeout);
+                    console.log('[ScrcpyClient] WebSocket 연결 종료:', event.code);
+                    this.isConnected = false;
+                    this._updateStatus('연결 끊김', true);
+                    
+                    // 자동 재연결 (5초 후)
+                    if (event.code !== 1000) {
+                        setTimeout(() => this.connect(), 5000);
+                    }
+                };
+                
+                this.ws.onerror = (err) => {
+                    clearTimeout(timeout);
+                    console.error('[ScrcpyClient] WebSocket 오류:', err);
+                    reject(err);
+                };
+            });
+        }
+        
+        /**
+         * 메시지 처리
+         */
+        _handleMessage(event) {
+            if (event.data instanceof ArrayBuffer) {
+                // H.264 바이너리 데이터
+                this._handleVideoData(event.data);
+            } else {
+                // JSON 메시지
+                try {
+                    const msg = JSON.parse(event.data);
+                    this._handleJsonMessage(msg);
+                } catch (e) {
+                    console.warn('[ScrcpyClient] JSON 파싱 실패:', e);
+                }
             }
-        });
-
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (!touchStartPos) return;
+        }
+        
+        /**
+         * H.264 비디오 데이터 처리
+         */
+        _handleVideoData(data) {
+            if (!this.jmuxer) return;
             
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'touch',
-                    action: 'up',
-                    x: touchStartPos.x,
-                    y: touchStartPos.y
-                }));
+            // 통계 업데이트
+            this.stats.bytesReceived += data.byteLength;
+            this.stats.framesDecoded++;
+            this.stats.lastFrameTime = Date.now();
+            
+            // JMuxer에 피드
+            try {
+                this.jmuxer.feed({
+                    video: new Uint8Array(data)
+                });
+            } catch (e) {
+                console.error('[ScrcpyClient] 디코딩 오류:', e);
+                this.stats.errors++;
             }
-            touchStartPos = null;
-        });
-
-        canvas.style.cursor = 'pointer';
-        canvas.style.touchAction = 'none';
+            
+            // FPS 계산
+            this._frameCount++;
+            const now = Date.now();
+            if (now - this._lastFpsTime >= 1000) {
+                this._currentFps = Math.round(this._frameCount * 1000 / (now - this._lastFpsTime));
+                this._frameCount = 0;
+                this._lastFpsTime = now;
+                
+                // 상태 업데이트
+                this._updateStatus(`${this._currentFps} FPS | ${this._formatBytes(this.stats.bytesReceived)}`);
+            }
+        }
+        
+        /**
+         * JSON 메시지 처리
+         */
+        _handleJsonMessage(msg) {
+            console.log('[ScrcpyClient] JSON 메시지:', msg);
+            
+            switch (msg.type) {
+                case 'connected':
+                    this._updateStatus(`연결됨 (${msg.quality || 'medium'})`);
+                    break;
+                    
+                case 'error':
+                    this._updateStatus(`오류: ${msg.message}`, true);
+                    break;
+                    
+                case 'status':
+                    this._updateStatus(msg.message || 'OK');
+                    break;
+            }
+        }
+        
+        /**
+         * 상태 업데이트
+         */
+        _updateStatus(message, isError = false) {
+            if (this.statusElement) {
+                this.statusElement.textContent = message;
+                this.statusElement.style.color = isError ? '#f44' : '#4f4';
+            }
+        }
+        
+        /**
+         * 바이트 포맷팅
+         */
+        _formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        }
+        
+        /**
+         * 터치 이벤트 전송
+         */
+        sendTouch(action, x, y, endX, endY) {
+            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+            
+            const msg = {
+                type: 'control:touch',
+                payload: { action, x, y, endX, endY }
+            };
+            
+            this.ws.send(JSON.stringify(msg));
+        }
+        
+        /**
+         * 키 이벤트 전송
+         */
+        sendKey(keycode) {
+            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+            
+            const msg = {
+                type: 'control:key',
+                payload: { keycode }
+            };
+            
+            this.ws.send(JSON.stringify(msg));
+        }
+        
+        /**
+         * 연결 종료
+         */
+        disconnect() {
+            if (this.ws) {
+                this.ws.close(1000, 'Client disconnect');
+                this.ws = null;
+            }
+            
+            if (this.jmuxer) {
+                this.jmuxer.destroy();
+                this.jmuxer = null;
+            }
+            
+            this.isConnected = false;
+        }
+        
+        /**
+         * 통계 조회
+         */
+        getStats() {
+            return {
+                ...this.stats,
+                fps: this._currentFps,
+                isConnected: this.isConnected,
+                uptime: this.stats.connectTime 
+                    ? Date.now() - this.stats.connectTime 
+                    : 0
+            };
+        }
     }
-
-    // 초기화
-    setupTouchHandling();
-    connect();
-
-    // 공개 API
-    return {
-        reconnect: () => {
-            if (ws) ws.close();
-            reconnectAttempts = 0;
-            connect();
-        },
-        disconnect: () => {
-            if (ws) ws.close();
-            cleanupDecoder();
-        },
-        getFps: () => currentFps,
-        isConnected: () => ws && ws.readyState === WebSocket.OPEN
-    };
-}
-
-// 글로벌 export
-if (typeof window !== 'undefined') {
-    window.initScrcpyClient = initScrcpyClient;
-}
+    
+    /**
+     * 초기화 함수 (전역)
+     * 
+     * @param {string} canvasId - Canvas 요소 ID
+     * @param {string} wsUrl - WebSocket URL
+     * @param {string} statusId - 상태 요소 ID (선택)
+     * @returns {ScrcpyClient}
+     */
+    function initScrcpyClient(canvasId, wsUrl, statusId) {
+        const client = new ScrcpyClient(canvasId, wsUrl, statusId);
+        client.connect().catch(err => {
+            console.error('[initScrcpyClient] 연결 실패:', err);
+        });
+        return client;
+    }
+    
+    // 전역 노출
+    global.ScrcpyClient = ScrcpyClient;
+    global.initScrcpyClient = initScrcpyClient;
+    
+})(typeof window !== 'undefined' ? window : global);
 

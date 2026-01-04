@@ -1,5 +1,0 @@
-NORMAL_KEY=normalvalue
-CARET_KEY=value^with^caret
-JUST_CARET=^
-CARET_START=^test
-CARET_END=test^

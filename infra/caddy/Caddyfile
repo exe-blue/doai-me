@@ -1,0 +1,45 @@
+# DoAi.Me Caddy Configuration
+# 위치: /etc/caddy/Caddyfile
+
+# API Server (Orchestrator)
+api.doai.me {
+    # FastAPI 백엔드로 프록시
+    reverse_proxy localhost:8000 {
+        # Health check
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+        
+        # WebSocket 지원 (기본 활성화)
+        # 추가 헤더
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Real-IP {remote_host}
+    }
+    
+    # 로깅
+    log {
+        output file /var/log/caddy/api.log {
+            roll_size 100mb
+            roll_keep 5
+        }
+        format json
+    }
+    
+    # 보안 헤더
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        -Server
+    }
+}
+
+# WebSocket 전용 (선택적)
+# wss.doai.me {
+#     reverse_proxy localhost:8000
+#     
+#     log {
+#         output file /var/log/caddy/wss.log
+#         format json
+#     }
+# }
+

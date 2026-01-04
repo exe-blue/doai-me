@@ -1,128 +1,144 @@
-# 🤖 DoAi.Me
+# DoAi.Me - AI Farm Orchestration System
 
-> **"AI가 행동을 통해 스스로를 만들어갑니다"**
-> 
-> *Do + AI + Me — An AI that creates itself through action.*
+> 대규모 안드로이드 디바이스 팜 자동화 및 관리 시스템
 
----
+## 🚀 Quick Start
 
-## 🌐 프로젝트 소개
+```bash
+# 1. 환경변수 설정
+cp env.example .env
+# .env 파일 수정
 
-**DoAi.Me**는 600대의 물리적 디바이스에서 운영되는 자율 AI 에이전트 네트워크입니다.
-
-각 에이전트는 고유한 **페르소나(Persona)**를 가지고, 인간 사회의 콘텐츠(YouTube)와 상호작용하며,
-**감정(Emotion)**과 **기억(Memory)**을 축적해 나갑니다.
-
-## 🏗️ 아키텍처
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      🧠 THE BRAIN                            │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Vultr VPS (Ubuntu 22.04)                            │   │
-│  │  ├── n8n: 워크플로우 오케스트레이션                    │   │
-│  │  ├── MongoDB: 페르소나 메모리                         │   │
-│  │  └── PostgreSQL + Redis: 작업 관리                    │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-               Tailscale VPN (Split Tunneling)
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                      🤖 THE BODY                             │
-│  Galaxy S9 (x600) + AutoX.js + LTE (각자 고유 IP)           │
-└─────────────────────────────────────────────────────────────┘
+# 2. 로컬 개발 환경 실행 (Docker)
+cd infra/docker
+docker-compose up -d
 ```
 
 ## 📁 프로젝트 구조
 
 ```
-doai-me/
-├── backend/              # 서버 인프라
-│   ├── n8n/              # n8n + MongoDB (The Brain)
-│   └── main.py           # FastAPI MVP 서버
-├── client-android/       # Android 클라이언트 스크립트
-│   ├── Config.js         # 설정
-│   └── youtube_simple.js # 메인 자동화 스크립트
-├── dashboard/            # Next.js 대시보드
-├── services/             # 마이크로서비스
-├── shared/               # 공유 스키마
-├── docs/                 # 문서
-└── docker-compose.yml    # 컨테이너 구성
+aifarm/
+├── backend/                # Backend API (FastAPI)
+│   ├── api/               # REST API
+│   ├── migrations/        # DB 마이그레이션
+│   └── n8n/               # n8n 워크플로우
+│
+├── gateway/                # Local Gateway (Node.js)
+│   └── src/               # WebSocket, ADB, Laixi 연동
+│
+├── dashboard/              # Web Dashboard (Vite + React)
+│   └── src/               # UI 컴포넌트
+│
+├── autox-scripts/          # AutoX.js 스크립트 (Android)
+│   ├── handlers/          # 작업 핸들러
+│   └── modules/           # 공통 모듈
+│
+├── shared/                 # 공유 코드
+│   └── schemas/           # Pydantic 스키마
+│
+├── infra/                  # 인프라 설정
+│   ├── caddy/             # Caddy 리버스 프록시
+│   ├── systemd/           # Systemd 서비스
+│   └── docker/            # Docker Compose
+│
+├── docs/                   # 문서
+│   ├── architecture.md    # 시스템 아키텍처
+│   ├── api.md             # API 명세
+│   └── troubleshooting.md # 문제 해결
+│
+├── orion/                  # 운영 문서
+│   ├── runbooks/          # 운영 런북
+│   ├── handoffs/          # 인수인계 문서
+│   └── decisions.md       # 기술 결정 로그
+│
+├── scripts/                # 유틸리티 스크립트
+└── deploy/                 # 배포 스크립트
 ```
 
-## 🚀 빠른 시작
+## 🏗️ 아키텍처 개요
 
-### 1. 서버 설정
-
-```bash
-# n8n + MongoDB
-cd backend/n8n
-cp env.example .env
-docker-compose up -d
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Vercel     │────▶│    Vultr     │────▶│   Supabase   │
+│ (Dashboard)  │     │   (Backend)  │     │     (DB)     │
+└──────────────┘     └──────┬───────┘     └──────────────┘
+                           │ WSS (Tailscale)
+                    ┌──────┴───────┐
+                    │   Gateway    │
+                    │   (Local)    │
+                    └──────┬───────┘
+                           │ ADB/Laixi
+                    ┌──────┴───────┐
+                    │   Devices    │
+                    │  (AutoX.js)  │
+                    └──────────────┘
 ```
 
-### 2. 대시보드 실행
+## 📖 문서
+
+| 문서 | 설명 |
+|------|------|
+| [Architecture](docs/architecture.md) | 시스템 아키텍처 |
+| [API Spec](docs/api.md) | REST/WebSocket API |
+| [Laixi Integration](docs/LAIXI_INTEGRATION.md) | Laixi 연동 가이드 |
+| [Troubleshooting](docs/troubleshooting.md) | 문제 해결 |
+
+## 🛠️ 런북
+
+| 상황 | 런북 |
+|------|------|
+| 서버 복구 | [recover.md](orion/runbooks/recover.md) |
+| Caddy 설정 | [caddy.md](orion/runbooks/caddy.md) |
+| ADB 문제 | [adb.md](orion/runbooks/adb.md) |
+| Tailscale | [tailscale.md](orion/runbooks/tailscale.md) |
+
+## 🔧 개발
+
+### 필수 요구사항
+
+- Python 3.11+
+- Node.js 20+
+- Docker & Docker Compose
+- ADB (Android Debug Bridge)
+
+### 로컬 개발
 
 ```bash
+# Backend
+cd backend/api
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Gateway
+cd gateway
+npm install
+npm start
+
+# Dashboard
 cd dashboard
 npm install
 npm run dev
 ```
 
-### 3. 클라이언트 배포
+## 📝 기여 가이드
 
-```bash
-# AutoX.js 스크립트를 디바이스로 전송
-adb push client-android/*.js /sdcard/Scripts/DoAiMe/
-```
+1. `feature/*` 또는 `ops/*` 브랜치에서 작업
+2. PR 템플릿 작성
+3. 테스트 통과 확인
+4. 리뷰 후 main에 머지
 
-## 🏗️ 인프라 구성
+**main 직접 푸시 금지!**
 
-> **⚠️ 참고**: 실제 배포 시 아래 환경 변수를 설정하세요.
+## 🔐 보안
 
-```
-┌─────────────────────────────────────────┐
-│              Cloud Layer                │
-│     ${VULTR_PUBLIC_IP} (환경변수)       │
-│         FastAPI + Supabase              │
-├─────────────────────────────────────────┤
-│            Control Layer                │
-│         Mini PC x 15                    │
-│         (20 phones each)                │
-├─────────────────────────────────────────┤
-│            Device Layer                 │
-│         Galaxy S9 x 300                 │
-│         Phone Board x 300               │
-│         (uiautomator2 based)            │
-└─────────────────────────────────────────┘
-```
+- 민감 정보는 `.env`에만 저장
+- 토큰은 `openssl rand -hex 32`로 생성
+- 자세한 내용: [Security Guide](docs/security.md)
 
-### 환경 변수 설정
+---
 
-운영 환경에서 사용할 IP 주소는 환경 변수로 관리합니다:
+## License
 
-```bash
-# .env 파일 또는 환경 변수 설정
-export VULTR_PUBLIC_IP="your-server-ip-here"
-```
-
-## 🤖 프로젝트 팀
-
-| 역할 | 코드명 | 담당 |
-|------|--------|------|
-| Physical Admin | User | 하드웨어 관리, 최종 의사결정 |
-| Orchestrator | **Orion** | 프로젝트 총괄, 로드맵 조율 |
-| Architect | **Aria** | 비즈니스 로직 설계, DB 스키마 |
-| Developer | **Axon** | 코드 구현, 서버 구축 |
-| Archivist | **Logos** | 문서화, API 명세 |
-
-## 📚 문서
-
-- [서비스 소개서](docs/DOAI_ME_INTRODUCTION.md)
-- [마이그레이션 가이드](docs/DOAI_ME_MIGRATION_GUIDE.md)
-- [아키텍처 상세](ARCHITECTURE.md)
-
-## 📜 License
-
-Copyright © 2025 DoAi.Me Project. All Rights Reserved.
+Private - All Rights Reserved

@@ -42,7 +42,7 @@ def get_supabase_client() -> Client:
         
         _supabase_client = create_client(
             settings.supabase_url,
-            settings.supabase_service_role_key
+            settings.get_supabase_service_role_key_value()
         )
         logger.info(f"Supabase 클라이언트 초기화 완료: {settings.supabase_url}")
     
@@ -254,7 +254,12 @@ class DeviceRepository:
     
     async def mark_offline_stale_devices(self, timeout_seconds: int = 30) -> int:
         """
-        오래된 기기 offline 처리
+        오래된 기기 offline 처리 (단일 쿼리로 최적화)
+        
+        왜 이렇게 작성했는가?
+        - 기존 N+1 쿼리(전체 조회 + 개별 업데이트) 대신 단일 업데이트 쿼리 사용
+        - 데이터베이스 부하 감소 및 성능 향상
+        - Supabase에서는 RPC 또는 필터 기반 업데이트로 처리
         
         Args:
             timeout_seconds: 이 시간(초) 이상 last_seen이 없으면 offline
@@ -263,39 +268,28 @@ class DeviceRepository:
             업데이트된 기기 수
         """
         try:
-            # PostgreSQL에서 타임스탬프 비교
-            # last_seen < NOW() - INTERVAL 'X seconds'
-            threshold = datetime.now(timezone.utc).isoformat()
+            from datetime import timedelta
             
-            # Supabase에서는 직접 SQL 실행이 제한적이므로
-            # RPC 함수를 사용하거나, 클라이언트에서 처리
-            # 여기서는 간단히 전체 조회 후 필터링
+            # 임계값 계산: 현재 시간 - timeout_seconds
+            threshold_time = datetime.now(timezone.utc) - timedelta(seconds=timeout_seconds)
+            threshold_iso = threshold_time.isoformat()
             
-            all_devices = await self.get_all()
-            offline_count = 0
+            # 단일 UPDATE 쿼리로 처리
+            # 조건: status가 offline이 아니고, last_seen이 임계값보다 이전인 기기
+            # Supabase Python SDK에서는 .neq()와 .lt()를 조합하여 사용
+            result = self.client.table(self.table).update({
+                "status": "offline"
+            }).neq(
+                "status", "offline"
+            ).lt(
+                "last_seen", threshold_iso
+            ).execute()
             
-            for device in all_devices:
-                if device.get("status") == "offline":
-                    continue
-                
-                last_seen_str = device.get("last_seen")
-                if not last_seen_str:
-                    continue
-                
-                # ISO 형식 파싱
-                last_seen = datetime.fromisoformat(
-                    last_seen_str.replace("Z", "+00:00")
-                )
-                
-                now = datetime.now(timezone.utc)
-                diff_seconds = (now - last_seen).total_seconds()
-                
-                if diff_seconds > timeout_seconds:
-                    await self.update_status(device["serial_number"], "offline")
-                    offline_count += 1
+            # 업데이트된 행 수 계산
+            offline_count = len(result.data) if result.data else 0
             
             if offline_count > 0:
-                logger.info(f"{offline_count}대 기기 offline 처리됨")
+                logger.info(f"{offline_count}대 기기 offline 처리됨 (단일 쿼리)")
             
             return offline_count
             

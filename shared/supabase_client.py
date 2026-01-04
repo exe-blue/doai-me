@@ -184,6 +184,12 @@ class DeviceSync:
         
         주기적으로 호출하여 last_seen 업데이트
         
+        왜 이렇게 작성했는가?
+        - last_seen은 항상 갱신 (기기가 살아있음을 표시)
+        - status가 "busy"인 경우 그대로 유지 (작업 중 상태 보존)
+        - status가 "busy"가 아닌 경우에만 "idle"로 설정
+        - 조건부 업데이트로 상태 덮어쓰기 방지
+        
         Args:
             serial_number: 시리얼 번호
             health_data: 선택적 헬스 정보
@@ -194,10 +200,23 @@ class DeviceSync:
         try:
             now = datetime.now(timezone.utc).isoformat()
             
+            # 먼저 현재 기기 상태 조회
+            current = self.client.table(self.table).select("status").eq(
+                "serial_number", serial_number
+            ).single().execute()
+            
+            current_status = current.data.get("status") if current.data else None
+            
+            # 업데이트 데이터 구성
+            # status가 "busy"이면 유지, 그 외에는 "idle"로 설정
             update_data = {
-                "last_seen": now,
-                "status": "idle"
+                "last_seen": now
             }
+            
+            if current_status != "busy":
+                # busy가 아닌 경우에만 idle로 변경
+                update_data["status"] = "idle"
+            # else: busy 상태는 그대로 유지 (status 필드 업데이트 안함)
             
             result = self.client.table(self.table).update(
                 update_data
@@ -212,6 +231,15 @@ class DeviceSync:
             return True
             
         except Exception as e:
+            # single() 조회 실패 시 (기기 없음) - 새로 등록 시도
+            if "PGRST116" in str(e):  # Supabase "not found" 에러 코드
+                try:
+                    await self.upsert_device(serial_number)
+                    return True
+                except Exception as upsert_err:
+                    logger.error(f"[PC{self.pc_id}] 하트비트 등록 실패: {serial_number} - {upsert_err}")
+                    return False
+            
             logger.error(f"[PC{self.pc_id}] 하트비트 실패: {serial_number} - {e}")
             return False
     

@@ -1,0 +1,36 @@
+[Unit]
+Description=DoAi.Me Node Runner Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=doai
+Group=doai
+WorkingDirectory=/opt/aifarm/apps/node-runner
+
+# 환경변수 파일
+EnvironmentFile=/etc/doai/node.env
+
+# Python 실행
+ExecStart=/opt/aifarm/apps/node-runner/venv/bin/python main.py
+
+# 재시작 정책
+Restart=always
+RestartSec=10
+
+# ADB 접근을 위해 필요
+SupplementaryGroups=plugdev
+
+# 리소스 제한
+MemoryMax=512M
+CPUQuota=50%
+
+# 로깅
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=doai-node-runner
+
+[Install]
+WantedBy=multi-user.target
+

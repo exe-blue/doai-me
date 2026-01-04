@@ -56,6 +56,9 @@ const aiRouter = require('./api/routes/ai');
 // Stream Server (Legacy, Iframe용)
 const StreamServer = require('./stream/server');
 
+// H.264 Stream Server (v2.0 - Real-time Screen Streaming)
+const H264StreamServer = require('./stream/h264-stream');
+
 // ==================== 초기화 ====================
 const logger = new Logger();
 const config = new Config();
@@ -89,6 +92,9 @@ const wsMultiplexer = new WebSocketMultiplexer(logger, adbClient, discoveryManag
 
 // ==================== Stream Server (Legacy) ====================
 const streamServer = new StreamServer(logger, adbClient, deviceTracker);
+
+// ==================== H.264 Stream Server (v2.0) ====================
+const h264StreamServer = new H264StreamServer({ logger, deviceTracker });
 
 // ==================== Express 서버 ====================
 const app = express();
@@ -334,6 +340,11 @@ async function start() {
         streamServer.initialize(server);
         logger.info('[Gateway] 🎥 Stream 서버 초기화');
         
+        // H.264 Real-time Stream 서버 (v2.0)
+        // 참고: WSMultiplexer가 /ws/stream/{deviceId} 경로를 이미 처리하므로 비활성화
+        // h264StreamServer.initialize(server, '/ws/stream');
+        logger.info('[Gateway] 📺 H.264 Stream: WSMultiplexer 사용 (/ws/stream/{deviceId})');
+        
         server.listen(port, () => {
             logger.info(`[Gateway] 🚀 서버 시작: http://0.0.0.0:${port}`);
         });
@@ -360,6 +371,7 @@ async function shutdown(signal) {
     dispatcher.stop();
     wsMultiplexer.shutdown();
     streamServer.shutdown();
+    h264StreamServer.shutdown();
     discoveryManager.shutdown();
     await deviceTracker.stopTracking();
     

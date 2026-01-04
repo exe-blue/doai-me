@@ -1,0 +1,39 @@
+[Unit]
+Description=DoAi.Me Orchestrator Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=doai
+Group=doai
+WorkingDirectory=/opt/aifarm/apps/orchestrator
+
+# 환경변수 파일
+EnvironmentFile=/etc/doai/orchestrator.env
+
+# 가상환경 Python 사용
+ExecStart=/opt/aifarm/apps/orchestrator/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
+# 재시작 정책
+Restart=always
+RestartSec=5
+
+# 리소스 제한
+MemoryMax=1G
+CPUQuota=80%
+
+# 보안 설정
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+# 로깅
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=doai-orchestrator
+
+[Install]
+WantedBy=multi-user.target
+

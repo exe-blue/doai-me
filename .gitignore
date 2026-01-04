@@ -36,6 +36,10 @@ frontend/dist/
 frontend/build/
 *.local
 
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+**/*.tsbuildinfo
+
 # Environment
 .env
 .env.local

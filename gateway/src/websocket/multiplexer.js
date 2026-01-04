@@ -73,10 +73,14 @@ class WebSocketMultiplexer {
      * 초기화
      */
     initialize(server) {
+        // 모든 WebSocket 서버를 noServer 모드로 설정
+        // 이렇게 해야 여러 경로를 동시에 처리할 수 있음
+        
         // 메인 Multiplexer WebSocket (/ws)
+        // 모든 WebSocket에서 압축 비활성화 (바이너리 스트리밍에 필수)
         this.wss = new WebSocket.Server({ 
-            server,
-            path: '/ws'
+            noServer: true,
+            perMessageDeflate: false
         });
 
         this.wss.on('connection', (ws, req) => {
@@ -85,12 +89,38 @@ class WebSocketMultiplexer {
         
         // 개별 디바이스 스트림 WebSocket (/ws/stream/:deviceId)
         this.streamWss = new WebSocket.Server({ 
-            server,
-            path: /^\/ws\/stream\/(.+)$/
+            noServer: true,
+            perMessageDeflate: false,
+            clientNoContextTakeover: true,  // 추가 압축 방지
+            serverNoContextTakeover: true
         });
         
         this.streamWss.on('connection', (ws, req) => {
             this._handleStreamConnection(ws, req);
+        });
+        
+        // HTTP upgrade 이벤트 중앙 처리
+        server.on('upgrade', (request, socket, head) => {
+            const pathname = request.url.split('?')[0];  // 쿼리스트링 제거
+            
+            // /ws/stream/{deviceId} 경로 매칭 (먼저 검사 - 더 구체적인 경로)
+            if (pathname.startsWith('/ws/stream/')) {
+                this.streamWss.handleUpgrade(request, socket, head, (ws) => {
+                    this.streamWss.emit('connection', ws, request);
+                });
+                return;
+            }
+            
+            // /ws 경로 매칭
+            if (pathname === '/ws') {
+                this.wss.handleUpgrade(request, socket, head, (ws) => {
+                    this.wss.emit('connection', ws, request);
+                });
+                return;
+            }
+            
+            // /stream 경로는 Legacy StreamServer가 처리 (path 옵션 사용)
+            // 여기서 처리하지 않으면 다른 곳에서 처리하거나 연결 거부됨
         });
 
         // Discovery 이벤트 리스닝
@@ -145,9 +175,11 @@ class WebSocketMultiplexer {
      * 경로: /ws/stream/:deviceId
      */
     _handleStreamConnection(ws, req) {
-        // URL에서 deviceId 추출
-        const match = req.url.match(/^\/ws\/stream\/(.+)$/);
+        // URL에서 deviceId 추출 (쿼리스트링 처리)
+        const urlWithoutQuery = req.url.split('?')[0];
+        const match = urlWithoutQuery.match(/^\/ws\/stream\/(.+)$/);
         if (!match) {
+            this.logger.warn('[WSMultiplexer] 잘못된 스트림 경로', { url: req.url });
             ws.close(4000, 'Invalid path');
             return;
         }
@@ -731,7 +763,37 @@ class WebSocketMultiplexer {
 
         // WebSocket 서버 종료
         if (this.wss) {
-            this.wss.close();
+            try {
+                this.wss.close((err) => {
+                    if (err) {
+                        this.logger.error('[WSMultiplexer] wss 종료 오류:', err);
+                    }
+                });
+            } catch (err) {
+                this.logger.error('[WSMultiplexer] wss 종료 중 예외:', err);
+            }
+        }
+
+        // 스트림 WebSocket 서버 종료
+        if (this.streamWss) {
+            try {
+                // 연결된 클라이언트 종료
+                this.streamWss.clients.forEach((client) => {
+                    try {
+                        client.terminate();
+                    } catch (e) {
+                        // 무시
+                    }
+                });
+                this.streamWss.close((err) => {
+                    if (err) {
+                        this.logger.error('[WSMultiplexer] streamWss 종료 오류:', err);
+                    }
+                });
+            } catch (err) {
+                this.logger.error('[WSMultiplexer] streamWss 종료 중 예외:', err);
+            }
+            this.streamWss = null;
         }
 
         this.logger.info('[WSMultiplexer] 종료');

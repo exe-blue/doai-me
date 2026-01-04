@@ -1,0 +1,69 @@
+# DoAi.Me 로컬 개발 환경
+# 사용법: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # Orchestrator (FastAPI)
+  orchestrator:
+    build:
+      context: ../../apps/orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ORCH_BASE_URL=http://localhost:8000
+      - ORCH_ADMIN_TOKEN=${ORCH_ADMIN_TOKEN:-dev_admin_token}
+      - ORCH_NODE_TOKEN=${ORCH_NODE_TOKEN:-dev_node_token}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    volumes:
+      - ../../apps/orchestrator:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Node Runner (로컬 테스트용)
+  node-runner:
+    build:
+      context: ../../apps/node-runner
+      dockerfile: Dockerfile
+    environment:
+      - ORCH_BASE_URL=http://orchestrator:8000
+      - ORCH_NODE_TOKEN=${ORCH_NODE_TOKEN:-dev_node_token}
+      - NODE_ID=local-dev-node
+    volumes:
+      - ../../apps/node-runner:/app
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    restart: unless-stopped
+    # ADB 접근이 필요한 경우 privileged 모드
+    # privileged: true
+
+  # Caddy (로컬 리버스 프록시)
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../caddy/Caddyfile.local:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - orchestrator
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  default:
+    name: doai-network
+
