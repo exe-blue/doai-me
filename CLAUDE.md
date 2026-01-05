@@ -47,7 +47,7 @@ Located in `/services/`:
 - `task-service` (8003) - Task scheduling
 - `human-pattern-service` (8004) - Human behavior patterns
 - `result-service` (8005) - Result aggregation
-- `persona-service` - Persona management
+- `persona-service` (8006) - Persona CRUD, existence state, attention economy
 
 ## Common Commands
 
