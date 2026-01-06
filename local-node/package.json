@@ -1,0 +1,14 @@
+{
+  "name": "doaime-local-node",
+  "version": "1.0.0",
+  "description": "DoAi.Me Local Node Heartbeat",
+  "main": "heartbeat.js",
+  "scripts": {
+    "start": "node heartbeat.js",
+    "dev": "node --watch heartbeat.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "node-fetch": "^2.7.0"
+  }
+}

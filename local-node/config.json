@@ -1,0 +1,21 @@
+{
+  "node_id": "NODE_01",
+  "node_name": "미니PC-01",
+
+  "supabase": {
+    "url": "https://hycynmzdrngsozxdmyxi.supabase.co",
+    "anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5Y3lubXpkcm5nc296eGRteXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMDAwOTUsImV4cCI6MjA4Mjc3NjA5NX0.U9MCWf04dNuZ33RkUNqZ82a87S8rLE8EL1qeG9znv6w"
+  },
+
+  "laixi": {
+    "api_base": "http://127.0.0.1:8080",
+    "adb_path": "C:\\Program Files\\Laixi\\tools\\platform-tools\\adb.exe"
+  },
+
+  "heartbeat": {
+    "interval_ms": 30000,
+    "task_poll_ms": 5000
+  },
+
+  "devices": []
+}
