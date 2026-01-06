@@ -16,9 +16,12 @@ WORKDIR /app
 # 로그 디렉토리 생성
 RUN mkdir -p /app/logs
 
-# 패키지 파일 복사 및 설치
+# 패키지 파일 복사 (client 포함)
 COPY package.json ./
-RUN npm install --production
+COPY client/package.json ./client/
+
+# 의존성 설치
+RUN npm install --omit=dev
 
 # 소스 코드 복사
 COPY . .
