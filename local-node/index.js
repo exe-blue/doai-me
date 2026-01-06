@@ -103,10 +103,11 @@ async function processDevice(device) {
         const finalScript = envInjection + "\n" + scriptTemplate;
 
         // 5. Run Script
-        const success = await Laixi.runScript(serial, finalScript);
-        
-        if (success) {
+        try {
+            await laixi.runScript(serial, finalScript);
             DeviceState.set(serial, { taskId: task.id, startTime: Date.now() });
+        } catch (e) {
+            // Error is logged by the client, just prevent state update
         }
     }
 }
@@ -147,6 +148,20 @@ async function processSystemJobs() {
                     }
                 } else {
                     errorMessage = "Failed to capture screenshot from device";
+                }
+            } else if (job.job_type === 'DEVICE_STATUS_CHECK') {
+                const serial = job.target_device;
+                const details = await laixi.getDeviceDetails(serial);
+
+                if (details) {
+                    await supabase.rpc('update_device_details', {
+                        p_device_serial: serial,
+                        p_details: details
+                    });
+                    success = true;
+                    result = details;
+                } else {
+                    errorMessage = `Failed to get details for device ${serial}`;
                 }
             }
 

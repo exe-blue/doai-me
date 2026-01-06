@@ -11,7 +11,7 @@ class LaixiClient {
     constructor(baseUrl = 'http://127.0.0.1:9317') {
         this.client = axios.create({
             baseURL: baseUrl,
-            timeout: 10000 // 10 seconds timeout (increased for screenshots)
+            timeout: 5000 // 5 seconds timeout
         });
     }
 
@@ -76,18 +76,16 @@ class LaixiClient {
     }
 
     /**
-     * Take a screenshot of the device
+     * Get detailed information for a specific device.
      * @param {string} serial 
-     * @returns {Promise<Buffer|null>} Image buffer or null
+     * @returns {Promise<object|null>} Device details or null
      */
-    async takeScreenshot(serial) {
+    async getDeviceDetails(serial) {
         try {
-            const response = await this.client.get(`/api/devices/${serial}/screenshot`, {
-                responseType: 'arraybuffer'
-            });
-            return response.data;
+            const response = await this.client.get(`/api/devices/${serial}`);
+            return response.data; // The API doc suggests the details are in the root of the response
         } catch (error) {
-            console.error(`[Laixi] Failed to take screenshot on ${serial}: ${error.message}`);
+            console.error(`[Laixi] Failed to get details for ${serial}: ${error.message}`);
             return null;
         }
     }

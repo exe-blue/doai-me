@@ -1,0 +1,11 @@
+제목,URL
+Never Gonna Give You Up,https://www.youtube.com/watch?v=dQw4w9WgXcQ
+PSY - GANGNAM STYLE,https://www.youtube.com/watch?v=9bZkp7q19f0
+Ed Sheeran - Shape of You,https://www.youtube.com/watch?v=JGwWNGJdvx8
+Luis Fonsi - Despacito,https://www.youtube.com/watch?v=kJQP7kiw5Fk
+Wiz Khalifa - See You Again,https://www.youtube.com/watch?v=RgKAFK5djSk
+Queen - Bohemian Rhapsody,https://www.youtube.com/watch?v=fJ9rUzIMcZQ
+Adele - Hello,https://www.youtube.com/watch?v=YQHsXMglC9A
+BTS - Dynamite,https://www.youtube.com/watch?v=gdZLi9oWNZg
+BLACKPINK - DDU-DU DDU-DU,https://www.youtube.com/watch?v=IHNzOHi8sJs
+IU - Blueming,https://www.youtube.com/watch?v=D1PvIWdJ8xo
