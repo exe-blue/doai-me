@@ -185,21 +185,39 @@ class YouTubeAutomation {
 
     /**
      * 좋아요 클릭
+     * @param {boolean|null} forceLike - true: 강제 좋아요, false: 스킵, null: 확률 기반
+     * @returns {boolean} 좋아요 클릭 성공 여부
      */
-    clickLike() {
-        if (Math.random() < this.config.like_probability) {
+    clickLike(forceLike = null) {
+        // forceLike가 지정되면 해당 값 사용, 아니면 기존 확률 로직
+        const shouldLike = forceLike !== null
+            ? forceLike
+            : Math.random() < (this.config?.like_probability || 0.5);
+
+        if (shouldLike) {
             try {
                 this.logger.info('좋아요 클릭 시도');
 
-                const likeButton = desc('Like').findOne(3000);
-                if (likeButton) {
-                    likeButton.click();
-                    this.human.clickDelay();
+                // 좋아요 버튼 찾기 (여러 셀렉터 시도)
+                const likeBtn = desc("좋아요").findOne(3000) ||
+                               desc("like").findOne(3000) ||
+                               desc("Like").findOne(3000) ||
+                               id("like_button").findOne(3000);
+
+                if (likeBtn) {
+                    const bounds = likeBtn.bounds();
+                    // human 모듈이 있으면 자연스러운 클릭, 없으면 일반 클릭
+                    if (this.human && this.human.naturalClick) {
+                        this.human.naturalClick(bounds.centerX(), bounds.centerY());
+                    } else {
+                        click(bounds.centerX(), bounds.centerY());
+                    }
+                    sleep(1000);
                     this.logger.info('좋아요 완료');
                     return true;
                 }
             } catch (e) {
-                this.logger.warn('좋아요 실패', { error: e.message });
+                this.logger.error('clickLike 실패', { error: e.message });
             }
         }
         return false;
@@ -207,45 +225,82 @@ class YouTubeAutomation {
 
     /**
      * 댓글 작성
+     * @param {string|null} commentText - 외부에서 전달된 댓글 텍스트, null이면 랜덤 템플릿 사용
+     * @returns {boolean} 댓글 작성 성공 여부
      */
-    writeComment() {
-        if (Math.random() < this.config.comment_probability) {
-            try {
-                this.logger.info('댓글 작성 시도');
+    writeComment(commentText = null) {
+        const text = commentText || this.getRandomComment();
 
-                // 랜덤 댓글 목록
-                const comments = [
-                    '좋은 영상 감사합니다!',
-                    '유익한 정보네요',
-                    '잘 봤습니다',
-                    '도움이 많이 됐어요',
-                    '최고입니다!'
-                ];
+        if (!text) return false;
 
-                const comment = comments[Math.floor(Math.random() * comments.length)];
+        try {
+            this.logger.info('댓글 작성 시도', { text });
 
-                // 댓글 입력창 찾기
-                const commentButton = text('Add a comment').findOne(3000);
-                if (commentButton) {
-                    commentButton.click();
-                    this.human.clickDelay();
+            // 댓글 영역으로 스크롤
+            if (this.human && this.human.naturalScrollDown) {
+                this.human.naturalScrollDown(this.config?.SCREEN_WIDTH || 1080, this.config?.SCREEN_HEIGHT || 1920);
+            } else {
+                swipe(540, 1500, 540, 800, 500);
+            }
+            sleep(1500);
 
-                    this.human.naturalInput(comment);
-                    sleep(1000);
+            // 댓글 입력창 찾기 (여러 셀렉터 시도)
+            const commentBox = text("공개 댓글 추가...").findOne(3000) ||
+                              text("Add a public comment...").findOne(3000) ||
+                              text("Add a comment").findOne(3000) ||
+                              id("comment_simplebox").findOne(3000);
 
-                    // 게시 버튼 클릭
-                    const postButton = text('Post').findOne(2000);
-                    if (postButton) {
-                        postButton.click();
-                        this.logger.info('댓글 작성 완료', { comment });
+            if (commentBox) {
+                const bounds = commentBox.bounds();
+                click(bounds.centerX(), bounds.centerY());
+                sleep(1000);
+
+                // 텍스트 입력
+                const input = className("android.widget.EditText").findOne(3000);
+                if (input) {
+                    if (this.human && this.human.naturalTyping) {
+                        this.human.naturalTyping(input, text);
+                    } else if (this.human && this.human.naturalInput) {
+                        this.human.naturalInput(text);
+                    } else {
+                        input.setText(text);
+                    }
+                    sleep(500);
+
+                    // 전송 버튼 (여러 셀렉터 시도)
+                    const postBtn = desc("댓글").findOne(2000) ||
+                                   id("send_button").findOne(2000) ||
+                                   text("게시").findOne(2000) ||
+                                   text("Post").findOne(2000);
+
+                    if (postBtn) {
+                        const btnBounds = postBtn.bounds();
+                        click(btnBounds.centerX(), btnBounds.centerY());
+                        sleep(2000);
+                        this.logger.info('댓글 작성 완료', { text });
                         return true;
                     }
                 }
-            } catch (e) {
-                this.logger.warn('댓글 작성 실패', { error: e.message });
             }
+        } catch (e) {
+            this.logger.error('writeComment 실패', { error: e.message });
         }
         return false;
+    }
+
+    /**
+     * 랜덤 댓글 템플릿 반환
+     * @returns {string} 랜덤 댓글 텍스트
+     */
+    getRandomComment() {
+        const templates = this.config?.comment_templates || [
+            "좋은 영상이네요!",
+            "정말 유익합니다",
+            "잘 봤습니다 👍",
+            "도움이 됐어요",
+            "감사합니다"
+        ];
+        return templates[Math.floor(Math.random() * templates.length)];
     }
 
     /**
@@ -509,6 +564,50 @@ class YouTubeAutomation {
         } catch (e) {
             this.logger.warn('영상 정보 가져오기 실패', { error: e.message });
             return null;
+        }
+    }
+
+    /**
+     * 영상 정보 추출 (다중 셀렉터 지원)
+     * @returns {Object} { title, channel, timestamp }
+     */
+    extractVideoInfo() {
+        try {
+            // 제목 찾기 (여러 셀렉터 시도)
+            const titleElement = id("title").findOne(3000) ||
+                                className("android.widget.TextView")
+                                    .textMatches(/^.{10,100}$/)  // 10-100자 텍스트
+                                    .findOne(3000);
+
+            // 채널명 찾기 (여러 셀렉터 시도)
+            const channelElement = id("channel_name").findOne(2000) ||
+                                  id("owner_text").findOne(2000) ||
+                                  desc("채널").findOne(2000);
+
+            const title = titleElement?.text() || null;
+            const channel = channelElement?.text() || null;
+
+            if (this.logger) {
+                this.logger.debug('영상 정보 추출', {
+                    title: title?.substring(0, 30),
+                    channel
+                });
+            }
+
+            return {
+                title,
+                channel,
+                timestamp: new Date().toISOString()
+            };
+        } catch (e) {
+            if (this.logger) {
+                this.logger.error('영상 정보 추출 실패', { error: e.message });
+            }
+            return {
+                title: null,
+                channel: null,
+                timestamp: new Date().toISOString()
+            };
         }
     }
 }
