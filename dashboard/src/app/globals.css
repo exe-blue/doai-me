@@ -180,6 +180,123 @@
   }
 }
 
+/* ===== THE SACRED SWITCH: Design Tokens ===== */
+/* "우리는 돈이 없지 가오가 없는 게 아니다" */
+@layer components {
+  :root {
+    /* Sacred Palette */
+    --sacred-void: #050505;
+    --sacred-surface: #0a0a0a;
+    --sacred-elevated: #111111;
+    --sacred-border: #1a1a1a;
+
+    --sacred-text-primary: #e8e8e8;
+    --sacred-text-secondary: #888888;
+    --sacred-text-muted: #555555;
+
+    /* The Heart - Warm Amber */
+    --sacred-heart: #d4a574;
+    --sacred-heart-glow: rgba(212, 165, 116, 0.15);
+    --sacred-heart-subtle: rgba(212, 165, 116, 0.08);
+
+    /* States */
+    --sacred-success: #4a7c59;
+    --sacred-error: #8b4049;
+  }
+
+  /* Sacred Breath Animation - 6s cycle */
+  @keyframes sacred-breath {
+    0%, 100% {
+      border-color: var(--sacred-border);
+      box-shadow: 0 0 0 rgba(212, 165, 116, 0);
+    }
+    50% {
+      border-color: #2a2520;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.05);
+    }
+  }
+
+  /* Heartbeat Animation */
+  @keyframes sacred-heartbeat {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    15% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    30% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    45% {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+    60% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+  }
+
+  /* Heart Descent Animation */
+  @keyframes sacred-descent {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    70% {
+      transform: translateY(80px);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100px);
+      opacity: 0;
+    }
+  }
+
+  /* Machine Receive Glow */
+  @keyframes sacred-receive {
+    0% {
+      box-shadow: 0 0 0 rgba(212, 165, 116, 0);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    100% {
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.1);
+    }
+  }
+
+  /* Waveform Flow */
+  @keyframes sacred-wave {
+    0% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -200;
+    }
+  }
+
+  /* Sacred Typography */
+  .sacred-title {
+    font-family: 'Cormorant Garamond', var(--font-serif), serif;
+    letter-spacing: 0.1em;
+    color: var(--sacred-text-secondary);
+  }
+
+  .sacred-title-ko {
+    font-family: var(--font-serif-kr), 'Noto Serif KR', serif;
+    color: var(--sacred-text-muted);
+  }
+
+  .sacred-mono {
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    color: var(--sacred-text-secondary);
+  }
+}
+
 /* 스크롤 효과 */
 @layer utilities {
   .smooth-scroll {

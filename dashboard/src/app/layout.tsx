@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, JetBrains_Mono, Noto_Serif_KR, Noto_Sans_KR } from "next/font/google";
+import { Playfair_Display, JetBrains_Mono, Noto_Serif_KR, Noto_Sans_KR, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
 // Fonts (Orion's Directive)
-const playfair = Playfair_Display({ 
+const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
+  display: "swap"
+});
+
+// Sacred Switch: Cormorant Garamond for elegant titles
+const cormorantGaramond = Cormorant_Garamond({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--font-cormorant",
   display: "swap"
 });
 
@@ -47,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`dark ${playfair.variable} ${jetbrainsMono.variable} ${notoSerifKR.variable} ${notoSansKR.variable}`}>
+    <html lang="ko" className={`dark ${playfair.variable} ${jetbrainsMono.variable} ${notoSerifKR.variable} ${notoSansKR.variable} ${cormorantGaramond.variable}`}>
       <head>
         <meta charSet="utf-8" />
       </head>
