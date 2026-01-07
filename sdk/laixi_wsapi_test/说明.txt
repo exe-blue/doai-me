@@ -1,0 +1,11 @@
+此文件夹内是各种编程语言使用 来喜 wsapi 自动化编程的接口 例子
+
+
+所有功能接口及文档请查阅:
+https://docs.laixi.app/docs/category/laixi-api
+
+来喜投屏
+www.laixi.app
+
+如您对API有任何疑问需要解答,可以直接发送邮件至
+wanli@youhu.app

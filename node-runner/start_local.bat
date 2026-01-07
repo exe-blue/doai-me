@@ -1,16 +1,16 @@
 @echo off
-REM DoAi.Me NodeRunner - Local Test Mode
+REM DoAi.Me NodeRunner - Local Test Mode (Protocol v1.0)
 
 set NODE_ID=%COMPUTERNAME%
-set LAIXI_HOST=127.0.0.1
-set LAIXI_PORT=22221
+set GATEWAY_URL=ws://localhost:8000/ws/node
+set LAIXI_WS_URL=ws://127.0.0.1:22221/
 
 echo ============================================
 echo DoAi.Me NodeRunner - LOCAL TEST MODE
 echo NODE_ID: %NODE_ID%
-echo CENTRAL: ws://localhost:8000/ws/node
+echo GATEWAY: %GATEWAY_URL%
 echo ============================================
 
-python noderunner.py --local
+python main.py --local --no-sign
 
 pause

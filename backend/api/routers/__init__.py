@@ -7,9 +7,10 @@ DoAi.Me Backend API Routers
 - personas: AI 페르소나 관리
 - youtube: YouTube 자동화
 - wifi: WiFi 자동 연결
+- nocturne: 밤의 상징문장 (Nocturne Line)
 """
 
-from . import commissions, maintenance, personas, youtube, wifi
+from . import commissions, maintenance, personas, youtube, wifi, nocturne
 
 __all__ = [
     "commissions",
@@ -17,5 +18,6 @@ __all__ = [
     "personas",
     "youtube",
     "wifi",
+    "nocturne",
 ]
 

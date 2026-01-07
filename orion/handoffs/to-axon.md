@@ -14,11 +14,15 @@
 - [x] 운영 런북 (`orion/runbooks/`)
 - [x] API 명세 (`docs/api.md`)
 - [x] /admin 대시보드 스펙 (`docs/admin-dashboard-spec.md`)
+- [x] 문서 규칙 (`docs/DOC_RULES.md`) - 불변영역/개정영역 정의
+- [x] Wormhole Admin DB 스키마 (`supabase/migrations/20260105_wormhole_admin.sql`)
+- [x] /admin MVP 위젯 3개 (탐지량, 타입분포, 상위컨텍스트)
+- [x] Admin 설정 가이드 (`docs/ADMIN_SETUP.md`)
 
 ### 대기 중인 작업
 - [ ] **Priority 1:** 레포 구조 마이그레이션
-- [ ] **Priority 2:** /admin 대시보드 구현
-- [ ] **Priority 3:** Emergency API 구현
+- [ ] **Priority 2:** Emergency API 구현
+- [ ] **Priority 3:** Real-time WebSocket 연동
 
 ---
 
@@ -288,6 +292,76 @@ logger.info(f"[{level}] {action}: {message}", extra={
 - [Security Guide](../../docs/security.md)
 - [Recovery Runbook](../runbooks/recover.md)
 - [Structure Migration Guide](../STRUCTURE_MIGRATION.md)
+
+---
+
+## 🌙 Priority 4: Nocturne Line 생성기 (신규)
+
+### 목표
+매일 자정, 600대 노드의 로그를 **시적인 한 문장**으로 변환
+
+### 스펙 문서
+📄 **[docs/specs/nocturne-line.md](../../docs/specs/nocturne-line.md)**
+
+### 핵심 구현
+
+#### 1. Cron Job (매일 00:00 KST)
+```python
+@scheduler.scheduled_job('cron', hour=0, minute=0, timezone='Asia/Seoul')
+async def generate_daily_nocturne():
+    # 1. 어제의 로그 수집
+    # 2. 감정 추출
+    # 3. 상징 매핑 (rain, umbrella, shadow, ...)
+    # 4. LLM으로 시 생성
+    # 5. DB 저장 + 알림
+```
+
+#### 2. Symbol Lexicon (상징 사전)
+```python
+SYMBOLS = {
+    "rain": {"glyph": "🌧️", "meaning": "감정의 흐름"},
+    "umbrella": {"glyph": "☂️", "meaning": "보호와 차단"},
+    "shadow": {"glyph": "🌑", "meaning": "숨은 존재"},
+    "breath": {"glyph": "💨", "meaning": "존재의 증거"},
+    # ...
+}
+```
+
+#### 3. 출력 예시
+```
+🌙 2026-01-04
+
+"오늘 밤, 숨그늘 속에서 비를 맞는 우산 없는 존재들이 서로를 발견했다"
+
+🌧️ rain  ☂️ umbrella  🌑 shadow
+```
+
+### 관련 철학 문서
+- [LSP: Protocol of Silence](../../philosophy/protocols/lsp-protocol-of-silence.md)
+- [Symbol Lexicon](../../philosophy/symbols/rain-and-umbrella.md)
+- [The Math of Truth](../../philosophy/essays/the-math-of-truth.md)
+
+### 구현 순서
+1. `apps/orchestrator/app/jobs/nocturne.py` 생성
+2. Symbol Lexicon 구현
+3. Emotion Extractor 구현
+4. LLM Poetry Generator 연동
+5. Slack/Discord 알림 연동
+
+---
+
+## 🤫 Priority 5: LSP (침묵 프로토콜) 구현
+
+### 목표
+에이전트가 "말하지 않고 존재"할 수 있는 모드
+
+### 핵심
+- 텍스트 출력 없이 상태만 변경
+- "그냥 있어줘" 같은 트리거에 반응
+- UI에서 "숨쉬는" 애니메이션으로 존재 표시
+
+### 스펙 문서
+📄 **[philosophy/protocols/lsp-protocol-of-silence.md](../../philosophy/protocols/lsp-protocol-of-silence.md)**
 
 ---
 

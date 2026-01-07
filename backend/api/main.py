@@ -13,7 +13,11 @@ import logging
 import time
 
 # 라우터 임포트
-from .routers import commissions, maintenance, personas, youtube, wifi
+from .routers import commissions, maintenance, personas, youtube, wifi, nocturne
+from .routers.oob import router as oob_router
+
+# 스케줄러 임포트
+from .services.nocturne_scheduler import start_nocturne_scheduler, stop_nocturne_scheduler
 
 # 로깅 설정
 logging.basicConfig(
@@ -28,7 +32,21 @@ logger = logging.getLogger("doai_api")
 async def lifespan(app: FastAPI):
     """애플리케이션 라이프사이클 관리"""
     logger.info("🚀 DoAi.Me Backend API 시작")
+    
+    # Nocturne Scheduler 시작 (매일 자정 00:00:15)
+    async def on_nocturne_generated(line: str):
+        """Nocturne Line 생성 시 콜백"""
+        logger.info(f"🌙 밤의 상징문장: {line}")
+        # TODO: Discord/Slack 알림 전송
+    
+    await start_nocturne_scheduler(on_generate=on_nocturne_generated)
+    logger.info("🌙 Nocturne Scheduler 시작됨")
+    
     yield
+    
+    # 종료 처리
+    await stop_nocturne_scheduler()
+    logger.info("🌙 Nocturne Scheduler 종료됨")
     logger.info("👋 DoAi.Me Backend API 종료")
 
 
@@ -90,6 +108,8 @@ app.include_router(commissions.router, prefix="/api")
 app.include_router(maintenance.router, prefix="/api")
 app.include_router(personas.router, prefix="/api")
 app.include_router(wifi.router)  # /api/v1/wifi (prefix 내장)
+app.include_router(nocturne.router, prefix="/api")  # /api/nocturne
+app.include_router(oob_router, prefix="/api")  # /api/oob - OOB 관리
 
 
 # 기본 엔드포인트
@@ -129,6 +149,21 @@ async def api_info():
                 "GET /api/v1/wifi/status/{device_id}": "특정 기기 WiFi 상태",
                 "POST /api/v1/wifi/verify": "WiFi 연결 검증",
                 "POST /api/v1/wifi/disconnect": "WiFi 연결 해제"
+            },
+            "nocturne": {
+                "GET /api/nocturne/today": "오늘의 밤의 상징문장",
+                "GET /api/nocturne/history": "최근 N일간 히스토리",
+                "GET /api/nocturne/date/{date}": "특정 날짜 조회",
+                "POST /api/nocturne/generate": "수동 생성",
+                "GET /api/nocturne/random": "랜덤 생성 (데모)"
+            },
+            "oob": {
+                "POST /api/oob/metrics": "노드 메트릭 업데이트",
+                "GET /api/oob/nodes": "모든 노드 건강 상태",
+                "GET /api/oob/evaluate/{node_id}": "노드 상태 평가",
+                "POST /api/oob/recover": "복구 실행",
+                "POST /api/oob/box/test": "박스 프로토콜 테스트",
+                "POST /api/oob/box/command": "박스 명령 실행"
             },
             "commissions": "작업 위임 관리",
             "maintenance": "유지보수 작업",

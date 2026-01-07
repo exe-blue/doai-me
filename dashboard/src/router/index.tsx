@@ -16,6 +16,7 @@ import DeviceCockpitPage from '@/pages/device/Cockpit';
 import EconomyPage from '@/pages/Economy';
 import SystemPage from '@/pages/System';
 import NotFoundPage from '@/pages/NotFound';
+import LSPPage from '@/pages/LSP';
 
 // Guards
 import { AuthGuard } from '@/guards/AuthGuard';
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
       {
         path: '/auth/login',
         element: <LoginPage />,
+      },
+      {
+        path: '/lsp',
+        element: <LSPPage />,
       },
     ],
   },

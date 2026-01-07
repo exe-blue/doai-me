@@ -8,12 +8,12 @@
 # * Upload the tarball to github.
 # * Announce
 
-# 시맨틱 버전 순서로 정렬하여 최신 태그 가져오기
-version=$(git tag --sort=-v:refname | head -1)
+# 시맨틱 버전 패턴(vMAJOR.MINOR.PATCH 또는 MAJOR.MINOR.PATCH)만 필터링하여 최신 태그 가져오기
+version=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 
 # 버전이 비어있으면 에러 메시지 출력 후 종료
 if [ -z "$version" ]; then
-    echo "Error: No git tags found. Please create a version tag first."
+    echo "Error: No semantic version tags found. Please create a version tag (e.g., v1.0.0 or 1.0.0) first."
     exit 1
 fi
 

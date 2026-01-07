@@ -53,6 +53,9 @@ const discoveryRouter = require('./api/routes/discovery');
 // OpenAI Integration
 const aiRouter = require('./api/routes/ai');
 
+// Vultr WSS Integration (v2.1)
+const { initVultrConnection, shutdownVultrConnection } = require('./vultr-integration');
+
 // Stream Server (Legacy, Iframe용)
 const StreamServer = require('./stream/server');
 
@@ -328,6 +331,21 @@ async function start() {
         // 5. Dispatcher 시작
         dispatcher.start();
 
+        // 5.5. Vultr WSS 연결 (v2.1)
+        logger.info('[Gateway] Vultr 연결 초기화...');
+        const vultrClient = await initVultrConnection({
+            adbClient,
+            laixiAdapter: null, // Laixi 사용 시 laixiAdapter 인스턴스 전달
+            logger,
+            config
+        });
+        
+        if (vultrClient) {
+            logger.info('[Gateway] 🌐 Vultr 연결 활성화됨');
+        } else {
+            logger.info('[Gateway] ⏭️ Vultr 연결 비활성화 (로컬 모드)');
+        }
+
         // 6. HTTP 서버 및 WebSocket 시작
         const port = config.get('port') || 3100;
         const server = http.createServer(app);
@@ -369,6 +387,7 @@ async function shutdown(signal) {
     
     heartbeat.stop();
     dispatcher.stop();
+    shutdownVultrConnection(); // Vultr 연결 종료
     wsMultiplexer.shutdown();
     streamServer.shutdown();
     h264StreamServer.shutdown();

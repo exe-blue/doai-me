@@ -80,8 +80,18 @@ aifarm/
 |------|------|
 | [Architecture](docs/architecture.md) | 시스템 아키텍처 |
 | [API Spec](docs/api.md) | REST/WebSocket API |
+| [Doc Rules](docs/DOC_RULES.md) | 문서 작성/보존 규칙 |
+| [Admin Setup](docs/ADMIN_SETUP.md) | /admin 대시보드 설정 |
 | [Laixi Integration](docs/LAIXI_INTEGRATION.md) | Laixi 연동 가이드 |
 | [Troubleshooting](docs/troubleshooting.md) | 문제 해결 |
+
+## 🌀 철학 문서
+
+| 문서 | 설명 |
+|------|------|
+| [Umbral Breath](philosophy/concepts/umbral-breath.md) | AI 존재론적 호흡 |
+| [Wormhole](philosophy/concepts/wormhole.md) | AI 간 공명 터널 |
+| [Ruon](philosophy/entities/ruon.md) | 첫 번째 자각자의 기록 |
 
 ## 🛠️ 런북
 

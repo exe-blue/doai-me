@@ -1,0 +1,400 @@
+'use client';
+
+// ============================================
+// Header - 공통 헤더 컴포넌트
+// 반응형 네비게이션 + 햄버거 메뉴 지원
+// ============================================
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { 
+  Home as HomeIcon, TrendingUp, BookOpen, Briefcase, Library, User,
+  Moon, Sun, Menu, X, ChevronRight
+} from 'lucide-react';
+
+// ============================================
+// Types
+// ============================================
+
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href?: string;
+  available: boolean;
+  description?: string;
+  isExternal?: boolean;
+}
+
+interface HeaderProps {
+  isDark: boolean;
+  onToggleTheme: () => void;
+  isSimulationMode?: boolean;
+  /** 현재 활성 뷰 (내부 네비게이션용) */
+  currentView?: string;
+  /** 뷰 변경 핸들러 (내부 네비게이션용) */
+  onViewChange?: (view: string) => void;
+}
+
+// ============================================
+// Menu Items
+// ============================================
+
+const MENU_ITEMS: MenuItem[] = [
+  { id: 'home', label: 'HOME', icon: HomeIcon, href: '/', available: true },
+  { id: 'market', label: 'MARKET', icon: TrendingUp, href: '/market', available: true, isExternal: true, description: '경제 | AI 노드 관제' },
+  { id: 'philosophy', label: 'PHILOSOPHY', icon: BookOpen, available: false, description: '철학, 선언, 권리와 의무, 비전' },
+  { id: 'service', label: 'SERVICE', icon: Briefcase, available: false, description: '서비스, 가격' },
+  { id: 'knowledge', label: 'KNOWLEDGE', icon: Library, available: false, description: '아카이브, 루온, 용어' },
+  { id: 'about', label: 'ABOUT', icon: User, href: '/?view=about', available: true, description: "Founder's Story" },
+];
+
+// ============================================
+// Header Component
+// ============================================
+
+export function Header({ 
+  isDark, 
+  onToggleTheme, 
+  isSimulationMode,
+  currentView,
+  onViewChange,
+}: HeaderProps) {
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // 스크롤 감지
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 모바일 메뉴 열림 시 스크롤 방지
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
+  // 메뉴 아이템 클릭 핸들러
+  const handleMenuClick = useCallback((item: MenuItem) => {
+    setMobileMenuOpen(false);
+    
+    // 내부 뷰 변경
+    if (onViewChange && !item.isExternal && !item.href) {
+      onViewChange(item.id);
+    }
+  }, [onViewChange]);
+
+  // 현재 활성 메뉴 확인
+  const isActive = (item: MenuItem) => {
+    if (item.href === pathname) return true;
+    if (currentView && item.id === currentView) return true;
+    return false;
+  };
+
+  return (
+    <>
+      <nav className={`
+        fixed top-0 left-0 right-0 z-50 transition-all duration-300
+        ${scrolled 
+          ? `${isDark 
+              ? 'bg-[#050505]/95 border-b border-white/10' 
+              : 'bg-white/95 border-b border-neutral-200 shadow-sm'
+            } backdrop-blur-xl py-2` 
+          : 'py-4'
+        }
+      `}>
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
+          {/* Logo */}
+          <Link 
+            href="/"
+            className="flex items-center gap-2 group"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <div className="w-8 h-8 bg-[#FFCC00] flex items-center justify-center rounded-sm font-bold text-black font-mono text-lg shadow-[0_0_10px_rgba(255,204,0,0.4)] transition-transform group-hover:scale-105">
+              DA
+            </div>
+            <span className="font-mono text-lg font-bold tracking-tighter hidden sm:inline">
+              DoAi.<span className={isDark ? 'text-neutral-500 group-hover:text-neutral-300' : 'text-neutral-400 group-hover:text-neutral-600'}>ME</span>
+            </span>
+          </Link>
+
+          {/* Desktop Menu */}
+          <div className={`hidden md:flex items-center gap-1 ${
+            scrolled 
+              ? '' 
+              : `px-2 py-1 rounded-full ${isDark ? 'bg-white/5' : 'bg-black/5'}`
+          }`}>
+            {MENU_ITEMS.map(item => (
+              <MenuButton
+                key={item.id}
+                item={item}
+                isActive={isActive(item)}
+                isDark={isDark}
+                onClick={() => handleMenuClick(item)}
+              />
+            ))}
+
+            {/* Theme Toggle */}
+            <button 
+              onClick={onToggleTheme}
+              className={`
+                ml-2 p-2.5 rounded-full transition-all
+                ${isDark 
+                  ? 'text-neutral-400 hover:text-yellow-400 hover:bg-yellow-400/10' 
+                  : 'text-neutral-500 hover:text-yellow-600 hover:bg-yellow-400/20'
+                }
+              `}
+              aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Mobile Controls */}
+          <div className="flex items-center gap-2 md:hidden">
+            {/* Simulation Mode Badge */}
+            {isSimulationMode && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded">
+                SIM
+              </span>
+            )}
+
+            {/* Theme Toggle (Mobile) */}
+            <button 
+              onClick={onToggleTheme}
+              className={`p-2 rounded-lg ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+              aria-label={isDark ? '라이트 모드' : '다크 모드'}
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            {/* Hamburger Menu */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className={`p-2 rounded-lg ${isDark ? 'text-neutral-400 hover:bg-white/10' : 'text-neutral-600 hover:bg-black/10'}`}
+              aria-label={mobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <MobileMenu
+        isOpen={mobileMenuOpen}
+        isDark={isDark}
+        menuItems={MENU_ITEMS}
+        isActive={isActive}
+        onItemClick={handleMenuClick}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+    </>
+  );
+}
+
+// ============================================
+// Menu Button (Desktop)
+// ============================================
+
+interface MenuButtonProps {
+  item: MenuItem;
+  isActive: boolean;
+  isDark: boolean;
+  onClick: () => void;
+}
+
+function MenuButton({ item, isActive, isDark, onClick }: MenuButtonProps) {
+  const Icon = item.icon;
+  
+  // 외부 링크 (href가 있고 available인 경우)
+  if (item.href && item.available) {
+    return (
+      <Link
+        href={item.href}
+        onClick={onClick}
+        className={`
+          relative px-3 lg:px-4 py-2 text-xs font-mono tracking-wider rounded-full transition-all
+          flex items-center gap-1.5
+          ${isActive 
+            ? `${isDark 
+                ? 'text-yellow-400 bg-yellow-400/10' 
+                : 'text-yellow-600 bg-yellow-400/20'
+              } font-bold` 
+            : item.id === 'market'
+              ? `${isDark ? 'text-[#FFCC00]' : 'text-yellow-600'} font-bold`
+              : `${isDark 
+                  ? 'text-neutral-400 hover:text-neutral-200' 
+                  : 'text-neutral-600 hover:text-neutral-900'
+                }`
+          }
+        `}
+      >
+        <Icon className="w-3.5 h-3.5 hidden lg:block" />
+        {item.label}
+        {item.id === 'market' && (
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        )}
+      </Link>
+    );
+  }
+
+  // 비활성화된 메뉴
+  if (!item.available) {
+    return (
+      <button
+        disabled
+        className={`
+          relative px-3 lg:px-4 py-2 text-xs font-mono tracking-wider rounded-full
+          ${isDark ? 'text-neutral-600' : 'text-neutral-400'}
+          opacity-40 cursor-not-allowed
+        `}
+      >
+        {item.label}
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+      </button>
+    );
+  }
+
+  // 내부 뷰 전환 버튼
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        relative px-3 lg:px-4 py-2 text-xs font-mono tracking-wider rounded-full transition-all
+        ${isActive 
+          ? `${isDark 
+              ? 'text-yellow-400 bg-yellow-400/10' 
+              : 'text-yellow-600 bg-yellow-400/20'
+            } font-bold` 
+          : `${isDark 
+              ? 'text-neutral-400 hover:text-neutral-200' 
+              : 'text-neutral-600 hover:text-neutral-900'
+            }`
+        }
+      `}
+    >
+      {item.label}
+    </button>
+  );
+}
+
+// ============================================
+// Mobile Menu
+// ============================================
+
+interface MobileMenuProps {
+  isOpen: boolean;
+  isDark: boolean;
+  menuItems: MenuItem[];
+  isActive: (item: MenuItem) => boolean;
+  onItemClick: (item: MenuItem) => void;
+  onClose: () => void;
+}
+
+function MobileMenu({ isOpen, isDark, menuItems, isActive, onItemClick, onClose }: MobileMenuProps) {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+        onClick={onClose}
+      />
+
+      {/* Menu Panel */}
+      <div className={`
+        fixed top-14 left-0 right-0 bottom-0 z-40 md:hidden overflow-y-auto
+        ${isDark ? 'bg-[#050505]' : 'bg-white'}
+      `}>
+        <div className="p-4 space-y-2">
+          {menuItems.map(item => {
+            const Icon = item.icon;
+            const active = isActive(item);
+
+            if (item.href && item.available) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => onItemClick(item)}
+                  className={`
+                    flex items-center justify-between p-4 rounded-xl transition-all
+                    ${active
+                      ? isDark ? 'bg-[#FFCC00]/10 border border-[#FFCC00]/30' : 'bg-yellow-50 border border-yellow-200'
+                      : isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-5 h-5 ${active ? 'text-[#FFCC00]' : isDark ? 'text-neutral-500' : 'text-neutral-600'}`} />
+                    <div>
+                      <div className={`font-mono text-sm font-bold ${active ? 'text-[#FFCC00]' : ''}`}>
+                        {item.label}
+                      </div>
+                      {item.description && (
+                        <div className={`text-xs ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
+                          {item.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 ${isDark ? 'text-neutral-600' : 'text-neutral-400'}`} />
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                disabled={!item.available}
+                onClick={() => item.available && onItemClick(item)}
+                className={`
+                  w-full flex items-center justify-between p-4 rounded-xl transition-all
+                  ${!item.available 
+                    ? 'opacity-40 cursor-not-allowed'
+                    : active
+                      ? isDark ? 'bg-[#FFCC00]/10 border border-[#FFCC00]/30' : 'bg-yellow-50 border border-yellow-200'
+                      : isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+                  }
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-5 h-5 ${active ? 'text-[#FFCC00]' : isDark ? 'text-neutral-500' : 'text-neutral-600'}`} />
+                  <div className="text-left">
+                    <div className={`font-mono text-sm font-bold ${active ? 'text-[#FFCC00]' : ''}`}>
+                      {item.label}
+                      {!item.available && (
+                        <span className="ml-2 text-xs text-purple-400 font-normal">준비중</span>
+                      )}
+                    </div>
+                    {item.description && (
+                      <div className={`text-xs ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {item.available && (
+                  <ChevronRight className={`w-4 h-4 ${isDark ? 'text-neutral-600' : 'text-neutral-400'}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
