@@ -68,26 +68,34 @@ ring = false;
      */
     cleanupScreenshots() {
         try {
+            // files 객체 및 필수 메서드 존재 여부 확인
+            if (typeof files === 'undefined' ||
+                typeof files.listDir !== 'function' ||
+                typeof files.remove !== 'function') {
+                this.logger.error('스크린샷 정리 실패: files 객체 또는 메서드가 정의되어 있지 않습니다.');
+                return;
+            }
+
             // 디렉토리 파일 목록
-            const files = files.listDir(this.screenshotDir);
+            const screenshotFiles = files.listDir(this.screenshotDir);
             
-            if (!files || files.length === 0) {
+            if (!screenshotFiles || screenshotFiles.length === 0) {
                 return;
             }
             
             // 파일 수 초과 시 오래된 것부터 삭제
-            if (files.length > this.maxScreenshots) {
+            if (screenshotFiles.length > this.maxScreenshots) {
                 this.logger.info('🗑️  스크린샷 정리', {
-                    current: files.length,
+                    current: screenshotFiles.length,
                     max: this.maxScreenshots
                 });
                 
                 // 날짜 기준 정렬
-                files.sort();
+                screenshotFiles.sort();
                 
-                const deleteCount = files.length - this.maxScreenshots;
+                const deleteCount = screenshotFiles.length - this.maxScreenshots;
                 for (let i = 0; i < deleteCount; i++) {
-                    const filePath = this.screenshotDir + files[i];
+                    const filePath = this.screenshotDir + screenshotFiles[i];
                     files.remove(filePath);
                 }
                 
