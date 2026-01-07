@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { supabase } from '../../../lib/supabase/client';
 
 // ============================================
@@ -17,10 +18,10 @@ interface AdminLayoutProps {
 }
 
 // ============================================
-// Admin Layout
+// Admin Layout Inner (with useSearchParams)
 // ============================================
 
-export function AdminLayout({ children, activeTab }: AdminLayoutProps) {
+function AdminLayoutInner({ children, activeTab }: AdminLayoutProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
@@ -154,3 +155,14 @@ function LogoutButton() {
   );
 }
 
+// ============================================
+// Admin Layout (with Suspense wrapper)
+// ============================================
+
+export function AdminLayout({ children, activeTab }: AdminLayoutProps) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-950 flex items-center justify-center text-neutral-500">Loading...</div>}>
+      <AdminLayoutInner activeTab={activeTab}>{children}</AdminLayoutInner>
+    </Suspense>
+  );
+}

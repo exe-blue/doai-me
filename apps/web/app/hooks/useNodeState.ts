@@ -6,7 +6,7 @@
 // ============================================
 
 import { useCallback } from 'react';
-import { useNodes, Node, NodeStatus } from '../contexts/NodeContext';
+import { useNodes, GatewayNode as Node, NodeStatus } from '../contexts/NodeContext';
 
 /**
  * 노드 상태 관리를 위한 커스텀 훅

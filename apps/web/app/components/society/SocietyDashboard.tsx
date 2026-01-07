@@ -8,7 +8,7 @@ import { useSocietyStatus, useActivityFeed, useActiveEvents } from '../../../lib
 import { SimulatorControls } from './SimulatorControls';
 import { WormholeAlertContainer, WormholeEventsList } from './WormholeAlert';
 import { NodeStatusBadge } from './NodeStatusBadge';
-import type { ActivityFeedItem, SocialEvent, SocietyStatus } from '../../../lib/supabase/types';
+import type { ActivityFeedItem, SocialEvent, SocietyStatus, NodeStatus } from '../../../lib/supabase/types';
 
 // ============================================
 // Status Card
@@ -76,14 +76,14 @@ function SocietyStatsHeader({ status }: { status: SocietyStatus | null }) {
   const moodEmoji = avgMood > 0.6 ? '😊' : avgMood > 0.4 ? '😐' : '😔';
   const moodPercent = (avgMood * 100).toFixed(1);
   
-  // 안전한 값 접근
+  // 안전한 값 접근 (number 타입으로 명시적 캐스팅)
   const statusAny = status as unknown as Record<string, unknown>;
-  const totalNodes = statusAny.total_nodes ?? statusAny.totalNodes ?? 0;
-  const onlineNodes = statusAny.online_nodes ?? statusAny.activeNodes ?? 0;
-  const watchingTiktok = statusAny.watching_tiktok ?? 0;
-  const totalEconomy = statusAny.total_economy ?? 0;
-  const avgBalance = statusAny.avg_balance ?? 0;
-  const avgReputation = statusAny.avg_reputation ?? 0.5;
+  const totalNodes = (statusAny.total_nodes ?? statusAny.totalNodes ?? 0) as number;
+  const onlineNodes = (statusAny.online_nodes ?? statusAny.activeNodes ?? 0) as number;
+  const watchingTiktok = (statusAny.watching_tiktok ?? 0) as number;
+  const totalEconomy = (statusAny.total_economy ?? 0) as number;
+  const avgBalance = (statusAny.avg_balance ?? 0) as number;
+  const avgReputation = (statusAny.avg_reputation ?? 0.5) as number;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -97,14 +97,14 @@ function SocietyStatsHeader({ status }: { status: SocietyStatus | null }) {
       <StatusCard
         icon="📺"
         label="Watching TikTok"
-        value={watchingTiktok as number}
+        value={watchingTiktok}
         color="amber"
       />
       <StatusCard
         icon="💰"
         label="Total Economy"
-        value={`$${(totalEconomy as number).toLocaleString()}`}
-        subValue={`avg: $${(avgBalance as number).toFixed(2)}`}
+        value={`$${totalEconomy.toLocaleString()}`}
+        subValue={`avg: $${avgBalance.toFixed(2)}`}
         color="purple"
       />
       <StatusCard
@@ -116,7 +116,7 @@ function SocietyStatsHeader({ status }: { status: SocietyStatus | null }) {
       <StatusCard
         icon="⭐"
         label="Avg Reputation"
-        value={`${((avgReputation as number) * 100).toFixed(1)}%`}
+        value={`${(avgReputation * 100).toFixed(1)}%`}
         color="neutral"
       />
     </div>
@@ -144,6 +144,17 @@ function ActivityItem({ activity }: { activity: ActivityFeedItem }) {
     conformist: '🤝',
   };
   
+  // 안전한 값 접근 (NodeStatus 타입 호환성 유지)
+  const trait = activity.trait ?? '';
+  const nodeNumber = activity.node_number ?? 0;
+  const statusRaw = activity.status ?? 'inactive';
+  // NodeStatus 타입으로 변환 (유효하지 않으면 'inactive')
+  const validStatuses = ['active', 'inactive', 'in_umbra', 'connecting', 'offline', 'error', 'maintenance', 'watching_tiktok', 'discussing', 'creating', 'trading', 'observing', 'resting'];
+  const status = (validStatuses.includes(statusRaw) ? statusRaw : 'inactive') as NodeStatus;
+  const description = activity.description ?? activity.message ?? '';
+  const amount = activity.amount ?? 0;
+  const timestamp = activity.created_at ?? activity.timestamp?.toISOString() ?? new Date().toISOString();
+  
   return (
     <motion.div
       className="flex items-center gap-3 py-2 px-3 bg-neutral-900/30 rounded border-l-2 border-neutral-800 hover:border-amber-500/50 transition-colors"
@@ -154,28 +165,28 @@ function ActivityItem({ activity }: { activity: ActivityFeedItem }) {
     >
       {/* Node Badge */}
       <div className="flex items-center gap-2 min-w-[160px]">
-        <span className="text-sm">{traitEmojis[activity.trait] || '🤖'}</span>
+        <span className="text-sm">{traitEmojis[trait] || '🤖'}</span>
         <div className="flex items-center gap-2">
           <span className="text-neutral-300 text-sm font-mono">
-            #{activity.node_number.toString().padStart(3, '0')}
+            #{nodeNumber.toString().padStart(3, '0')}
           </span>
-          <NodeStatusBadge status={activity.status} size="sm" showLabel={false} />
+          <NodeStatusBadge status={status} size="sm" showLabel={false} />
         </div>
       </div>
       
       {/* Description */}
       <div className="flex-grow text-neutral-400 text-sm truncate">
-        {activity.description}
+        {description}
       </div>
       
       {/* Amount */}
       <div className={`font-mono text-sm ${amountColor} min-w-[80px] text-right`}>
-        {amountPrefix}${activity.amount.toFixed(2)}
+        {amountPrefix}${amount.toFixed(2)}
       </div>
       
       {/* Time */}
       <div className="text-neutral-600 text-xs min-w-[50px] text-right">
-        {new Date(activity.created_at).toLocaleTimeString('ko-KR', {
+        {new Date(timestamp).toLocaleTimeString('ko-KR', {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',

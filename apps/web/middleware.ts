@@ -1,13 +1,31 @@
 // apps/web/middleware.ts
 // Server-side admin 보호 미들웨어
 
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req: request, res });
+  let response = NextResponse.next({ request });
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
   
   // /admin/* 경로만 체크
   if (request.nextUrl.pathname.startsWith('/admin')) {
@@ -16,7 +34,7 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname === '/admin/login' ||
       request.nextUrl.pathname === '/admin/unauthorized'
     ) {
-      return res;
+      return response;
     }
     
     try {
@@ -43,7 +61,7 @@ export async function middleware(request: NextRequest) {
       }
       
       // 관리자 확인됨 - 요청 진행
-      return res;
+      return response;
     } catch (error) {
       // 에러 발생 시 로그인 페이지로 리다이렉트
       console.error('[Middleware] Admin check error:', error);
@@ -52,7 +70,7 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  return res;
+  return response;
 }
 
 export const config = {

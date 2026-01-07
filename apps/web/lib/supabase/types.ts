@@ -49,6 +49,8 @@ export const WormholeTriggerContextSchema = z.object({
   trigger_type: z.string().optional(),
   emotion: z.string().optional(),
   node_numbers: z.array(z.number()).optional(),
+  all_node_ids: z.array(z.string()).optional(),
+  time_diff_ms: z.number().optional(),
 }).nullable();
 
 export const WormholeEventSchema = z.object({
@@ -182,10 +184,17 @@ export interface WormholeScoreHistogram {
 
 export interface ActivityFeedItem {
   id: string;
-  type: 'node_status_change' | 'wormhole_detected' | 'system_event';
-  message: string;
-  timestamp: Date;
+  type: 'node_status_change' | 'wormhole_detected' | 'system_event' | 'earn' | 'reward' | 'spend';
+  message?: string;
+  timestamp?: Date;
   metadata?: Record<string, unknown>;
+  // 경제 활동 피드용 필드
+  node_number?: number;
+  description?: string;
+  amount?: number;
+  trait?: string;
+  status?: string;
+  created_at?: string;
 }
 
 export interface SocialEvent {
@@ -194,6 +203,10 @@ export interface SocialEvent {
   title: string;
   description: string;
   timestamp: Date;
+  severity: 'minor' | 'moderate' | 'major' | 'critical';
+  affected_nodes: number;
+  economic_impact: number;
+  mood_shift: number;
 }
 
 export interface SocietyStatus {
