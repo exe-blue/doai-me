@@ -5,8 +5,8 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase/client';
-import type { NodesStatusSummary, Node } from '../../../lib/supabase/types';
+import { supabase } from '@/lib/supabase/client';
+import type { NodesStatusSummary, Node } from '@/lib/supabase/types';
 import { NodeStatusBadge, NodeStatusDot } from './NodeStatusBadge';
 
 // ============================================

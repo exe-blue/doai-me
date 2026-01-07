@@ -5,8 +5,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase/client';
-import { WormholeEventSchema, type WormholeEvent } from '../../../lib/supabase/types';
+import { supabase } from '@/lib/supabase/client';
+import { WormholeEventSchema, type WormholeEvent } from '@/lib/supabase/types';
 
 // ============================================
 // Props

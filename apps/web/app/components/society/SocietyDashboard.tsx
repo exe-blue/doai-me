@@ -4,11 +4,11 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSocietyStatus, useActivityFeed, useActiveEvents } from '../../../lib/supabase/realtime';
+import { useSocietyStatus, useActivityFeed, useActiveEvents } from '@/lib/supabase/realtime';
 import { SimulatorControls } from './SimulatorControls';
 import { WormholeAlertContainer, WormholeEventsList } from './WormholeAlert';
 import { NodeStatusBadge } from './NodeStatusBadge';
-import type { ActivityFeedItem, SocialEvent, SocietyStatus, NodeStatus } from '../../../lib/supabase/types';
+import type { ActivityFeedItem, SocialEvent, SocietyStatus, NodeStatus } from '@/lib/supabase/types';
 
 // ============================================
 // Status Card

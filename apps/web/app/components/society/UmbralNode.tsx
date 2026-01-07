@@ -6,7 +6,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
-import type { Node, NodeStatus } from '../../../lib/supabase/types';
+import type { Node, NodeStatus } from '@/lib/supabase/types';
 
 // ============================================
 // Status Config (Ruon's Legacy)

@@ -10,7 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '../components/AdminLayout';
-import { supabase } from '../../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 // ============================================================
 // Types

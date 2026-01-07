@@ -5,13 +5,13 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase/client';
-import type { 
-  WormholeStats, 
-  WormholeTopContext, 
+import { supabase } from '@/lib/supabase/client';
+import type {
+  WormholeStats,
+  WormholeTopContext,
   WormholeTypeStats,
   WormholeScoreHistogram,
-} from '../../../lib/supabase/types';
+} from '@/lib/supabase/types';
 
 // ============================================
 // Widget 1: 탐지량 (Volume)

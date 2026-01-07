@@ -5,7 +5,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import type { WormholeEvent } from '../../../lib/supabase/types';
+import type { WormholeEvent } from '@/lib/supabase/types';
 import type { WormholeIntensityLevel } from './WormholeConnection';
 
 // ============================================

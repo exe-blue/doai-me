@@ -5,7 +5,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { NodeStatus } from '../../../lib/supabase/types';
+import type { NodeStatus } from '@/lib/supabase/types';
 
 interface Props {
   status: NodeStatus;
