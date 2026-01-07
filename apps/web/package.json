@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node -e \"console.log('CWD:', process.cwd()); const fs=require('fs'); console.log('lib:', fs.readdirSync('lib')); console.log('lib/supabase:', fs.readdirSync('lib/supabase'));\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
