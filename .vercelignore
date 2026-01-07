@@ -3,7 +3,7 @@ backend/
 gateway/
 node-runner/
 client-android/
-supabase/
+/supabase/
 sdk/
 jaffle_shop/
 archive/
