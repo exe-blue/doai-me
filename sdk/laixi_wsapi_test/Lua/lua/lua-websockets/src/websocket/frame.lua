@@ -135,7 +135,7 @@ local decode = function(encoded)
       pos,high = read_int32(encoded,1)
       pos,low = read_int32(encoded,pos)
       payload = high*2^32 + low
-      if payload < 0x10000 or payload > 2^53 then
+      if payload <= 0xffff or payload > 2^53 then
         assert(false,'INVALID PAYLOAD '..payload)
       end
     else
