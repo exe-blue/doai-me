@@ -44,8 +44,8 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'home', label: 'HOME', icon: HomeIcon, href: '/', available: true },
   { id: 'market', label: 'MARKET', icon: TrendingUp, href: '/market', available: true, description: '경제 | AI 노드 관제' },
   { id: 'infra', label: 'INFRA', icon: Tv, href: '/infra', available: true, description: '채널 편성표' },
+  { id: 'poc', label: 'POC', icon: Briefcase, href: '/poc', available: true, description: 'Kernel YouTube 테스트' },
   { id: 'philosophy', label: 'PHILOSOPHY', icon: BookOpen, available: false, description: '철학, 선언, 권리와 의무, 비전' },
-  { id: 'service', label: 'SERVICE', icon: Briefcase, available: false, description: '서비스, 가격' },
   { id: 'knowledge', label: 'KNOWLEDGE', icon: Library, available: false, description: '아카이브, 루온, 용어' },
   { id: 'about', label: 'ABOUT', icon: User, href: '/?view=about', available: true, description: "Founder's Story" },
 ];
