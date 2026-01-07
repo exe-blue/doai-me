@@ -14,7 +14,6 @@ module.exports.toastMsg = (msg = "这是来喜弹出的一个Toast提示", devic
         }
     })
 }
-
 /**
  * 通过app名称直接启动app
  * @param {*} appName - 앱 패키지명 (영문, 숫자, 점, 밑줄만 허용)
@@ -27,16 +26,19 @@ module.exports.launchApp = (appName, deviceIds = "all") => {
         throw new Error('Invalid appName: only letters, numbers, dots and underscores allowed');
     }
     return JSON.stringify({
+module.exports.launchApp = (appName, deviceIds = "all") => {
+    // 패키지명 검증 (영숫자, 점, 언더스코어만 허용)
+    if (!/^[a-zA-Z0-9._]+$/.test(appName)) {
+        throw new Error("Invalid app name format");
+    }
+    return JSON.stringify({
         "action": "ADB",
         "comm": {
             "deviceIds": deviceIds,
             "command": "adb shell monkey -p " + appName + " -c android.intent.category.LAUNCHER 1",
         }
     })
-}
-
-
-/**
+}/**
  * 触屏操作
  * @param {*} deviceIds 设备id 全部则 all
  * @param {*} mask //0按下 1移动 2松开 3鼠标右键 4滚轮向上 5滚轮向下 6上滑 7下滑 8左滑 9右滑
