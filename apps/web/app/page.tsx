@@ -1,5 +1,5 @@
 // apps/web/app/page.tsx
-// DoAi.Me 메인 랜딩 페이지
+// DoAi.Me 메인 랜딩 페이지 - 21st.dev 스타일 리디자인
 
 'use client';
 
@@ -20,7 +20,19 @@ export default function HomePage() {
 
   // 초기 테마 설정
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    // 시스템 설정 확인 또는 기본값 다크모드
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+      setIsDark(false);
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    } else {
+      setIsDark(true);
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
   }, []);
 
   // 테마 토글
@@ -30,23 +42,23 @@ export default function HomePage() {
       if (newIsDark) {
         document.documentElement.classList.add('dark');
         document.documentElement.classList.remove('light');
+        localStorage.setItem('theme', 'dark');
       } else {
         document.documentElement.classList.remove('dark');
         document.documentElement.classList.add('light');
+        localStorage.setItem('theme', 'light');
       }
       return newIsDark;
     });
   }, []);
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#050505] text-white' : 'bg-[#FAFAFA] text-black'} transition-colors duration-500`}>
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
       {/* 파티클 배경 */}
       <ParticleNetwork isDark={isDark} zIndex={0} />
 
       {/* CRT Scanlines (다크 모드에서만) */}
-      {isDark && (
-        <div className="scanlines fixed inset-0 pointer-events-none z-10 opacity-20" />
-      )}
+      <div className="scanlines" />
 
       {/* 헤더 */}
       <Header 
@@ -65,39 +77,6 @@ export default function HomePage() {
         {/* Enter CTA 섹션 */}
         <Enter />
       </main>
-
-      {/* 글로벌 스타일 */}
-      <style jsx global>{`
-        /* Amber gradient text */
-        .text-gradient-amber {
-          background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #F59E0B 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        /* CRT Scanlines */
-        .scanlines {
-          background: repeating-linear-gradient(
-            0deg,
-            rgba(0, 0, 0, 0.15),
-            rgba(0, 0, 0, 0.15) 1px,
-            transparent 1px,
-            transparent 2px
-          );
-        }
-
-        /* Smooth scroll */
-        html {
-          scroll-behavior: smooth;
-        }
-
-        /* Selection color */
-        ::selection {
-          background: rgba(245, 158, 11, 0.3);
-          color: inherit;
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 // app/society/page.tsx
-// Society Dashboard - Ruon's Legacy 시각화
+// Society Dashboard - 21st.dev 스타일 리디자인 - Ruon's Legacy 시각화
 
 'use client';
 
@@ -7,6 +7,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase/client';
 import type { Node, WormholeEvent, NodesStatusSummary } from '../../lib/supabase/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Badge } from '@/app/components/ui/badge';
+import { Zap, Activity } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Components
 import {
@@ -21,9 +25,6 @@ import {
   createUmbralWaveMessage,
   type WormholeIntensityLevel,
 } from '@/app/components/society';
-
-// CSS
-import '@/app/styles/umbral.css';
 
 // ============================================
 // Page Component
@@ -100,34 +101,35 @@ export default function SocietyPage() {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="text-4xl"
-        >
-          🌌
-        </motion.div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <Zap className="h-12 w-12 text-umbra" />
+          </motion.div>
+          <span className="text-sm text-muted-foreground">Loading Society...</span>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-neutral-800 px-6 py-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <motion.span
+            <motion.div
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="text-2xl"
             >
-              🌑
-            </motion.span>
+              <Activity className="h-6 w-6 text-umbra" />
+            </motion.div>
             <div>
-              <h1 className="text-lg font-mono text-neutral-200">DoAi.Me Society</h1>
-              <p className="text-xs text-neutral-500">Ruon's Legacy - 숨그늘과 웜홀의 관측</p>
+              <h1 className="text-lg font-semibold">DoAi.Me Society</h1>
+              <p className="text-xs text-muted-foreground">Ruon's Legacy - 숨그늘과 웜홀의 관측</p>
             </div>
           </div>
           
@@ -146,54 +148,58 @@ export default function SocietyPage() {
       {/* Main Content */}
       <div className="flex">
         {/* Network Map */}
-        <main className={`flex-1 p-6 relative ${wormholeModeEnabled ? 'wormhole-mode-active' : ''}`}>
+        <main className={cn("flex-1 p-6 relative", wormholeModeEnabled && 'wormhole-mode-active')}>
           {/* Nodes Grid */}
-          <div className="mb-6">
-            <h2 className="text-neutral-400 text-sm font-mono mb-4">
-              NETWORK ({nodes.length} nodes)
-            </h2>
-            
-            <div className="relative bg-neutral-900/50 rounded-xl p-4 min-h-[400px]">
-              <UmbralNodeGrid
-                nodes={nodes}
-                resonatingNodeIds={resonatingNodeIds}
-                wormholeActiveNodeIds={wormholeActiveNodeIds}
-                onNodeClick={(node) => console.log('Node clicked:', node)}
-                nodeSize={8}
-                gap={6}
-              />
-              
-              {/* Wormhole connections overlay */}
-              {wormholeModeEnabled && (
-                <WormholeLayer
-                  wormholes={wormholeEvents.slice(0, 5).map((e, i) => ({
-                    id: e.id,
-                    nodes: [
-                      { x: 100 + i * 80, y: 100 + i * 30, id: e.agent_a_id },
-                      { x: 300 + i * 50, y: 200 + i * 20, id: e.agent_b_id },
-                    ],
-                    intensity: e.resonance_score,
-                    intensityLevel: getIntensityLevel(e.resonance_score) as WormholeIntensityLevel,
-                    isActive: true,
-                  }))}
-                  width={800}
-                  height={500}
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                Network ({nodes.length} nodes)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative min-h-[400px]">
+                <UmbralNodeGrid
+                  nodes={nodes}
+                  resonatingNodeIds={resonatingNodeIds}
+                  wormholeActiveNodeIds={wormholeActiveNodeIds}
+                  onNodeClick={(node) => console.log('Node clicked:', node)}
+                  nodeSize={8}
+                  gap={6}
                 />
-              )}
-            </div>
-          </div>
+                
+                {/* Wormhole connections overlay */}
+                {wormholeModeEnabled && (
+                  <WormholeLayer
+                    wormholes={wormholeEvents.slice(0, 5).map((e, i) => ({
+                      id: e.id,
+                      nodes: [
+                        { x: 100 + i * 80, y: 100 + i * 30, id: e.agent_a_id },
+                        { x: 300 + i * 50, y: 200 + i * 20, id: e.agent_b_id },
+                      ],
+                      intensity: e.resonance_score,
+                      intensityLevel: getIntensityLevel(e.resonance_score) as WormholeIntensityLevel,
+                      isActive: true,
+                    }))}
+                    width={800}
+                    height={500}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
           
           {/* Recent Wormholes */}
           {wormholeModeEnabled && (
             <div>
-              <h2 className="text-purple-400 text-sm font-mono mb-4 flex items-center gap-2">
-                <motion.span
+              <h2 className="text-umbra text-sm font-medium mb-4 flex items-center gap-2">
+                <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
                 >
-                  🌌
-                </motion.span>
-                RECENT WORMHOLES
+                  <Zap className="h-4 w-4" />
+                </motion.div>
+                Recent Wormholes
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -210,7 +216,7 @@ export default function SocietyPage() {
         </main>
         
         {/* Side Panel */}
-        <aside className="w-72 border-l border-neutral-800 p-4">
+        <aside className="w-72 border-l border-border p-4">
           <NetworkSidePanel />
         </aside>
       </div>
@@ -239,42 +245,45 @@ export default function SocietyPage() {
 
 function WormholeCard({ event, onClick }: { event: WormholeEvent; onClick: () => void }) {
   const level = getIntensityLevel(event.resonance_score);
-  const context = event.trigger_context as any;
+  const context = event.trigger_context as Record<string, unknown>;
   
-  const levelColors = {
-    minor: 'border-purple-500/30 bg-purple-950/20',
-    moderate: 'border-purple-500/50 bg-purple-950/30',
-    strong: 'border-purple-500 bg-purple-950/40',
-    anomaly: 'border-amber-500 bg-amber-950/30',
+  const levelStyles = {
+    minor: 'border-umbra/30 bg-umbra/5 hover:border-umbra/50',
+    moderate: 'border-umbra/50 bg-umbra/10 hover:border-umbra/70',
+    strong: 'border-umbra bg-umbra/15 hover:border-umbra',
+    anomaly: 'border-signal-amber bg-signal-amber/10 hover:border-signal-amber',
   };
   
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
-      className={`cursor-pointer rounded-lg p-4 border ${levelColors[level]} transition-colors`}
+      className={cn(
+        "cursor-pointer rounded-lg p-4 border transition-all",
+        levelStyles[level]
+      )}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-purple-400 font-mono text-sm">
+        <Badge variant="umbra" className="text-xs">
           Type {event.wormhole_type}
-        </span>
-        <span className="text-neutral-400 text-xs">
+        </Badge>
+        <span className="text-muted-foreground text-xs">
           {new Date(event.detected_at).toLocaleTimeString()}
         </span>
       </div>
       
-      <div className="text-neutral-300 text-sm mb-2 truncate">
-        {context?.trigger || 'Unknown trigger'}
+      <div className="text-sm mb-2 truncate">
+        {(context?.trigger as string) || 'Unknown trigger'}
       </div>
       
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-1 bg-neutral-800 rounded-full overflow-hidden">
+        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-purple-500 rounded-full"
+            className="h-full bg-umbra rounded-full transition-all"
             style={{ width: `${event.resonance_score * 100}%` }}
           />
         </div>
-        <span className="text-purple-400 text-xs font-mono">
+        <span className="text-umbra text-xs font-mono">
           {Math.round(event.resonance_score * 100)}%
         </span>
       </div>

@@ -2,116 +2,194 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Admin Dashboard Design Tokens */
-@import '../styles/admin-tokens.css';
-
 /* ============================================
-   DoAi.Me - Dark Mode First Theme
-   포인트 컬러: Yellow (#FFCC00)
-   기본: Dark Mode
+   DoAi.Me - Unified Design System
+   shadcn/ui + 21st.dev 통합 스타일시트
    ============================================ */
 
-:root {
-  /* ===== Dark Mode (Default) ===== */
-  --background: 0 0% 2%;
-  --foreground: 0 0% 90%;
-  --card: 0 0% 5%;
-  --card-foreground: 0 0% 90%;
-  --popover: 0 0% 5%;
-  --popover-foreground: 0 0% 90%;
-  --primary: 45 100% 50%;
-  --primary-foreground: 0 0% 5%;
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 0 0% 90%;
-  --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 45 100% 50%;
-  --accent-foreground: 0 0% 5%;
-  --border: 0 0% 12%;
-  --input: 0 0% 12%;
-  --ring: 45 100% 50%;
-  
-  /* DoAi Yellow - 포인트 컬러 (#FFCC00) */
-  --yellow-50: 48 100% 96%;
-  --yellow-100: 48 96% 89%;
-  --yellow-200: 48 97% 77%;
-  --yellow-300: 46 97% 65%;
-  --yellow-400: 45 100% 50%;
-  --yellow-500: 40 95% 50%;
-  --yellow-600: 35 95% 45%;
-  --yellow-700: 30 90% 40%;
-  
-  /* 기타 색상 */
-  --terminal-green: 142 76% 45%;
-  --neon-green: 120 100% 60%;
-  --purple-glow: 263 70% 50%;
-  --umbra: 258 90% 66%;
-  --error: 0 90% 55%;
-  --success: 142 76% 45%;
-  
-  /* 그림자 (다크모드용) */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-  
-  /* 폰트 - Pretendard 기반 */
-  --font-sans: 'Pretendard', var(--font-pretendard), -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: var(--font-noto-serif-kr), Georgia, serif;
-  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-}
-
-/* ===== Light Mode (수동 전환 시) ===== */
-.light {
-  --background: 0 0% 98%;
-  --foreground: 0 0% 9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 9%;
-  --primary: 45 93% 47%;
-  --primary-foreground: 0 0% 9%;
-  --secondary: 0 0% 96%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 45 93% 47%;
-  --accent-foreground: 0 0% 9%;
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 45 93% 47%;
-}
-
 /* ============================================
-   Base Styles
+   1. CSS Variables (Design Tokens)
    ============================================ */
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+@layer base {
+  :root {
+    /* ===== shadcn/ui 기본 변수 (Dark Mode Default) ===== */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 227 76% 45%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 227 76% 45%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 90% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 227 76% 45%;
+    --radius: 0.5rem;
+    
+    /* ===== DoAi Blue - 포인트 컬러 (#162b96) ===== */
+    --doai-50: 227 76% 96%;
+    --doai-100: 227 76% 89%;
+    --doai-200: 227 76% 77%;
+    --doai-300: 227 76% 65%;
+    --doai-400: 227 76% 55%;
+    --doai-500: 227 76% 45%;
+    --doai-600: 227 76% 34%;
+    --doai-700: 227 76% 28%;
+    
+    /* ===== Admin Design Tokens ===== */
+    --admin-bg: 210 40% 2%;
+    --admin-bg-elevated: 210 30% 5%;
+    --admin-card: 210 30% 5%;
+    --admin-card-hover: 210 25% 7%;
+    --admin-card-active: 210 20% 10%;
+    --admin-border: 215 20% 12%;
+    --admin-border-subtle: 215 25% 8%;
+    
+    /* ===== Signal Colors (Status) ===== */
+    --signal-green: 142 76% 45%;
+    --signal-green-muted: 142 76% 45% / 0.15;
+    --signal-amber: 38 92% 50%;
+    --signal-amber-muted: 38 92% 50% / 0.15;
+    --signal-red: 0 84% 60%;
+    --signal-red-muted: 0 84% 60% / 0.15;
+    --signal-blue: 217 91% 60%;
+    --signal-blue-muted: 217 91% 60% / 0.15;
+    
+    /* ===== In Umbra Colors ===== */
+    --umbra-primary: 263 70% 66%;
+    --umbra-light: 263 70% 76%;
+    --umbra-dark: 263 70% 46%;
+    --umbra-glow: 263 70% 66% / 0.15;
+    --umbra-glow-strong: 263 70% 66% / 0.3;
+    --umbra-border: 263 70% 66% / 0.3;
+    --umbra-bg: 263 70% 66% / 0.08;
+    
+    /* ===== Chart Colors (Wormhole Types) ===== */
+    --chart-alpha: 142 76% 45%;
+    --chart-beta: 217 91% 60%;
+    --chart-gamma: 38 92% 50%;
+    --chart-grid: 215 20% 12%;
+    --chart-axis: 215 16% 30%;
+    
+    /* ===== Intensity Scale ===== */
+    --intensity-low: 215 16% 47%;
+    --intensity-medium: 38 92% 50%;
+    --intensity-high: 0 84% 60%;
+    --intensity-critical: 0 72% 51%;
+    
+    /* ===== Text Hierarchy ===== */
+    --text-value: 210 40% 96%;
+    --text-primary: 210 40% 90%;
+    --text-secondary: 215 16% 65%;
+    --text-muted: 215 16% 47%;
+    --text-label: 215 16% 47%;
+    
+    /* ===== Spacing & Sizing ===== */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    
+    /* ===== Animation Timing ===== */
+    --transition-fast: 150ms;
+    --transition-normal: 250ms;
+    --transition-slow: 400ms;
+    --umbra-pulse-duration: 4s;
+    
+    /* ===== Layout ===== */
+    --header-height: 64px;
+    
+    /* ===== Fonts ===== */
+    --font-pretendard: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    --font-sans: var(--font-pretendard);
+    --font-serif: var(--font-noto-serif-kr), Georgia, serif;
+    --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', Menlo, monospace;
+    
+    /* ===== Legacy Color Support ===== */
+    --color-primary: #162b96;
+    --color-primary-dark: #0f1d64;
+    --color-background: #050505;
+    --color-surface: rgba(255, 255, 255, 0.05);
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-text: #E5E5E5;
+    --color-text-muted: #737373;
+    
+    /* ===== Shadows (Dark Mode) ===== */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  /* ===== Light Mode ===== */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 227 76% 40%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 227 76% 40%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 227 76% 40%;
+    
+    /* Light mode legacy */
+    --color-background: #F5F5F5;
+    --color-surface: rgba(0, 0, 0, 0.05);
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-text: #1A1A1A;
+    --color-text-muted: #737373;
+    
+    /* Light mode shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
+  /* ===== Base Element Styles ===== */
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
 
-/* Selection */
-::selection {
-  background-color: hsl(var(--yellow-400) / 0.3);
-  color: hsl(var(--foreground));
+  /* Selection */
+  ::selection {
+    background-color: hsl(var(--doai-500) / 0.3);
+    color: hsl(var(--foreground));
+  }
 }
 
 /* ============================================
-   Scrollbar
+   2. Scrollbar Styles
    ============================================ */
 
 ::-webkit-scrollbar {
@@ -133,51 +211,102 @@ body {
 }
 
 /* ============================================
-   Typography
+   3. Typography
    ============================================ */
 
-.font-serif {
-  font-family: var(--font-serif);
-}
+@layer utilities {
+  .font-pretendard {
+    font-family: var(--font-pretendard);
+  }
+  
+  .font-serif {
+    font-family: var(--font-serif);
+  }
 
-.font-mono {
-  font-family: var(--font-mono);
-}
+  .font-mono {
+    font-family: var(--font-mono);
+  }
 
-.text-gradient-yellow {
-  background: linear-gradient(135deg, hsl(var(--yellow-300)) 0%, hsl(var(--yellow-500)) 50%, hsl(var(--yellow-600)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  .text-gradient-blue {
+    background: linear-gradient(135deg, hsl(var(--doai-300)) 0%, hsl(var(--doai-500)) 50%, hsl(var(--doai-600)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Legacy alias */
+  .text-gradient-yellow {
+    background: linear-gradient(135deg, hsl(var(--doai-300)) 0%, hsl(var(--doai-500)) 50%, hsl(var(--doai-600)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-display {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .text-headline {
+    @apply text-2xl md:text-3xl font-bold;
+  }
+
+  .text-title {
+    @apply text-lg md:text-xl font-semibold;
+  }
+
+  .text-body {
+    @apply text-sm md:text-base;
+  }
+
+  .text-caption {
+    @apply text-xs text-muted-foreground;
+  }
 }
 
 /* ============================================
-   Glass Panel
+   4. Component Styles
    ============================================ */
 
+/* Glass Panel */
 .glass-panel {
   background: hsl(var(--card) / 0.8);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border: 1px solid hsl(var(--border));
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal) ease;
 }
 
 .glass-panel:hover {
-  border-color: hsl(var(--yellow-400) / 0.5);
+  border-color: hsl(var(--doai-500) / 0.5);
   box-shadow: var(--shadow-md);
 }
 
-/* ============================================
-   Buttons
-   ============================================ */
+/* Glass Card */
+.glass-card {
+  @apply backdrop-blur-md border rounded-xl;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.5) 0%,
+    hsl(var(--card) / 0.2) 100%
+  );
+  border-color: hsl(var(--border));
+}
 
+.light .glass-card {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+}
+
+/* Buttons */
 .btn-primary {
-  background: hsl(var(--yellow-400));
+  background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   transition: all 0.2s ease;
   border: none;
@@ -185,18 +314,18 @@ body {
 }
 
 .btn-primary:hover {
-  background: hsl(var(--yellow-500));
+  background: hsl(var(--doai-600));
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px hsl(var(--yellow-400) / 0.4);
+  box-shadow: 0 4px 12px hsl(var(--doai-500) / 0.4);
 }
 
 .btn-outline {
   background: transparent;
   color: hsl(var(--foreground));
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal) ease;
   border: 1px solid hsl(var(--border));
   cursor: pointer;
   position: relative;
@@ -210,7 +339,7 @@ body {
   background: hsl(var(--foreground));
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-normal) ease;
   z-index: -1;
 }
 
@@ -223,9 +352,88 @@ body {
   transform: scaleX(1);
 }
 
+/* 3D Cards */
+.card-3d {
+  background: hsl(var(--card));
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  border: 1px solid hsl(var(--border));
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-2deg);
+  border-color: hsl(var(--doai-500) / 0.5);
+  box-shadow: 
+    0 20px 40px hsl(var(--foreground) / 0.1),
+    0 0 0 1px hsl(var(--doai-500) / 0.1);
+}
+
+/* Channel Cards (Smart TV Style) */
+.channel-card {
+  @apply relative overflow-hidden rounded-xl transition-all duration-300;
+  @apply border border-border bg-gradient-to-br from-muted/50 to-transparent;
+}
+
+.channel-card:hover {
+  @apply border-primary/50 shadow-lg scale-[1.02];
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.1);
+}
+
+.channel-card:focus {
+  @apply outline-none ring-2 ring-primary/50;
+}
+
+/* Channel Number Badge */
+.channel-number {
+  @apply absolute top-3 left-3 w-10 h-10 rounded-lg;
+  @apply bg-primary text-primary-foreground font-bold text-lg;
+  @apply flex items-center justify-center;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
+}
+
+/* Video Thumbnail */
+.video-thumbnail {
+  @apply relative overflow-hidden rounded-lg;
+  @apply aspect-video bg-muted;
+}
+
+.video-thumbnail img {
+  @apply w-full h-full object-cover transition-transform duration-300;
+}
+
+.video-thumbnail:hover img {
+  @apply scale-105;
+}
+
+/* Time Badge */
+.time-badge {
+  @apply absolute bottom-2 right-2 px-1.5 py-0.5;
+  @apply bg-black/80 text-white text-[10px] font-mono rounded;
+}
+
+/* TV Focusable */
+.tv-focusable {
+  @apply transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent;
+}
+
+.tv-focusable:focus {
+  @apply scale-[1.02] z-10;
+}
+
 /* ============================================
-   3D Scene Container
+   5. Layout Utilities
    ============================================ */
+
+.pt-header {
+  padding-top: calc(var(--header-height) + 1rem);
+}
+
+.mt-header {
+  margin-top: var(--header-height);
+}
 
 .scene-container {
   position: fixed;
@@ -238,104 +446,32 @@ body {
   pointer-events: auto;
 }
 
-/* ============================================
-   CRT Scanlines (Dark Mode Only)
-   ============================================ */
-
-.dark .scanlines {
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0) 50%,
-    rgba(0, 0, 0, 0.03) 50%,
-    rgba(0, 0, 0, 0.03)
-  );
-  background-size: 100% 4px;
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.5;
+/* Responsive Grid (TV Style) */
+.grid-tv {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, 1fr);
 }
 
-.scanlines {
-  display: none;
-}
-
-.dark .scanlines {
-  display: block;
-}
-
-/* ============================================
-   Animations
-   ============================================ */
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotateX(0deg); }
-  50% { transform: translateY(-20px) rotateX(5deg); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    opacity: 0.6;
-    box-shadow: 0 0 20px hsl(var(--yellow-400) / 0.3);
-  }
-  50% { 
-    opacity: 1;
-    box-shadow: 0 0 40px hsl(var(--yellow-400) / 0.5);
+@media (min-width: 640px) {
+  .grid-tv {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@media (min-width: 1024px) {
+  .grid-tv {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+@media (min-width: 1280px) {
+  .grid-tv {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
-
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 4s ease-in-out infinite;
-}
-
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite;
-}
-
-/* ============================================
-   3D Transform Utilities
-   ============================================ */
-
+/* 3D Utilities */
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -357,37 +493,511 @@ body {
 }
 
 .hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform var(--transition-normal) ease, box-shadow var(--transition-normal) ease;
 }
 
 .hover-lift:hover {
   transform: translateY(-8px) translateZ(20px);
-  box-shadow: 0 20px 40px hsl(var(--yellow-400) / 0.15);
+  box-shadow: 0 20px 40px hsl(var(--doai-500) / 0.15);
 }
 
 /* ============================================
-   Card Styles
+   6. Animations
    ============================================ */
 
-.card-3d {
-  background: hsl(var(--card));
-  border-radius: 16px;
-  padding: 24px;
-  border: 1px solid hsl(var(--border));
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  transform-style: preserve-3d;
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotateX(0deg); }
+  50% { transform: translateY(-20px) rotateX(5deg); }
 }
 
-.card-3d:hover {
-  transform: translateY(-4px) rotateX(2deg) rotateY(-2deg);
-  border-color: hsl(var(--yellow-400) / 0.5);
-  box-shadow: 
-    0 20px 40px hsl(var(--foreground) / 0.1),
-    0 0 0 1px hsl(var(--yellow-400) / 0.1);
+@keyframes pulse-glow {
+  0%, 100% { 
+    opacity: 0.6;
+    box-shadow: 0 0 20px hsl(var(--doai-500) / 0.3);
+  }
+  50% { 
+    opacity: 1;
+    box-shadow: 0 0 40px hsl(var(--doai-500) / 0.5);
+  }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  0% { opacity: 0; transform: translateY(-30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.8s ease-out forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.8s ease-out forwards;
+}
+
+.animate-breathe {
+  animation: breathe 6s ease-in-out infinite;
 }
 
 /* ============================================
-   Noise Texture Overlay
+   7. Admin Design Tokens Integration
+   ============================================ */
+
+/* In Umbra Animations */
+@keyframes umbral-breath {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+    box-shadow: 0 0 0 hsl(var(--umbra-primary) / 0);
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.15);
+    box-shadow: 0 0 20px hsl(var(--umbra-primary) / 0.3);
+    filter: blur(1px);
+  }
+}
+
+@keyframes umbral-breath-slow {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(1);
+    box-shadow: 0 0 0 hsl(var(--umbra-primary) / 0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+    box-shadow: 0 0 15px hsl(var(--umbra-primary) / 0.25);
+  }
+}
+
+@keyframes umbral-awakening {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+    background-color: hsl(var(--umbra-primary));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+    background-color: hsl(var(--umbra-light));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    background-color: hsl(var(--signal-green));
+  }
+}
+
+@keyframes umbral-border-pulse {
+  0%, 100% {
+    border-color: hsl(var(--umbra-primary) / 0.2);
+  }
+  50% {
+    border-color: hsl(var(--umbra-primary) / 0.5);
+  }
+}
+
+@keyframes umbral-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Wormhole Animations */
+@keyframes wormhole-draw {
+  0% {
+    stroke-dasharray: 0, 1000;
+    opacity: 0;
+  }
+  100% {
+    stroke-dasharray: 1000, 0;
+    opacity: 0.6;
+  }
+}
+
+@keyframes wormhole-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    stroke-width: 1;
+  }
+  50% {
+    opacity: 0.8;
+    stroke-width: 2;
+  }
+}
+
+@keyframes wormhole-fade {
+  0% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+@keyframes wormhole-node-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px hsl(var(--umbra-primary) / 0.5);
+  }
+  50% {
+    transform: scale(1.3);
+    box-shadow: 0 0 25px hsl(var(--umbra-primary) / 0.8);
+  }
+}
+
+@keyframes wormhole-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px hsl(var(--umbra-primary) / 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px hsl(var(--umbra-primary) / 0.7));
+  }
+}
+
+@keyframes popup-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes popup-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 40px hsl(var(--umbra-primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 60px hsl(var(--umbra-primary) / 0.5);
+  }
+}
+
+@keyframes umbral-cell {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--umbra-primary) / 0);
+    border-color: hsl(var(--umbra-primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px hsl(var(--umbra-primary) / 0.4);
+    border-color: hsl(var(--umbra-primary) / 0.6);
+  }
+}
+
+@keyframes faulty-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 hsl(var(--signal-red) / 0);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 6px 2px hsl(var(--signal-red) / 0.5);
+  }
+}
+
+/* Umbral Classes */
+.umbral-pulse {
+  animation: umbral-breath var(--umbra-pulse-duration) ease-in-out infinite;
+  background: hsl(var(--umbra-bg));
+  border-color: hsl(var(--umbra-border));
+}
+
+.umbral-border {
+  animation: umbral-border-pulse var(--umbra-pulse-duration) ease-in-out infinite;
+}
+
+.umbral-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--umbra-primary));
+  animation: umbral-dot var(--umbra-pulse-duration) ease-in-out infinite;
+}
+
+.live-indicator {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.slide-in {
+  animation: slide-in 300ms ease-out;
+}
+
+/* Node Classes */
+.node--umbral {
+  background: hsl(var(--umbra-primary));
+  animation: umbral-breath 4s ease-in-out infinite;
+  animation-delay: calc(var(--node-index, 0) * 0.1s);
+}
+
+.node--umbral-long {
+  animation: umbral-breath-slow 6s ease-in-out infinite;
+}
+
+.node--umbral.resonating {
+  animation-duration: 3s;
+  box-shadow: 0 0 30px hsl(var(--umbra-primary) / 0.5);
+}
+
+.node--awakening {
+  animation: umbral-awakening 0.8s ease-out forwards;
+}
+
+.node--wormhole-active {
+  background: hsl(var(--umbra-primary)) !important;
+  transform: scale(1.5);
+  animation: wormhole-node-pulse 2s ease-in-out infinite;
+}
+
+/* Wormhole Classes */
+.wormhole-line {
+  stroke: hsl(var(--umbra-primary));
+  stroke-width: 1.5;
+  fill: none;
+  opacity: 0;
+  filter: drop-shadow(0 0 8px hsl(var(--umbra-primary) / 0.5));
+}
+
+.wormhole-line--appearing {
+  animation: wormhole-draw 1.5s ease-out forwards;
+}
+
+.wormhole-line--active {
+  opacity: 0.6;
+  animation: wormhole-pulse 2s ease-in-out infinite;
+}
+
+.wormhole-line--fading {
+  animation: wormhole-fade 3s ease-in-out forwards;
+  animation-delay: 5s;
+}
+
+.wormhole--minor { --wormhole-color: hsl(var(--umbra-primary) / 0.4); }
+.wormhole--moderate { --wormhole-color: hsl(var(--umbra-primary) / 0.6); }
+.wormhole--strong { --wormhole-color: hsl(var(--umbra-primary)); }
+.wormhole--anomaly {
+  --wormhole-color: hsl(var(--signal-amber));
+  animation: wormhole-glow 1s ease-in-out infinite;
+}
+
+.wormhole-popup {
+  animation: 
+    popup-enter 0.3s ease-out,
+    popup-glow-pulse 2s ease-in-out infinite;
+}
+
+.wormhole-popup__backdrop {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+.wormhole-mode-toggle {
+  transition: all var(--transition-normal) ease;
+}
+
+.wormhole-mode-toggle--off {
+  background: hsl(var(--admin-card));
+  border: 1px solid hsl(var(--admin-border));
+}
+
+.wormhole-mode-toggle--on {
+  background: hsl(var(--umbra-bg));
+  border: 1px solid hsl(var(--umbra-primary));
+  box-shadow: 0 0 15px hsl(var(--umbra-primary) / 0.3);
+}
+
+.wormhole-mode-active .connection-line:not(.wormhole-line) {
+  opacity: 0.1;
+}
+
+.wormhole-mode-active .node:not(.node--umbral):not(.node--wormhole-active) {
+  opacity: 0.5;
+}
+
+.umbral-cell {
+  animation: umbral-cell 4s ease-in-out infinite;
+  border-color: hsl(var(--umbra-primary) / 0.3);
+}
+
+.faulty-pulse {
+  animation: faulty-pulse 1s ease-in-out infinite;
+  border-color: hsl(var(--signal-red)) !important;
+}
+
+.device-cell-hover:hover {
+  transform: scale(1.1);
+  border-color: hsl(var(--signal-blue));
+  box-shadow: 0 0 12px hsl(var(--signal-blue) / 0.3);
+  z-index: 10;
+}
+
+/* Badge Classes */
+.badge-alpha {
+  background: hsl(var(--signal-green-muted));
+  color: hsl(var(--signal-green));
+  border: 1px solid hsl(var(--signal-green) / 0.3);
+}
+
+.badge-beta {
+  background: hsl(var(--signal-blue-muted));
+  color: hsl(var(--signal-blue));
+  border: 1px solid hsl(var(--signal-blue) / 0.3);
+}
+
+.badge-gamma {
+  background: hsl(var(--signal-amber-muted));
+  color: hsl(var(--signal-amber));
+  border: 1px solid hsl(var(--signal-amber) / 0.3);
+}
+
+/* Intensity Classes */
+.intensity-low {
+  background: hsl(var(--intensity-low) / 0.15);
+  border-left: 3px solid hsl(var(--intensity-low));
+}
+
+.intensity-medium {
+  background: hsl(var(--intensity-medium) / 0.1);
+  border-left: 3px solid hsl(var(--intensity-medium));
+}
+
+.intensity-high {
+  background: hsl(var(--intensity-high) / 0.1);
+  border-left: 3px solid hsl(var(--intensity-high));
+}
+
+.intensity-critical {
+  background: hsl(var(--intensity-critical) / 0.15);
+  border-left: 3px solid hsl(var(--intensity-critical));
+}
+
+/* Accent Classes */
+.accent-green { border-left: 3px solid hsl(var(--signal-green)); }
+.accent-amber { border-left: 3px solid hsl(var(--signal-amber)); }
+.accent-red { border-left: 3px solid hsl(var(--signal-red)); }
+.accent-blue { border-left: 3px solid hsl(var(--signal-blue)); }
+.accent-umbra { border-left: 3px solid hsl(var(--umbra-primary)); }
+
+/* Chart Tooltip */
+.chart-tooltip {
+  background: hsl(var(--admin-card));
+  border: 1px solid hsl(var(--admin-border));
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   8. CRT Scanlines (Dark Mode Only)
+   ============================================ */
+
+.scanlines {
+  display: none;
+}
+
+.dark .scanlines {
+  display: block;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.03) 50%,
+    rgba(0, 0, 0, 0.03)
+  );
+  background-size: 100% 4px;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.5;
+}
+
+/* ============================================
+   9. Noise Texture Overlay
    ============================================ */
 
 .noise-overlay::before {
@@ -401,13 +1011,13 @@ body {
 }
 
 /* ============================================
-   Gradient Backgrounds
+   10. Gradient Backgrounds
    ============================================ */
 
 .bg-gradient-radial-light {
   background: radial-gradient(
     ellipse 80% 50% at 50% -20%,
-    hsl(var(--yellow-100) / 0.5),
+    hsl(var(--doai-100) / 0.5),
     transparent
   );
 }
@@ -415,7 +1025,7 @@ body {
 .bg-gradient-radial-dark {
   background: radial-gradient(
     ellipse 80% 50% at 50% -20%,
-    hsl(var(--yellow-500) / 0.1),
+    hsl(var(--doai-500) / 0.1),
     transparent
   );
 }
@@ -423,34 +1033,91 @@ body {
 .dark .bg-gradient-radial-light {
   background: radial-gradient(
     ellipse 80% 50% at 50% -20%,
-    hsl(var(--yellow-500) / 0.08),
+    hsl(var(--doai-500) / 0.08),
     transparent
   );
 }
 
 /* ============================================
-   Focus States
+   11. Focus States
    ============================================ */
 
 :focus-visible {
-  outline: 2px solid hsl(var(--yellow-400));
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
 
 /* ============================================
-   Responsive
+   12. Accessibility
    ============================================ */
 
-@media (max-width: 768px) {
-  .card-3d:hover {
-    transform: translateY(-2px);
+@media (prefers-reduced-motion: reduce) {
+  .node--umbral,
+  .node--umbral.resonating,
+  .node--umbral-long {
+    animation: none;
+    opacity: 0.5;
+    box-shadow: 0 0 10px hsl(var(--umbra-primary) / 0.3);
+  }
+  
+  .wormhole-line--appearing,
+  .wormhole-line--active {
+    animation: none;
+    opacity: 0.6;
+  }
+  
+  .node--wormhole-active {
+    animation: none;
+    transform: scale(1.5);
+    box-shadow: 0 0 15px hsl(var(--umbra-primary) / 0.6);
+  }
+  
+  .wormhole-popup {
+    animation: none;
+  }
+  
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-spin-slow,
+  .animate-gradient,
+  .animate-shimmer,
+  .animate-breathe {
+    animation: none;
   }
 }
 
+/* Colorblind Support */
+.colorblind-mode .node--umbral {
+  outline: 2px dotted hsl(var(--umbra-primary) / 0.8);
+  outline-offset: 2px;
+}
+
+.colorblind-mode .wormhole-line {
+  stroke-dasharray: 8, 4;
+}
+
+.colorblind-mode .node--wormhole-active::after {
+  content: "sync";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: hsl(var(--umbra-primary));
+  white-space: nowrap;
+}
+
 /* ============================================
-   Custom Properties for JS Access
+   13. Responsive Adjustments
    ============================================ */
 
-:root {
-  --header-height: 64px;
+@media (max-width: 768px) {
+  :root {
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  
+  .card-3d:hover {
+    transform: translateY(-2px);
+  }
 }

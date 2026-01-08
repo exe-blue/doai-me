@@ -1,7 +1,8 @@
 'use client';
 
 // ============================================
-// DoAi.ME - Market (경제) 페이지 v4.1
+// DoAi.ME - Market (경제) 페이지 v5.0
+// 21st.dev 스타일 리디자인
 // 
 // 용어:
 // - Node (노드) = PC (Bridge 실행 컴퓨터)
@@ -13,7 +14,10 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { NodeProvider, useNodes } from '../contexts/NodeContext';
 import { useYouTubeChannelPolling } from '../hooks/useYouTubeChannelPolling';
-import { Moon, Sun, Monitor, Smartphone, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Moon, Sun, Monitor, Smartphone, Wifi, WifiOff, RefreshCw, Zap, LayoutGrid } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // 컴포넌트 임포트
 import {
@@ -117,33 +121,34 @@ function MarketContent() {
   const onlineDeviceCount = devices.filter(d => d.status !== 'offline').length;
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'} transition-colors duration-300`}>
+    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
       {/* 파티클 네트워크 배경 */}
       <ParticleNetwork isDark={isDark} zIndex={0} />
 
       {/* CRT Scanlines */}
-      {isDark && <div className="scanlines fixed inset-0 pointer-events-none z-10 opacity-30" />}
+      <div className="scanlines" />
 
       {/* 고정 헤더 */}
-      <header className={`fixed top-0 left-0 right-0 z-50 h-16 ${isDark ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto h-full px-4 md:px-6 flex items-center justify-between">
           {/* 로고 & 네비게이션 */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-[#FFCC00]">DoAi</span>
-              <span className={`text-2xl font-light ${isDark ? 'text-white' : 'text-black'}`}>.Me</span>
+            <Link href="/" className="flex items-center gap-1">
+              <Zap className="h-6 w-6 text-primary" />
+              <span className="text-2xl font-bold text-primary">DoAi</span>
+              <span className="text-2xl font-light text-foreground">.Me</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-1">
               <Link 
                 href="/market" 
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FFCC00]/10 text-[#FFCC00]"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-primary/10 text-primary"
               >
                 Market
               </Link>
               <Link 
                 href="/infra" 
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isDark ? 'text-neutral-400 hover:text-white hover:bg-white/5' : 'text-neutral-600 hover:text-black hover:bg-black/5'}`}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 Infra
               </Link>
@@ -151,54 +156,49 @@ function MarketContent() {
           </div>
 
           {/* 상태 표시 + 컨트롤 */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* 연결 상태 인디케이터 */}
-            <div className="hidden sm:flex items-center gap-3 text-xs font-mono">
+            <div className="hidden sm:flex items-center gap-2 text-xs font-mono">
               {/* Bridge 연결 */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${
-                isConnected ? 'bg-green-500/20 text-green-400' : 
-                isConnecting ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
-              }`}>
+              <Badge variant={isConnected ? 'success' : isConnecting ? 'warning' : 'error'} className="gap-1.5">
                 {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                <span>Bridge</span>
-              </div>
+                Bridge
+              </Badge>
               
               {/* 노드 */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${
-                primaryNode ? 'bg-blue-500/20 text-blue-400' : 'bg-neutral-500/20 text-neutral-500'
-              }`}>
+              <Badge variant={primaryNode ? 'info' : 'secondary'} className="gap-1.5">
                 <Monitor className="w-3 h-3" />
-                <span>{nodes.length}</span>
-              </div>
+                {nodes.length}
+              </Badge>
               
               {/* 디바이스 */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${
-                onlineDeviceCount > 0 ? 'bg-purple-500/20 text-purple-400' : 'bg-neutral-500/20 text-neutral-500'
-              }`}>
+              <Badge variant={onlineDeviceCount > 0 ? 'umbra' : 'secondary'} className="gap-1.5">
                 <Smartphone className="w-3 h-3" />
-                <span>{onlineDeviceCount}/{devices.length}</span>
-              </div>
+                {onlineDeviceCount}/{devices.length}
+              </Badge>
             </div>
 
             {/* 테마 토글 */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
-              className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
-              title={isDark ? '라이트 모드' : '다크 모드'}
+              aria-label={isDark ? '라이트 모드' : '다크 모드'}
             >
-              {isDark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5" />}
-            </button>
+              {isDark ? <Sun className="h-5 w-5 text-primary" /> : <Moon className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
       </header>
 
       {/* 연결 오류 배너 */}
       {!isConnected && (
-        <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg flex items-center gap-3 ${
+        <div className={cn(
+          "fixed top-20 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg flex items-center gap-3",
           isConnecting 
-            ? 'bg-yellow-500 text-black' 
-            : 'bg-red-500 text-white'
-        }`}>
+            ? 'bg-signal-amber text-black' 
+            : 'bg-destructive text-destructive-foreground'
+        )}>
           {isConnecting ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -211,12 +211,14 @@ function MarketContent() {
             <>
               <WifiOff className="w-4 h-4" />
               Bridge 연결 안됨
-              <button 
+              <Button 
+                size="sm"
+                variant="secondary"
                 onClick={handleReconnect}
-                className="px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition-colors text-xs font-bold"
+                className="h-7 text-xs"
               >
                 재연결
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -289,18 +291,18 @@ function MarketContent() {
       </main>
 
       {/* 모바일 네비게이션 */}
-      <nav className={`fixed bottom-0 left-0 right-0 z-50 md:hidden ${isDark ? 'bg-black/90' : 'bg-white/90'} backdrop-blur-md border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/90 backdrop-blur-xl border-t border-border">
         <div className="flex items-center justify-around h-14">
           <Link 
             href="/market" 
-            className="flex flex-col items-center gap-1 px-4 py-2 text-[#FFCC00]"
+            className="flex flex-col items-center gap-1 px-4 py-2 text-primary"
           >
-            <Monitor className="w-5 h-5" />
+            <LayoutGrid className="w-5 h-5" />
             <span className="text-[10px] font-medium">Market</span>
           </Link>
           <Link 
             href="/infra" 
-            className={`flex flex-col items-center gap-1 px-4 py-2 ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+            className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground"
           >
             <Smartphone className="w-5 h-5" />
             <span className="text-[10px] font-medium">Infra</span>

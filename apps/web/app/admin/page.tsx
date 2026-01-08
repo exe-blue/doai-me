@@ -1,11 +1,33 @@
 // app/admin/page.tsx
-// Admin Dashboard - Wormhole + Umbra MVP
+// Admin Dashboard - 21st.dev 스타일 리디자인
 
 'use client';
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '../../lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/app/components/ui/card';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { 
+  Zap, 
+  Activity, 
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Server,
+  Cpu,
+  Lock
+} from 'lucide-react';
 
 // Widgets
 import { 
@@ -53,71 +75,57 @@ export default function AdminDashboard() {
     checkAuth();
   }, []);
   
-  // Loading
+  // Loading State
   if (isAuthorized === null) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <div className="animate-spin text-purple-500 text-4xl">🕳️</div>
-      </div>
-    );
+    return <LoadingState />;
   }
   
-  // Unauthorized
+  // Unauthorized State
   if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔒</div>
-          <h1 className="text-xl text-neutral-200 mb-2">Access Denied</h1>
-          <p className="text-neutral-500 mb-6">
-            관리자 승인이 필요합니다. <br />
-            승인 후 다시 시도해주세요.
-          </p>
-          <a
-            href="/auth/login"
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            로그인
-          </a>
-        </div>
-      </div>
-    );
+    return <UnauthorizedState />;
   }
   
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-neutral-800 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <motion.span
+            <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-              className="text-2xl"
+              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
             >
-              🕳️
-            </motion.span>
-            <h1 className="text-lg font-mono text-neutral-200">DoAi.Me Admin</h1>
+              <Zap className="h-6 w-6 text-primary" />
+            </motion.div>
+            <h1 className="text-lg font-semibold">
+              DoAi.Me <span className="text-muted-foreground font-normal">Admin</span>
+            </h1>
           </div>
           
-          {/* Tabs */}
-          <div className="flex gap-2">
+          {/* Tab Switcher */}
+          <div className="flex items-center gap-2">
             <TabButton 
               active={activeTab === 'wormholes'} 
               onClick={() => setActiveTab('wormholes')}
+              icon={<Zap className="h-4 w-4" />}
             >
-              🕳️ Wormholes
+              Wormholes
             </TabButton>
             <TabButton 
               active={activeTab === 'nodes'} 
               onClick={() => setActiveTab('nodes')}
+              icon={<Server className="h-4 w-4" />}
             >
-              🖥️ Nodes
+              Nodes
             </TabButton>
           </div>
           
-          {/* User Menu */}
-          <div className="text-neutral-500 text-sm">
+          {/* User Actions */}
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-signal-green animate-pulse" />
+              Live
+            </Badge>
             <LogoutButton />
           </div>
         </div>
@@ -141,6 +149,53 @@ export default function AdminDashboard() {
 }
 
 // ============================================
+// Loading State
+// ============================================
+
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        >
+          <Zap className="h-12 w-12 text-primary" />
+        </motion.div>
+        <span className="text-sm text-muted-foreground">Loading dashboard...</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// Unauthorized State
+// ============================================
+
+function UnauthorizedState() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <div className="mx-auto mb-4 p-4 rounded-full bg-destructive/10">
+            <Lock className="h-8 w-8 text-destructive" />
+          </div>
+          <CardTitle>Access Denied</CardTitle>
+          <CardDescription>
+            관리자 승인이 필요합니다. 승인 후 다시 시도해주세요.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild className="w-full">
+            <Link href="/admin/login">로그인</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================
 // Wormholes Tab
 // ============================================
 
@@ -154,68 +209,65 @@ interface WormholesTabProps {
 function WormholesTab({ timeFilter, setTimeFilter, contextFilter, setContextFilter }: WormholesTabProps) {
   return (
     <div className="space-y-6">
-      {/* Row 1: Stats Cards */}
+      {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <WormholeVolumeWidget />
         <WormholeTypeDistributionWidget />
         <WormholeScoreHistogramWidget />
       </div>
       
-      {/* Row 2: Context + Events */}
+      {/* Context + Events Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Top Contexts */}
+        {/* Top Contexts */}
         <div>
           <WormholeTopContextWidget 
             onContextClick={(ctx) => setContextFilter(ctx === contextFilter ? undefined : ctx)}
           />
         </div>
         
-        {/* Right: Events List */}
+        {/* Events List */}
         <div className="lg:col-span-2">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-lg">
-            {/* Filter Header */}
-            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
-              <div className="flex items-center gap-2">
-                <span className="text-neutral-300 text-sm font-mono">WORMHOLE EVENTS</span>
-                {contextFilter && (
-                  <span className="px-2 py-0.5 bg-purple-950 text-purple-300 text-xs rounded">
-                    {contextFilter}
-                    <button 
-                      onClick={() => setContextFilter(undefined)}
-                      className="ml-1 hover:text-white"
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-base font-medium">Wormhole Events</CardTitle>
+                  {contextFilter && (
+                    <Badge variant="secondary" className="gap-1">
+                      {contextFilter}
+                      <button 
+                        onClick={() => setContextFilter(undefined)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Time Filter */}
+                <div className="flex gap-1">
+                  {(['1h', '24h', '7d', 'all'] as const).map((t) => (
+                    <Button
+                      key={t}
+                      variant={timeFilter === t ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setTimeFilter(t)}
+                      className="h-7 text-xs"
                     >
-                      ✕
-                    </button>
-                  </span>
-                )}
+                      {t}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              
-              {/* Time Filter */}
-              <div className="flex gap-1">
-                {(['1h', '24h', '7d', 'all'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTimeFilter(t)}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      timeFilter === t 
-                        ? 'bg-neutral-700 text-neutral-200' 
-                        : 'text-neutral-500 hover:text-neutral-300'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Events List */}
-            <div className="p-4 max-h-[500px] overflow-y-auto">
+            </CardHeader>
+            <CardContent className="max-h-[500px] overflow-y-auto">
               <WormholeEventsList 
                 timeFilter={timeFilter}
                 contextFilter={contextFilter}
               />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
@@ -229,38 +281,45 @@ function WormholesTab({ timeFilter, setTimeFilter, contextFilter, setContextFilt
 function NodesTab() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   
+  const statusOptions = [
+    { value: undefined, label: 'All' },
+    { value: 'active', label: 'Active' },
+    { value: 'in_umbra', label: '숨그늘' },
+    { value: 'offline', label: 'Offline' },
+    { value: 'error', label: 'Error' },
+  ];
+  
   return (
     <div className="space-y-6">
       {/* Status Summary */}
       <NodesStatusSummaryWidget />
       
       {/* Nodes List */}
-      <div className="bg-neutral-950 border border-neutral-800 rounded-lg">
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
-          <span className="text-neutral-300 text-sm font-mono">NODE LIST</span>
-          
-          {/* Status Filter */}
-          <div className="flex gap-1">
-            {[undefined, 'active', 'in_umbra', 'offline', 'error'].map((s) => (
-              <button
-                key={s || 'all'}
-                onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  statusFilter === s 
-                    ? 'bg-neutral-700 text-neutral-200' 
-                    : 'text-neutral-500 hover:text-neutral-300'
-                }`}
-              >
-                {s === undefined ? 'All' : s === 'in_umbra' ? '숨그늘' : s}
-              </button>
-            ))}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">Node List</CardTitle>
+            
+            {/* Status Filter */}
+            <div className="flex gap-1">
+              {statusOptions.map((opt) => (
+                <Button
+                  key={opt.label}
+                  variant={statusFilter === opt.value ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setStatusFilter(opt.value)}
+                  className="h-7 text-xs"
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
-        
-        <div className="p-4 max-h-[600px] overflow-y-auto">
+        </CardHeader>
+        <CardContent className="max-h-[600px] overflow-y-auto">
           <NodesList statusFilter={statusFilter} />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -272,36 +331,37 @@ function NodesTab() {
 interface TabButtonProps {
   active: boolean;
   onClick: () => void;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }
 
-function TabButton({ active, onClick, children }: TabButtonProps) {
+function TabButton({ active, onClick, icon, children }: TabButtonProps) {
   return (
-    <button
+    <Button
+      variant={active ? 'secondary' : 'ghost'}
+      size="sm"
       onClick={onClick}
-      className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-        active 
-          ? 'bg-neutral-800 text-neutral-100' 
-          : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900'
-      }`}
+      className="gap-2"
     >
+      {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 
 function LogoutButton() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/auth/login';
+    window.location.href = '/admin/login';
   };
   
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={handleLogout}
-      className="hover:text-neutral-300 transition-colors"
     >
       Logout
-    </button>
+    </Button>
   );
 }

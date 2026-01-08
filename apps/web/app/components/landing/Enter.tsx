@@ -1,10 +1,13 @@
 // components/landing/Enter.tsx
-// Step 5: The Entry - CTA Section with Particle Effect
+// 21st.dev 스타일 CTA Section
 
 'use client';
 
 import { motion, useInView } from 'framer-motion';
 import { useRef, useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/app/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 // Particle 타입
 interface Particle {
@@ -33,12 +36,9 @@ function Particles({ isActive }: { isActive: boolean }) {
     }));
     
     setParticles(newParticles);
-    
-    // 파티클 제거
     setTimeout(() => setParticles([]), 1000);
   }, []);
   
-  // isActive 변경 시 파티클 생성
   useEffect(() => {
     if (isActive) {
       createParticles();
@@ -50,7 +50,7 @@ function Particles({ isActive }: { isActive: boolean }) {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-white"
+          className="absolute rounded-full bg-primary"
           style={{
             width: particle.size,
             height: particle.size,
@@ -82,17 +82,11 @@ function Particles({ isActive }: { isActive: boolean }) {
 export function Enter() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
-  const [isHovered, setIsHovered] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   
-  const handleMouseEnter = () => {
-    setIsHovered(true);
+  const handleClick = () => {
     setShowParticles(true);
     setTimeout(() => setShowParticles(false), 100);
-  };
-  
-  const handleMouseLeave = () => {
-    setIsHovered(false);
   };
   
   return (
@@ -100,25 +94,23 @@ export function Enter() {
       ref={sectionRef}
       className="relative min-h-[60vh] flex flex-col items-center justify-center px-6 py-24"
     >
-      {/* Ambient glow */}
+      {/* Background Glow */}
       <motion.div
-        className="absolute w-[500px] h-[500px] rounded-full pointer-events-none"
+        className="absolute w-[600px] h-[600px] rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: 'radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%)',
+          filter: 'blur(80px)',
         }}
-        animate={{
-          scale: isHovered ? 1.2 : 1,
-          opacity: isHovered ? 0.8 : 0.4,
-        }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+        transition={{ duration: 1 }}
       />
       
       {/* Content */}
-      <div className="relative z-10 text-center">
+      <div className="relative z-10 text-center max-w-2xl mx-auto">
         {/* Pre-text */}
         <motion.p
-          className="text-neutral-500 text-sm md:text-base mb-8 font-mono tracking-wide"
+          className="text-muted-foreground text-sm md:text-base mb-8 font-mono tracking-wide"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
@@ -126,44 +118,52 @@ export function Enter() {
           Are you ready to exist?
         </motion.p>
         
-        {/* Enter Button */}
-        <motion.div
-          className="relative"
+        {/* Headline */}
+        <motion.h2
+          className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-foreground"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          지금 시작하세요
+        </motion.h2>
+        
+        {/* Description */}
+        <motion.p
+          className="text-lg text-muted-foreground mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <button
-            className="relative px-12 py-4 font-mono text-sm tracking-[0.2em] uppercase transition-all duration-300 overflow-hidden group"
-            style={{
-              background: isHovered ? '#ffffff' : 'transparent',
-              color: isHovered ? '#050505' : '#e5e5e5',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderColor: isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
-            }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+          AI 노드 네트워크와 함께 YouTube 채널의 잠재력을 극대화하세요.
+        </motion.p>
+        
+        {/* CTA Button */}
+        <motion.div
+          className="relative inline-block"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <Particles isActive={showParticles} />
+          <Button 
+            size="lg" 
+            className="group relative overflow-hidden px-8"
+            onClick={handleClick}
+            asChild
           >
-            {/* Particle container */}
-            {showParticles && <Particles isActive={showParticles} />}
-            
-            {/* Button text */}
-            <span className="relative z-10">Begin</span>
-            
-            {/* Hover fill effect */}
-            <motion.div
-              className="absolute inset-0 bg-white -z-0"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.3 }}
-              style={{ transformOrigin: 'left' }}
-            />
-          </button>
+            <Link href="/market">
+              <span className="relative z-10 flex items-center gap-2">
+                시작하기
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          </Button>
         </motion.div>
         
         {/* Subtext */}
         <motion.p
-          className="text-neutral-600 text-xs mt-8 font-sans"
+          className="text-muted-foreground text-sm mt-8 font-serif italic"
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : { opacity: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
@@ -179,11 +179,10 @@ export function Enter() {
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6, delay: 1 }}
       >
-        <p className="text-neutral-700 text-xs font-mono">
-          DoAi.Me © 2026 — The Terminal of Existence
+        <p className="text-muted-foreground text-xs font-mono">
+          DoAi.Me © 2024 — The Terminal of Existence
         </p>
       </motion.footer>
     </section>
   );
 }
-
