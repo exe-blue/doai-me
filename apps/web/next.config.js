@@ -18,7 +18,7 @@ const nextConfig = {
   
   // 이미지 최적화
   images: {
-    domains: [],
+    domains: ['images.unsplash.com', 'assets.aceternity.com'],
     formats: ['image/avif', 'image/webp'],
   },
   
