@@ -246,8 +246,8 @@ class AISearchGenerator:
             logger.error(f"최근 검색어 조회 실패: {e}")
             return []
     
+    @staticmethod
     def _build_prompt(
-        self,
         category: Optional[str],
         context: Optional[str],
         exclude_keywords: Optional[List[str]]
@@ -321,7 +321,8 @@ class AISearchGenerator:
         
         return keyword if keyword else None
     
-    def _clean_keyword(self, keyword: str) -> str:
+    @staticmethod
+    def _clean_keyword(keyword: str) -> str:
         """검색어 후처리"""
         # 따옴표 제거
         keyword = keyword.strip('"\'')
@@ -338,8 +339,8 @@ class AISearchGenerator:
         
         return keyword
     
+    @staticmethod
     def _get_fallback_keyword(
-        self,
         exclude_keywords: Optional[List[str]] = None
     ) -> str:
         """폴백 검색어 가져오기"""

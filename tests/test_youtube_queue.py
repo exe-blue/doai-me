@@ -152,98 +152,85 @@ class TestYouTubeQueueSchemas:
 
 
 class TestInteractionProbability:
-    """인터랙션 확률 계산 테스트"""
+    """인터랙션 확률 계산 테스트 (정적 메서드)"""
     
     def test_like_probability_default(self):
         """기본 좋아요 확률 (20%)"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
         # 조회수 무관 기본 확률
-        prob = service.calculate_like_probability(0.20, None)
+        prob = YouTubeQueueService.calculate_like_probability(0.20, None)
         assert prob == 0.20
     
     def test_like_probability_low_views(self):
         """저조회수 영상 좋아요 확률 증가"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
         # 1000 미만 조회수 → 2배
-        prob = service.calculate_like_probability(0.20, 500)
+        prob = YouTubeQueueService.calculate_like_probability(0.20, 500)
         assert prob == 0.40
     
     def test_like_probability_medium_views(self):
         """중간 조회수 영상 좋아요 확률"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
         # 1000~10000 조회수 → 1.5배
-        prob = service.calculate_like_probability(0.20, 5000)
+        prob = YouTubeQueueService.calculate_like_probability(0.20, 5000)
         assert prob == pytest.approx(0.30)
     
     def test_like_probability_high_views(self):
         """고조회수 영상 좋아요 확률"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
         # 10000 이상 조회수 → 기본 확률
-        prob = service.calculate_like_probability(0.20, 100000)
+        prob = YouTubeQueueService.calculate_like_probability(0.20, 100000)
         assert prob == 0.20
     
     def test_should_like_logged_in(self):
         """로그인 상태에서 좋아요 확률"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
         # 확률 100%로 테스트
-        result = service.should_like(1.0, is_logged_in=True)
+        result = YouTubeQueueService.should_like(1.0, is_logged_in=True)
         assert result is True
         
         # 확률 0%로 테스트
-        result = service.should_like(0.0, is_logged_in=True)
+        result = YouTubeQueueService.should_like(0.0, is_logged_in=True)
         assert result is False
     
     def test_should_like_not_logged_in(self):
         """비로그인 상태에서 좋아요 항상 False"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
         # 확률 100%여도 비로그인이면 False
-        result = service.should_like(1.0, is_logged_in=False)
+        result = YouTubeQueueService.should_like(1.0, is_logged_in=False)
         assert result is False
     
     def test_should_comment_not_logged_in(self):
         """비로그인 상태에서 댓글 항상 False"""
         from shared.youtube_queue_service import YouTubeQueueService
-        service = YouTubeQueueService.__new__(YouTubeQueueService)
         
-        result = service.should_comment(1.0, is_logged_in=False)
+        result = YouTubeQueueService.should_comment(1.0, is_logged_in=False)
         assert result is False
 
 
 class TestAISearchGenerator:
-    """AI 검색어 생성 테스트"""
+    """AI 검색어 생성 테스트 (정적 메서드)"""
     
     def test_fallback_keywords(self):
         """폴백 키워드 반환"""
         from shared.ai_search_generator import AISearchGenerator, FALLBACK_KEYWORDS
         
-        generator = AISearchGenerator.__new__(AISearchGenerator)
-        generator._openai = None
-        generator._anthropic = None
-        
-        keyword = generator._get_fallback_keyword()
+        keyword = AISearchGenerator._get_fallback_keyword()
         assert keyword in FALLBACK_KEYWORDS
     
     def test_fallback_with_exclusions(self):
         """제외 키워드가 있는 폴백"""
         from shared.ai_search_generator import AISearchGenerator, FALLBACK_KEYWORDS
         
-        generator = AISearchGenerator.__new__(AISearchGenerator)
-        
         # 일부 키워드 제외
         exclude = FALLBACK_KEYWORDS[:5]
-        keyword = generator._get_fallback_keyword(exclude_keywords=exclude)
+        keyword = AISearchGenerator._get_fallback_keyword(exclude_keywords=exclude)
         
         # 제외된 키워드가 아니어야 함
         assert keyword not in exclude
@@ -252,26 +239,22 @@ class TestAISearchGenerator:
         """검색어 후처리"""
         from shared.ai_search_generator import AISearchGenerator
         
-        generator = AISearchGenerator.__new__(AISearchGenerator)
-        
         # 따옴표 제거
-        assert generator._clean_keyword('"브이로그"') == "브이로그"
-        assert generator._clean_keyword("'게임'") == "게임"
+        assert AISearchGenerator._clean_keyword('"브이로그"') == "브이로그"
+        assert AISearchGenerator._clean_keyword("'게임'") == "게임"
         
         # 줄바꿈 제거 (첫 줄만)
-        assert generator._clean_keyword("먹방\n설명입니다") == "먹방"
+        assert AISearchGenerator._clean_keyword("먹방\n설명입니다") == "먹방"
         
         # 공백 제거
-        assert generator._clean_keyword("  요리  ") == "요리"
+        assert AISearchGenerator._clean_keyword("  요리  ") == "요리"
     
     def test_prompt_building(self):
         """프롬프트 구성"""
         from shared.ai_search_generator import AISearchGenerator, CATEGORY_PROMPTS
         
-        generator = AISearchGenerator.__new__(AISearchGenerator)
-        
         # 카테고리 프롬프트 추가
-        prompt = generator._build_prompt(category="gaming", context=None, exclude_keywords=None)
+        prompt = AISearchGenerator._build_prompt(category="gaming", context=None, exclude_keywords=None)
         assert "게임" in prompt or "gaming" in prompt.lower()
 
 

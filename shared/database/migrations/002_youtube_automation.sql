@@ -171,7 +171,13 @@ CREATE TABLE IF NOT EXISTS execution_logs (
     -- 시청 데이터
     watch_duration_seconds INTEGER CHECK (watch_duration_seconds >= 0),
     target_duration_seconds INTEGER,
-    watch_percent FLOAT,  -- 애플리케이션에서 계산: (watch_duration / target_duration * 100)
+    watch_percent FLOAT GENERATED ALWAYS AS (
+        CASE 
+            WHEN target_duration_seconds IS NOT NULL AND target_duration_seconds > 0 
+            THEN (watch_duration_seconds::FLOAT / target_duration_seconds * 100.0)
+            ELSE NULL 
+        END
+    ) STORED
     
     -- 인터랙션 결과
     did_like BOOLEAN DEFAULT FALSE,

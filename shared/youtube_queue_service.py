@@ -569,11 +569,11 @@ class YouTubeQueueService:
             return []
     
     # =========================================
-    # 인터랙션 확률 계산
+    # 인터랙션 확률 계산 (정적 메서드)
     # =========================================
     
+    @staticmethod
     def calculate_like_probability(
-        self,
         base_probability: float,
         view_count: Optional[int]
     ) -> float:
@@ -581,6 +581,13 @@ class YouTubeQueueService:
         좋아요 확률 계산 (조회수 기반 조정)
         
         조회수가 적을수록 확률 증가
+        
+        Args:
+            base_probability: 기본 확률 (0.0 ~ 1.0)
+            view_count: 조회수 (None이면 기본 확률 반환)
+        
+        Returns:
+            조정된 확률
         """
         if view_count is None:
             return base_probability
@@ -591,8 +598,8 @@ class YouTubeQueueService:
             return min(base_probability * 1.5, 1.0)
         return base_probability
     
+    @staticmethod
     def calculate_comment_probability(
-        self,
         base_probability: float,
         view_count: Optional[int]
     ) -> float:
@@ -600,6 +607,13 @@ class YouTubeQueueService:
         댓글 확률 계산 (조회수 기반 조정)
         
         조회수가 적을수록 확률 증가
+        
+        Args:
+            base_probability: 기본 확률 (0.0 ~ 1.0)
+            view_count: 조회수 (None이면 기본 확률 반환)
+        
+        Returns:
+            조정된 확률
         """
         if view_count is None:
             return base_probability
@@ -610,22 +624,40 @@ class YouTubeQueueService:
             return min(base_probability * 1.5, 1.0)
         return base_probability
     
+    @staticmethod
     def should_like(
-        self,
         probability: float,
         is_logged_in: bool
     ) -> bool:
-        """좋아요 실행 여부 결정"""
+        """
+        좋아요 실행 여부 결정
+        
+        Args:
+            probability: 좋아요 확률 (0.0 ~ 1.0)
+            is_logged_in: 로그인 상태 여부
+        
+        Returns:
+            True면 좋아요 실행, False면 스킵
+        """
         if not is_logged_in:
             return False
         return random.random() < probability
     
+    @staticmethod
     def should_comment(
-        self,
         probability: float,
         is_logged_in: bool
     ) -> bool:
-        """댓글 실행 여부 결정"""
+        """
+        댓글 실행 여부 결정
+        
+        Args:
+            probability: 댓글 확률 (0.0 ~ 1.0)
+            is_logged_in: 로그인 상태 여부
+        
+        Returns:
+            True면 댓글 실행, False면 스킵
+        """
         if not is_logged_in:
             return False
         return random.random() < probability
