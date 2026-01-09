@@ -1,0 +1,32 @@
+# CODEOWNERS - Auto-assign reviewers for pull requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @exe-blue
+
+# CI/CD and GitHub configuration
+/.github/ @exe-blue
+
+# Backend services
+/services/ @exe-blue
+/shared/ @exe-blue
+
+# Frontend applications
+/apps/dashboard/ @exe-blue
+/apps/web/ @exe-blue
+
+# Local development components
+/local/gateway/ @exe-blue
+
+# Infrastructure and deployment
+/infra/ @exe-blue
+/deploy/ @exe-blue
+
+# Database migrations
+/supabase/migrations/ @exe-blue
+
+# Tests
+/tests/ @exe-blue
+
+# Documentation
+/docs/ @exe-blue
