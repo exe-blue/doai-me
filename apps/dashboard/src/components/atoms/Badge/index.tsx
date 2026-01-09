@@ -4,16 +4,19 @@
  */
 import type { ReactNode } from 'react';
 import { clsx } from 'clsx';
-
-// Status Types
-type StatusType = 'online' | 'offline' | 'busy' | 'idle';
-type ActivityType = 'mining' | 'surfing' | 'response' | 'labor' | 'idle';
-type ConnectionType = 'usb' | 'wifi' | 'lan';
+import type {
+  StatusType,
+  ActivityType,
+  ConnectionType,
+  BadgeVariant,
+  ComponentSize,
+} from '@/types/design-system';
+import { ACTIVITY_ICONS, CONNECTION_ICONS } from '@/types/design-system';
 
 export interface BadgeProps {
-  variant: 'status' | 'activity' | 'connection' | 'count';
+  variant: BadgeVariant;
   value: StatusType | ActivityType | ConnectionType | number | string;
-  size?: 'sm' | 'md';
+  size?: Exclude<ComponentSize, 'lg'>;
   icon?: ReactNode;
   className?: string;
 }
@@ -24,6 +27,7 @@ const statusColors: Record<StatusType, string> = {
   offline: 'bg-status-offline/20 text-status-offline',
   busy: 'bg-status-busy/20 text-status-busy',
   idle: 'bg-status-idle/20 text-status-idle',
+  connecting: 'bg-doai-yellow-500/20 text-doai-yellow-500',
 };
 
 const activityColors: Record<ActivityType, string> = {
@@ -38,21 +42,6 @@ const connectionColors: Record<ConnectionType, string> = {
   usb: 'bg-connection-usb/20 text-connection-usb',
   wifi: 'bg-connection-wifi/20 text-connection-wifi',
   lan: 'bg-connection-lan/20 text-connection-lan',
-};
-
-// 아이콘 매핑
-const activityIcons: Record<ActivityType, string> = {
-  mining: '🎭',
-  surfing: '🍿',
-  response: '🔥',
-  labor: '💰',
-  idle: '💤',
-};
-
-const connectionIcons: Record<ConnectionType, string> = {
-  usb: '🔌',
-  wifi: '📶',
-  lan: '🔗',
 };
 
 const sizeStyles = {
@@ -71,11 +60,11 @@ export function Badge({ variant, value, size = 'md', icon, className }: BadgePro
       break;
     case 'activity':
       colorClass = activityColors[value as ActivityType] || 'bg-gray-500/20 text-gray-500';
-      displayIcon = displayIcon || activityIcons[value as ActivityType];
+      displayIcon = displayIcon || ACTIVITY_ICONS[value as ActivityType];
       break;
     case 'connection':
       colorClass = connectionColors[value as ConnectionType] || 'bg-gray-500/20 text-gray-500';
-      displayIcon = displayIcon || connectionIcons[value as ConnectionType];
+      displayIcon = displayIcon || CONNECTION_ICONS[value as ConnectionType];
       break;
     case 'count':
       colorClass = 'bg-doai-yellow-500/20 text-doai-yellow-500';

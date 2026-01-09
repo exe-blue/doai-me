@@ -12,12 +12,12 @@
  */
 
 import React, { useCallback } from 'react';
-import clsx from 'clsx';
+import { clsx } from 'clsx';
 import { Card, StatusDot, ExistenceBar, Badge, Button } from '@/components/atoms';
 import { StreamView } from '@/components/organisms/StreamView';
 import type { Device } from '@/services/api';
 
-interface ExpandableDeviceCardProps {
+export interface ExpandableDeviceCardProps {
   device: Device;
   isExpanded: boolean;
   onToggleExpand: (deviceId: string) => void;

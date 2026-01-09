@@ -7,5 +7,5 @@ export { Badge, type BadgeProps } from './Badge';
 export { Card, type CardProps } from './Card';
 export { StatusDot, type StatusDotProps, type StatusType } from './StatusDot';
 export { ExistenceBar, type ExistenceBarProps } from './ExistenceBar';
-export { GlowOrb } from './GlowOrb';
+export { GlowOrb, type GlowOrbProps } from './GlowOrb';
 
