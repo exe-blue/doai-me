@@ -21,7 +21,7 @@ interface HeaderProps {
 
 const MENU_ITEMS: MenuItem[] = [
   { id: 'home', label: 'HOME', href: '/', available: true },
-  { id: 'market', label: 'MARKET', href: '/dashboard', available: true, description: 'AI Control Room' },
+  { id: 'consume', label: 'CONSUME', href: '/dashboard', available: true, description: 'Control Room' },
   { id: 'infra', label: 'INFRA', available: false, description: '채널 편성표' },
   { id: 'poc', label: 'POC', available: false, description: 'Kernel Test' },
   { id: 'philosophy', label: 'PHILOSOPHY', available: false, description: '철학, 비전' },
