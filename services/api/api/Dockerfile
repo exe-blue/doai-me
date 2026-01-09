@@ -1,5 +1,6 @@
 # DoAi.Me Backend API - FastAPI
 # P1: Persona IDLE Search System
+# M4: Multi-worker scaling support
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -22,7 +23,10 @@ ENV PYTHONPATH=/app
 ENV API_HOST=0.0.0.0
 ENV API_PORT=8000
 
+# M4: Worker configuration (2-4 per CPU recommended)
+ENV WORKERS=4
+
 EXPOSE 8000
 
-# uvicorn으로 실행
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# M4: Use gunicorn with uvicorn workers for production
+CMD ["sh", "-c", "gunicorn main:app -w ${WORKERS} -k uvicorn.workers.UvicornWorker -b ${API_HOST}:${API_PORT} --timeout 120"]
