@@ -140,5 +140,19 @@ def get_settings() -> APISettings:
     return APISettings()
 
 
-# 편의를 위한 글로벌 인스턴스
-settings = get_settings()
+# 편의를 위한 lazy-loaded 글로벌 인스턴스
+# Note: settings는 함수로 변경됨 - 호출 시점에만 환경 변수 검증
+# 이유: 테스트 collection 시점에 import되면 환경 변수 누락 에러 발생
+def _get_lazy_settings():
+    """Lazy settings getter - 실제 사용 시점에만 Settings 인스턴스 생성"""
+    return get_settings()
+
+
+class _LazySettings:
+    """Lazy proxy for settings - 실제 접근 시에만 환경 변수 검증"""
+
+    def __getattr__(self, name):
+        return getattr(get_settings(), name)
+
+
+settings = _LazySettings()
