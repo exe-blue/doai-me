@@ -1,0 +1,68 @@
+{
+  "idle_mode": {
+    "delay_min_ms": 3000,
+    "delay_max_ms": 7000,
+    "click_error_px": 20,
+    "watch_min_seconds": 5,
+    "watch_max_seconds": 60,
+    "like_probability": 0.10,
+    "comment_probability": 0.05,
+    "scroll_min_count": 1,
+    "scroll_max_count": 5,
+    "max_consecutive_errors": 3,
+    "cooldown_after_error_ms": 30000
+  },
+  "queue_mode": {
+    "delay_min_ms": 5000,
+    "delay_max_ms": 10000,
+    "click_error_px": 20,
+    "ad_skip_wait_min_ms": 7000,
+    "ad_skip_wait_max_ms": 20000,
+    "watch_min_seconds": 120,
+    "watch_max_seconds": 600,
+    "like_probability": 0.10,
+    "comment_probability": 0.05,
+    "random_actions": {
+      "back_double_probability": 0.01,
+      "forward_double_probability": 0.01,
+      "scroll_comments_probability": 0.01
+    },
+    "max_scrolls_for_title": 5,
+    "ad_skip_retries": 3
+  },
+  "heartbeat": {
+    "interval_ms": 30000,
+    "timeout_ms": 5000,
+    "failure_threshold": 3
+  },
+  "queue_polling": {
+    "interval_ms": 10000
+  },
+  "typing": {
+    "char_delay_min_ms": 50,
+    "char_delay_max_ms": 200,
+    "mistakes_probability": 0.02,
+    "pause_probability": 0.05,
+    "pause_min_ms": 300,
+    "pause_max_ms": 1000
+  },
+  "screen": {
+    "width": 1440,
+    "height": 2960
+  },
+  "coordinates": {
+    "search_icon": { "x": 0.85, "y": 0.05 },
+    "search_input": { "x": 0.5, "y": 0.05 },
+    "video_results": [
+      { "x": 0.5, "y": 0.25 },
+      { "x": 0.5, "y": 0.45 },
+      { "x": 0.5, "y": 0.65 },
+      { "x": 0.5, "y": 0.85 }
+    ],
+    "like_button": { "x": 0.15, "y": 0.35 },
+    "comment_section": { "x": 0.5, "y": 0.80 },
+    "player_left": { "x": 0.2, "y": 0.3 },
+    "player_right": { "x": 0.8, "y": 0.3 },
+    "player_center": { "x": 0.5, "y": 0.3 }
+  }
+}
