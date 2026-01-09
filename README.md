@@ -1,6 +1,7 @@
 # DoAi.Me - AI Farm Orchestration System
 
 [![CI](https://github.com/exe-blue/doai-me/actions/workflows/ci.yml/badge.svg)](https://github.com/exe-blue/doai-me/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/exe-blue/doai-me/branch/main/graph/badge.svg)](https://codecov.io/gh/exe-blue/doai-me)
 
 > 대규모 안드로이드 디바이스 팜 자동화 및 관리 시스템
 
