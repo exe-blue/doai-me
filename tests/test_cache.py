@@ -209,9 +209,7 @@ class TestCache:
             await asyncio.sleep(0.01)
             return {"async": True}
 
-        result = await cache.get_or_set(
-            CacheKey.VIDEO_QUEUE_STATS, ttl=60, factory=async_factory
-        )
+        result = await cache.get_or_set(CacheKey.VIDEO_QUEUE_STATS, ttl=60, factory=async_factory)
         assert result == {"async": True}
 
     @pytest.mark.asyncio

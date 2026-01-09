@@ -235,9 +235,7 @@ class Cache:
             return f"{prefix_str}:{':'.join(str(p) for p in parts)}"
         return prefix_str
 
-    async def get(
-        self, prefix: Union[CacheKey, str], *key_parts: str
-    ) -> Optional[Any]:
+    async def get(self, prefix: Union[CacheKey, str], *key_parts: str) -> Optional[Any]:
         """Get value from cache"""
         await self._ensure_backend()
         key = self._make_key(prefix, *key_parts)
@@ -318,9 +316,7 @@ class Cache:
         await self._backend.set(key, value, ttl)
         return value
 
-    async def incr(
-        self, prefix: Union[CacheKey, str], *key_parts: str, ttl: int = 60
-    ) -> int:
+    async def incr(self, prefix: Union[CacheKey, str], *key_parts: str, ttl: int = 60) -> int:
         """Increment counter (for rate limiting)"""
         await self._ensure_backend()
         key = self._make_key(prefix, *key_parts)
@@ -357,9 +353,7 @@ class RateLimiter:
 
     async def is_allowed(self, identifier: str) -> bool:
         """Check if request is allowed under rate limit"""
-        count = await self.cache.incr(
-            CacheKey.RATE_LIMIT, identifier, ttl=self.window_seconds
-        )
+        count = await self.cache.incr(CacheKey.RATE_LIMIT, identifier, ttl=self.window_seconds)
         return count <= self.max_requests
 
     async def get_remaining(self, identifier: str) -> int:

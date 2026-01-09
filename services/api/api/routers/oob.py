@@ -186,7 +186,9 @@ async def update_node_metrics(update: NodeMetricsUpdate):
 
     # M4: Cache node health
     cache = get_cache()
-    await cache.set(CacheKey.NODE_HEALTH, update.node_id, _node_to_dict(node), ttl=NODE_HEALTH_CACHE_TTL)
+    await cache.set(
+        CacheKey.NODE_HEALTH, update.node_id, _node_to_dict(node), ttl=NODE_HEALTH_CACHE_TTL
+    )
 
     return NodeHealthResponse(
         node_id=node.node_id,
