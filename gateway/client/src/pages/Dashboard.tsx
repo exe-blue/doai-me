@@ -13,7 +13,7 @@ import { useGridLayout } from '../hooks/useGridLayout';
 import { DeviceGrid } from '../components/DeviceGrid';
 import { GlobalActionBar } from '../components/GlobalActionBar';
 import { StatusBar } from '../components/StatusBar';
-import { logger } from '@/lib/logger';
+import { logger } from '../lib/logger';
 
 export default function Dashboard() {
   const containerRef = useRef<HTMLDivElement>(null);

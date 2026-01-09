@@ -8,12 +8,40 @@
 
 import { useParams, Link } from 'react-router-dom';
 import useSWR from 'swr';
-import { logger } from '@/lib/logger';
+import { logger } from '../lib/logger';
 
 // 매직 넘버 방지용 상수
 const DEVICE_REFRESH_INTERVAL_MS = 5_000;
 
-async function fetcher(url: string): Promise<unknown> {
+type DeviceMetrics = {
+  existence_score?: number | null;
+  priority?: number | null;
+  uniqueness?: number | null;
+  corruption?: number | null;
+};
+
+type AiCitizen = {
+  name?: string | null;
+  existence_state?: string | null;
+};
+
+type DeviceDetail = {
+  serial: string;
+  status: string;
+  model?: string | null;
+  androidVersion?: string | null;
+  connectionType?: string | null;
+  gatewayClientConnected?: boolean | null;
+  lastSeenAt: string;
+  aiCitizen?: AiCitizen | null;
+  metrics?: DeviceMetrics | null;
+};
+
+type DeviceDetailResponse =
+  | { success: true; device: DeviceDetail }
+  | { success: false; error?: string };
+
+async function fetcher(url: string): Promise<DeviceDetailResponse> {
   const res = await fetch(url);
   if (!res.ok) {
     const errorText = await res.text().catch(() => '');
@@ -24,7 +52,7 @@ async function fetcher(url: string): Promise<unknown> {
     });
     throw new Error(errorText || `요청 실패 (HTTP ${res.status})`);
   }
-  return res.json();
+  return res.json() as Promise<DeviceDetailResponse>;
 }
 
 function fireAndForget(promise: Promise<unknown>, context: string) {

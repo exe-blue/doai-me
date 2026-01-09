@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { WSMessage, DevicesUpdatedMessage } from '../types';
-import { logger } from '@/lib/logger';
+import { logger } from '../lib/logger';
 
 interface UseWebSocketOptions {
   onDevicesUpdate?: (message: DevicesUpdatedMessage) => void;
@@ -30,7 +30,7 @@ const MANUAL_RECONNECT_DELAY_MS = 100;
 
 // 전역 WebSocket 인스턴스 (싱글톤)
 let globalWs: WebSocket | null = null;
-let globalWsListeners: Set<(message: WSMessage) => void> = new Set();
+const globalWsListeners: Set<(message: WSMessage) => void> = new Set();
 let globalConnectionState: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
 let reconnectTimer: number | null = null;
 let reconnectAttempts = 0;

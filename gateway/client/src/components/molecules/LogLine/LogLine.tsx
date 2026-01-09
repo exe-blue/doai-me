@@ -37,14 +37,19 @@ const levelConfig: Record<LogLevel, { icon: string; color: string; bg: string }>
   success: { icon: '✅', color: 'text-green-400', bg: 'bg-green-500/10' },
 };
 
+function pad3(n: number): string {
+  return String(n).padStart(3, '0');
+}
+
 function formatTimestamp(timestamp: string | Date): string {
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
-  return date.toLocaleTimeString('ko-KR', { 
+  // TS lib/Intl 옵션 호환 문제로 fractionalSecondDigits 대신 직접 ms를 붙인다.
+  const base = date.toLocaleTimeString('ko-KR', {
     hour: '2-digit', 
     minute: '2-digit', 
     second: '2-digit',
-    fractionalSecondDigits: 3
   });
+  return `${base}.${pad3(date.getMilliseconds())}`;
 }
 
 export function LogLine({ 

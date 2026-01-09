@@ -17,7 +17,13 @@ module.exports = {
     ecmaFeatures: { jsx: true }
   },
   plugins: ['@typescript-eslint', 'react'],
-  extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:@typescript-eslint/recommended'],
+  extends: [
+    'eslint:recommended',
+    'plugin:react/recommended',
+    // React 17+ (automatic JSX runtime)
+    'plugin:react/jsx-runtime',
+    'plugin:@typescript-eslint/recommended'
+  ],
   settings: {
     react: { version: 'detect' }
   },
@@ -27,7 +33,10 @@ module.exports = {
 
     // 기존 코드 호환: 점진적으로 강화
     '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+
+    // 타입스크립트에서 const 권장 (가독성/안전성)
+    'prefer-const': 'warn'
   }
 };
 

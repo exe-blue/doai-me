@@ -11,7 +11,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import JMuxer from 'jmuxer';
 import type { StreamQuality } from '../lib/grid-calculator';
-import { logger } from '@/lib/logger';
+import { logger } from '../lib/logger';
 
 // 재연결 설정
 const RECONNECT_CONFIG = {
