@@ -3,13 +3,16 @@ DoAi.Me OOB (Out-of-Band) API Router
 원격 복구 및 박스 제어 API
 
 Strategos Security Design v1
+M4: Redis caching for node health (scaling to 100+ nodes)
 """
 
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
+
+from shared.cache import CacheKey, get_cache
 
 try:
     from ..services.oob import (
@@ -31,6 +34,29 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/oob", tags=["OOB Management"])
+
+# M4: Cache Configuration
+NODE_HEALTH_CACHE_TTL = 60
+
+
+def _node_to_dict(node) -> Dict[str, Any]:
+    """Serialize NodeHealth for caching"""
+    return {
+        "node_id": node.node_id,
+        "status": node.status.value,
+        "tailscale_ip": node.tailscale_ip,
+        "device_count_adb": node.metrics.device_count_adb,
+        "device_count_expected": node.metrics.device_count_expected,
+        "device_loss_pct": node.metrics.device_loss_pct,
+        "adb_server_ok": node.metrics.adb_server_ok,
+        "unauthorized_count": node.metrics.unauthorized_count,
+        "heartbeat_age_sec": node.metrics.node_heartbeat_age_sec,
+        "recovery_count_soft": node.recovery_count_soft,
+        "recovery_count_restart": node.recovery_count_restart,
+        "recovery_count_box": node.recovery_count_box,
+        "last_recovery_at": node.last_recovery_at.isoformat() if node.last_recovery_at else None,
+    }
+
 
 # === 싱글톤 인스턴스 ===
 _health_collector: Optional[HealthCollector] = None
@@ -151,10 +177,17 @@ class EvaluationResponse(BaseModel):
 async def update_node_metrics(update: NodeMetricsUpdate):
     """
     노드 메트릭 업데이트 (NodeRunner HEARTBEAT에서 호출)
+    M4: Also updates Redis cache for dashboard performance
     """
     collector = get_health_collector()
     node = await collector.update_node_metrics(
         node_id=update.node_id, metrics_data=update.model_dump()
+    )
+
+    # M4: Cache node health
+    cache = get_cache()
+    await cache.set(
+        CacheKey.NODE_HEALTH, update.node_id, _node_to_dict(node), ttl=NODE_HEALTH_CACHE_TTL
     )
 
     return NodeHealthResponse(
@@ -202,7 +235,13 @@ async def get_all_nodes():
 
 @router.get("/nodes/{node_id}", response_model=NodeHealthResponse)
 async def get_node_health(node_id: str):
-    """특정 노드 건강 상태 조회"""
+    """특정 노드 건강 상태 조회 (M4: cache-first)"""
+    # M4: Try cache first
+    cache = get_cache()
+    cached = await cache.get(CacheKey.NODE_HEALTH, node_id)
+    if cached:
+        return NodeHealthResponse(**cached)
+
     collector = get_health_collector()
     node = collector.get_node(node_id)
 
@@ -481,3 +520,25 @@ async def test_box_connection(box_ip: str, box_port: int = 56666):
     connected = await client.test_connection()
 
     return {"connected": connected, "box_ip": box_ip, "box_port": box_port}
+
+
+# === M4: Cached Stats Endpoint ===
+
+
+@router.get("/stats/summary")
+async def get_oob_stats_summary():
+    """M4: Cached OOB statistics for dashboard (30s TTL)"""
+    cache = get_cache()
+
+    async def compute_stats():
+        collector = get_health_collector()
+        nodes = collector.get_all_nodes()
+        return {
+            "total_nodes": len(nodes),
+            "connected": sum(1 for n in nodes.values() if n.status.value == "connected"),
+            "degraded": sum(1 for n in nodes.values() if n.status.value == "degraded"),
+            "disconnected": sum(1 for n in nodes.values() if n.status.value == "disconnected"),
+            "total_devices": sum(n.metrics.device_count_adb for n in nodes.values()),
+        }
+
+    return await cache.get_or_set(CacheKey.SYSTEM_STATS, "oob", ttl=30, factory=compute_stats)

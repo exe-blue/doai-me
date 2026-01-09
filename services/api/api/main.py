@@ -3,15 +3,20 @@ DoAi.Me Backend API - FastAPI 메인 애플리케이션
 
 @author Axon (DoAi.Me Tech Lead)
 @created 2026-01-01
+
+M4 Update: Rate limiting middleware for scaling to 100+ nodes
 """
 
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from shared.cache import CacheKey, get_cache
 
 # 라우터 임포트 (Docker/standalone 호환)
 try:
@@ -108,6 +113,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# M4: Rate Limiting Configuration
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
+RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
+RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
+RATE_LIMIT_EXEMPT_PATHS = {"/health", "/metrics", "/api/oob/metrics", "/api/devices/heartbeat"}
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """M4: Rate limiting middleware using Redis cache"""
+    if not RATE_LIMIT_ENABLED or request.url.path in RATE_LIMIT_EXEMPT_PATHS:
+        return await call_next(request)
+
+    client_ip = request.client.host if request.client else "unknown"
+    identifier = request.headers.get("X-API-Key", client_ip)
+
+    cache = get_cache()
+    count = await cache.incr(CacheKey.RATE_LIMIT, identifier, ttl=RATE_LIMIT_WINDOW)
+
+    if count > RATE_LIMIT_REQUESTS:
+        logger.warning(f"Rate limit exceeded: {identifier}")
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Rate limit exceeded"},
+            headers={"Retry-After": str(RATE_LIMIT_WINDOW)},
+        )
+
+    response = await call_next(request)
+    response.headers["X-RateLimit-Limit"] = str(RATE_LIMIT_REQUESTS)
+    response.headers["X-RateLimit-Remaining"] = str(max(0, RATE_LIMIT_REQUESTS - count))
+    return response
 
 
 # 요청 로깅 미들웨어
