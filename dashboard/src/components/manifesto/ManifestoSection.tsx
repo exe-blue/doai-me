@@ -1,3 +1,5 @@
+"use client";
+
 import { manifestoContent } from "./content";
 import { QuoteBlock } from "./QuoteBlock";
 import { DefinitionCard } from "./DefinitionCard";
