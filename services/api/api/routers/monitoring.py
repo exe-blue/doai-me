@@ -476,7 +476,9 @@ async def send_alert(request: AlertRequest):
 
     except Exception as e:
         logger.error(f"Failed to send alert: {e}")
-        return AlertResponse(success=False, message="An internal error occurred while sending alert")
+        return AlertResponse(
+            success=False, message="An internal error occurred while sending alert"
+        )
 
 
 @router.get("/api/monitoring/network")
