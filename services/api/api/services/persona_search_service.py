@@ -613,14 +613,21 @@ class PersonaSearchService:
             if not persona:
                 raise ValueError(f"페르소나를 찾을 수 없습니다: {persona_id}")
 
-            # 검색 통계 조회
-            result = self.client.table("persona_activity_logs").select(
-                "search_keyword, formative_impact, created_at"
-            ).eq("persona_id", persona_id).eq(
-                "activity_type", "idle_search"
-            ).order("created_at").execute()
-
-            logs = result.data or []
+            # Mock 모드
+            if self._mock_mode:
+                logs = [
+                    log for log in _mock_search_logs
+                    if log.get("persona_id") == persona_id
+                ]
+                logs.sort(key=lambda x: x.get("created_at", ""))
+            else:
+                # 검색 통계 조회
+                result = self.client.table("persona_activity_logs").select(
+                    "search_keyword, formative_impact, created_at"
+                ).eq("persona_id", persona_id).eq(
+                    "activity_type", "idle_search"
+                ).order("created_at").execute()
+                logs = result.data or []
 
             # 통계 계산
             keywords = [log.get("search_keyword") for log in logs if log.get("search_keyword")]
@@ -642,7 +649,8 @@ class PersonaSearchService:
                     "interests_evolved": [],  # TODO: P2
                     "first_search_at": logs[0]["created_at"] if logs else None,
                     "last_search_at": logs[-1]["created_at"] if logs else None,
-                }
+                },
+                "mock_mode": self._mock_mode
             }
         except Exception as e:
             logger.error(f"검색 프로필 조회 실패: {e}")

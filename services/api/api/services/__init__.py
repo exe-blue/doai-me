@@ -11,9 +11,15 @@ DoAi.Me Backend Services
 - supabase_rpc: Supabase RPC 클라이언트
 """
 
-from .laixi_client import LaixiClient, get_laixi_client
-from .wifi_service import WifiService, get_wifi_service
-from .persona_search_service import PersonaSearchService, get_persona_search_service
+# Docker/standalone 호환 import
+try:
+    from .laixi_client import LaixiClient, get_laixi_client
+    from .wifi_service import WifiService, get_wifi_service
+    from .persona_search_service import PersonaSearchService, get_persona_search_service
+except ImportError:
+    from laixi_client import LaixiClient, get_laixi_client
+    from wifi_service import WifiService, get_wifi_service
+    from persona_search_service import PersonaSearchService, get_persona_search_service
 
 __all__ = [
     "LaixiClient",
@@ -23,4 +29,3 @@ __all__ = [
     "PersonaSearchService",
     "get_persona_search_service",
 ]
-
