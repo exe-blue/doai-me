@@ -5,6 +5,9 @@
  * @author Axon (Builder)
  */
 
+const fs = require('fs');
+const path = require('path');
+
 class ResourceManager {
     constructor(logger) {
         this.logger = logger;
@@ -69,26 +72,26 @@ ring = false;
     cleanupScreenshots() {
         try {
             // 디렉토리 파일 목록
-            const files = files.listDir(this.screenshotDir);
+            const fileNames = fs.readdirSync(this.screenshotDir);
             
-            if (!files || files.length === 0) {
+            if (!fileNames || fileNames.length === 0) {
                 return;
             }
             
             // 파일 수 초과 시 오래된 것부터 삭제
-            if (files.length > this.maxScreenshots) {
+            if (fileNames.length > this.maxScreenshots) {
                 this.logger.info('🗑️  스크린샷 정리', {
-                    current: files.length,
+                    current: fileNames.length,
                     max: this.maxScreenshots
                 });
                 
                 // 날짜 기준 정렬
-                files.sort();
+                fileNames.sort();
                 
-                const deleteCount = files.length - this.maxScreenshots;
+                const deleteCount = fileNames.length - this.maxScreenshots;
                 for (let i = 0; i < deleteCount; i++) {
-                    const filePath = this.screenshotDir + files[i];
-                    files.remove(filePath);
+                    const filePath = path.join(this.screenshotDir, fileNames[i]);
+                    fs.unlinkSync(filePath);
                 }
                 
                 this.logger.info('✅ 스크린샷 정리 완료', {
