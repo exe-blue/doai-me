@@ -12,6 +12,9 @@ from contextlib import asynccontextmanager
 import logging
 import time
 
+# 설정 임포트
+from .config import settings
+
 # 라우터 임포트
 from .routers import commissions, maintenance, personas, youtube, wifi, nocturne, laixi
 from .routers.oob import router as oob_router
@@ -60,13 +63,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS 설정
+# CORS 설정 (환경 변수 기반)
+# 프로덕션 환경에서는 CORS_ORIGINS 환경 변수로 허용 도메인 명시 필요
+logger.info(f"CORS origins: {settings.get_cors_origins_list()}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.get_cors_origins_list(),
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.get_cors_methods_list(),
+    allow_headers=settings.get_cors_headers_list(),
 )
 
 
