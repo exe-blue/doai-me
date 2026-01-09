@@ -12,7 +12,6 @@ import {
   Search, 
   Download, 
   RefreshCw,
-  Filter,
   ChevronDown,
   CheckCircle,
   XCircle,
@@ -21,9 +20,7 @@ import {
   AlertCircle,
   Eye,
   Smartphone,
-  Play,
-  Video,
-  Calendar
+  Play
 } from 'lucide-react';
 
 // ============================================
