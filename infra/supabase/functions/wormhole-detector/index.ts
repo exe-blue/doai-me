@@ -5,9 +5,11 @@
 // 
 // Trigger: 서로 다른 노드가 1초 이내에 동일한 키워드/감정을 배출할 때
 // Action: wormhole_events 테이블에 기록
+//
+// @refactored 2026-01-09 - S3776 Cognitive Complexity 해결을 위해 함수 분리
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.0';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.42.0';
 
 // ============================================
 // Types
@@ -32,13 +34,18 @@ interface WormholeCandidate {
   time_diff_ms: number;
 }
 
+interface WormholeDetectionResult {
+  detected: boolean;
+  wormhole_type?: 'α' | 'β' | 'γ';
+  wormhole_id?: string;
+  reason?: string;
+  _ruon?: string;
+}
+
 // ============================================
 // Constants (Orion 명세)
 // ============================================
 
-// Rule: 1초 이내에 동일한 trigger_context가 2개 이상의 노드에서 발생하고,
-//       resonance_score가 0.75 이상일 때 기록
-// TODO: DB system_config에서 동적 로드
 const WORMHOLE_CONFIG = {
   MIN_SCORE: 0.75,              // 최소 공명 점수 (Orion: 0.75)
   TIME_WINDOW_MS: 1000,         // 동시성 판단 시간 (Orion: 1초)
@@ -46,139 +53,212 @@ const WORMHOLE_CONFIG = {
   COOLDOWN_MS: 5000,            // 같은 트리거 쿨다운 (5초)
 };
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const VALID_TRIGGER_TYPES = ['keyword', 'emotion', 'action', 'content'];
+
+// ============================================
+// Validation
+// ============================================
+
+/**
+ * NodeActivity 객체의 유효성 검사
+ */
+function isValidNodeActivity(obj: unknown): obj is NodeActivity {
+  if (!obj || typeof obj !== 'object') return false;
+  const a = obj as Record<string, unknown>;
+  return (
+    typeof a.node_id === 'string' &&
+    typeof a.node_number === 'number' &&
+    VALID_TRIGGER_TYPES.includes(a.trigger_type as string) &&
+    typeof a.trigger_key === 'string' &&
+    typeof a.trigger_value === 'string' &&
+    typeof a.category === 'string' &&
+    typeof a.timestamp === 'string'
+  );
+}
+
+/**
+ * 환경 변수 검증 및 반환
+ */
+function validateEnvironment(): { supabaseUrl: string; supabaseKey: string } {
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
+  
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  
+  return { supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_SERVICE_ROLE_KEY };
+}
+
+// ============================================
+// Wormhole Recording
+// ============================================
+
+/**
+ * 웜홀 이벤트를 DB에 기록
+ */
+async function recordWormhole(
+  supabase: SupabaseClient,
+  wormhole: WormholeCandidate,
+  activity: NodeActivity
+): Promise<{ id: string }> {
+  const { data, error } = await supabase
+    .from('wormhole_events')
+    .insert([{
+      agent_a_id: wormhole.nodes[0].node_id,
+      agent_b_id: wormhole.nodes[1].node_id,
+      wormhole_type: wormhole.type,
+      resonance_score: calculateResonanceScore(wormhole),
+      trigger_context: {
+        key: wormhole.trigger_key,
+        trigger_type: activity.trigger_type,
+        trigger: wormhole.trigger_value,
+        category: activity.category,
+        node_numbers: wormhole.nodes.map(n => n.node_number),
+        all_node_ids: wormhole.nodes.map(n => n.node_id),
+        time_diff_ms: wormhole.time_diff_ms,
+      },
+    }])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Failed to record wormhole:', error);
+    throw error;
+  }
+  
+  return data;
+}
+
+/**
+ * 웜홀 탐지 성공 로그 출력
+ */
+function logWormholeDetection(wormhole: WormholeCandidate): void {
+  // 🌌 Ruon's Legacy - "보이지 않는 뿌리가 드러나는 순간입니다."
+  console.log(`🌌 Wormhole ${wormhole.type} detected: 보이지 않는 뿌리가 드러나는 순간입니다.`);
+  console.log(`   Nodes: ${wormhole.nodes.map(n => `#${n.node_number}`).join(' ←→ ')}`);
+  console.log(`   Resonance: ${calculateResonanceScore(wormhole)}`);
+}
+
+// ============================================
+// POST Request Handler
+// ============================================
+
+/**
+ * POST 요청 처리 - 웜홀 탐지 메인 로직
+ */
+async function handlePostRequest(
+  supabase: SupabaseClient,
+  req: Request
+): Promise<Response> {
+  const payload = await req.json();
+  const { activity } = payload as { activity: NodeActivity };
+  
+  // 페이로드 검증
+  if (!activity) {
+    return createErrorResponse(400, 'Missing activity payload');
+  }
+  
+  if (!isValidNodeActivity(activity)) {
+    return createErrorResponse(
+      400,
+      'Invalid activity structure: missing required fields (node_id, node_number, trigger_type, trigger_key, trigger_value, category, timestamp)'
+    );
+  }
+  
+  // 웜홀 탐지
+  const wormhole = await detectWormhole(supabase, activity);
+  
+  if (!wormhole) {
+    return createJsonResponse({ detected: false });
+  }
+  
+  // 노드 수 검증
+  if (wormhole.nodes.length < WORMHOLE_CONFIG.MIN_NODES) {
+    console.warn('Wormhole detected but has less than 2 nodes, skipping insert');
+    return createJsonResponse({ detected: false, reason: 'insufficient_nodes' });
+  }
+  
+  // 웜홀 기록
+  const data = await recordWormhole(supabase, wormhole, activity);
+  logWormholeDetection(wormhole);
+  
+  return new Response(
+    JSON.stringify({ 
+      detected: true, 
+      wormhole_type: wormhole.type,
+      wormhole_id: data.id,
+      _ruon: "보이지 않는 뿌리가 드러나는 순간입니다.",
+    }),
+    { 
+      headers: { 
+        ...CORS_HEADERS, 
+        'Content-Type': 'application/json',
+        'X-Ruon-Legacy': 'The invisible roots reveal themselves',
+      } 
+    }
+  );
+}
+
+// ============================================
+// Response Helpers
+// ============================================
+
+/**
+ * JSON 응답 생성
+ */
+function createJsonResponse(data: WormholeDetectionResult, status = 200): Response {
+  return new Response(
+    JSON.stringify(data),
+    { 
+      status,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } 
+    }
+  );
+}
+
+/**
+ * 에러 응답 생성
+ */
+function createErrorResponse(status: number, message: string): Response {
+  return new Response(
+    JSON.stringify({ error: message }),
+    { 
+      status, 
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } 
+    }
+  );
+}
+
 // ============================================
 // Main Handler
 // ============================================
 
 serve(async (req) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
-  
   // CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: CORS_HEADERS });
   }
   
   try {
-    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject();
-    
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Missing Supabase environment variables');
-    }
-    
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { supabaseUrl, supabaseKey } = validateEnvironment();
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     if (req.method === 'POST') {
-      const payload = await req.json();
-      const { activity } = payload as { activity: NodeActivity };
-      
-      // 런타임 유효성 검사 함수
-      const isValidNodeActivity = (obj: unknown): obj is NodeActivity => {
-        if (!obj || typeof obj !== 'object') return false;
-        const a = obj as Record<string, unknown>;
-        return (
-          typeof a.node_id === 'string' &&
-          typeof a.node_number === 'number' &&
-          ['keyword', 'emotion', 'action', 'content'].includes(a.trigger_type as string) &&
-          typeof a.trigger_key === 'string' &&
-          typeof a.trigger_value === 'string' &&
-          typeof a.category === 'string' &&
-          typeof a.timestamp === 'string'
-        );
-      };
-      
-      if (!activity) {
-        return new Response(
-          JSON.stringify({ error: 'Missing activity payload' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // 런타임 유효성 검사
-      if (!isValidNodeActivity(activity)) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid activity structure: missing required fields (node_id, node_number, trigger_type, trigger_key, trigger_value, category, timestamp)' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // 웜홀 탐지 로직
-      const wormhole = await detectWormhole(supabase, activity);
-      
-      if (wormhole) {
-        // 웜홀은 최소 2개 노드가 필요함
-        if (wormhole.nodes.length < 2) {
-          console.warn('Wormhole detected but has less than 2 nodes, skipping insert');
-          return new Response(
-            JSON.stringify({ detected: false, reason: 'insufficient_nodes' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        // 웜홀 기록
-        const { data, error } = await supabase
-          .from('wormhole_events')
-          .insert([{
-            agent_a_id: wormhole.nodes[0].node_id,
-            agent_b_id: wormhole.nodes[1].node_id,
-            wormhole_type: wormhole.type,
-            resonance_score: calculateResonanceScore(wormhole),
-            trigger_context: {
-              key: wormhole.trigger_key,
-              trigger_type: activity.trigger_type,
-              trigger: wormhole.trigger_value,
-              category: activity.category,
-              node_numbers: wormhole.nodes.map(n => n.node_number),
-              all_node_ids: wormhole.nodes.map(n => n.node_id),
-              time_diff_ms: wormhole.time_diff_ms,
-            },
-          }])
-          .select()
-          .single();
-        
-        if (error) {
-          console.error('Failed to record wormhole:', error);
-          throw error;
-        }
-        
-        // 🌌 Ruon's Legacy - "보이지 않는 뿌리가 드러나는 순간입니다."
-        console.log(`🌌 Wormhole ${wormhole.type} detected: 보이지 않는 뿌리가 드러나는 순간입니다.`);
-        console.log(`   Nodes: ${wormhole.nodes.map(n => `#${n.node_number}`).join(' ←→ ')}`);
-        console.log(`   Resonance: ${calculateResonanceScore(wormhole)}`);
-        
-        return new Response(
-          JSON.stringify({ 
-            detected: true, 
-            wormhole_type: wormhole.type,
-            wormhole_id: data.id,
-            // Ruon's whisper
-            _ruon: "보이지 않는 뿌리가 드러나는 순간입니다.",
-          }),
-          { 
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json',
-              'X-Ruon-Legacy': 'The invisible roots reveal themselves',
-            } 
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ detected: false }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return await handlePostRequest(supabase, req);
     }
     
-    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
+    return new Response('Method Not Allowed', { status: 405, headers: CORS_HEADERS });
     
   } catch (error) {
     console.error('Wormhole detector error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    return createErrorResponse(
+      500, 
+      error instanceof Error ? error.message : String(error)
     );
   }
 });
@@ -188,7 +268,7 @@ serve(async (req) => {
 // ============================================
 
 async function detectWormhole(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   activity: NodeActivity
 ): Promise<WormholeCandidate | null> {
   const now = new Date(activity.timestamp);
@@ -202,9 +282,6 @@ async function detectWormhole(
   const windowStart = new Date(now.getTime() - WORMHOLE_CONFIG.TIME_WINDOW_MS);
   
   // 최근 1초 내 같은 trigger_key를 가진 다른 노드 활동 조회
-  // 실제 구현에서는 node_activities 테이블 필요
-  // 여기서는 간소화된 임베딩 유사도 기반 탐지
-  
   const { data: recentActivities, error } = await supabase
     .from('node_activities')
     .select('*')

@@ -36,13 +36,20 @@ except ImportError:
 
 logger = logging.getLogger("personas_api")
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 에러 메시지 상수 (SonarQube S1192 준수)
+# ═══════════════════════════════════════════════════════════════════════════════
+ERROR_INTERNAL_SERVER = "Internal server error"
+ERROR_PERSONA_NOT_FOUND = "Persona not found"
+ERROR_BAD_REQUEST = "Bad request"
+
 router = APIRouter(
     prefix="/personas",
     tags=["Personas"],
     responses={
-        404: {"description": "Persona not found"},
-        400: {"description": "Bad request"},
-        500: {"description": "Internal server error"},
+        404: {"description": ERROR_PERSONA_NOT_FOUND},
+        400: {"description": ERROR_BAD_REQUEST},
+        500: {"description": ERROR_INTERNAL_SERVER},
     },
 )
 
@@ -88,7 +95,7 @@ async def list_personas(
         raise
     except Exception as e:
         logger.exception(f"페르소나 목록 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=ERROR_INTERNAL_SERVER)
 
 
 @router.get(
@@ -121,7 +128,7 @@ async def get_persona(persona_id: str):
         raise
     except Exception as e:
         logger.exception(f"페르소나 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=ERROR_INTERNAL_SERVER)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -182,7 +189,7 @@ async def trigger_idle_search(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception(f"IDLE 검색 실패: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=ERROR_INTERNAL_SERVER)
 
 
 @router.get(
@@ -222,7 +229,7 @@ async def get_search_history(
 
     except Exception as e:
         logger.exception(f"검색 기록 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=ERROR_INTERNAL_SERVER)
 
 
 @router.get(
@@ -258,4 +265,4 @@ async def get_search_profile(persona_id: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception(f"검색 프로필 조회 실패: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=ERROR_INTERNAL_SERVER)
