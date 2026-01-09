@@ -37,6 +37,9 @@ const { loadDiscoveryConfig } = require('./discovery/config');
 // WebSocket Multiplexer (v3.0)
 const WebSocketMultiplexer = require('./websocket/multiplexer');
 
+// Dashboard WebSocket Handler (NodeContext 프로토콜)
+const DashboardHandler = require('./websocket/dashboard-handler');
+
 // API 라우터
 const responseRouter = require('./api/routes/response');
 const healthRouter = require('./api/routes/health');
@@ -51,6 +54,9 @@ const streamRouter = require('./api/routes/stream');
 const discoveryRouter = require('./api/routes/discovery');
 
 // OpenAI Integration
+
+
+
 const aiRouter = require('./api/routes/ai');
 
 // Vultr WSS Integration (v2.1)
@@ -63,10 +69,25 @@ const LaixiAdapter = require('./adapters/laixi/LaixiAdapter');
 const StreamServer = require('./stream/server');
 
 // H.264 Stream Server (v2.0 - Real-time Screen Streaming)
+
+// Chrome Automation Service (Puppeteer + CDP over ADB)
+const { createChromeService } = require('./services/chrome');
+const ChromeTaskHandler = require('./services/chrome/ChromeTaskHandler');
+const chromeRouter = require('./api/routes/chrome');
+const { initializeChromeRoutes } = require('./api/routes/chrome');
+
+// YouTube API Router
+const youtubeRouter = require('./api/routes/youtube');
+
+// Kernel API Router (placeholder for YouTube automation)
+const kernelRouter = require('./api/routes/kernel');
+
 const H264StreamServer = require('./stream/h264-stream');
 
 // ==================== Laixi Adapter (Device Control) ====================
 let laixiAdapter = null; // start()에서 초기화
+let chromeService = null; // start()에서 초기화
+let chromeTaskHandler = null;
 
 // ==================== 초기화 ====================
 const logger = new Logger();
@@ -105,6 +126,15 @@ const streamServer = new StreamServer(logger, adbClient, deviceTracker);
 // ==================== H.264 Stream Server (v2.0) ====================
 const h264StreamServer = new H264StreamServer({ logger, deviceTracker });
 
+// ==================== Dashboard Handler (NodeContext 프로토콜) ====================
+const dashboardHandler = new DashboardHandler({
+    logger,
+    discoveryManager,
+    deviceTracker,
+    commander,
+    laixiAdapter: null  // start()에서 설정
+});
+
 // ==================== Express 서버 ====================
 const app = express();
 
@@ -119,6 +149,7 @@ app.use(cors({
     origin: [
         'http://localhost:3000',      // Vite dev server
         'http://localhost:3100',      // Gateway 자체
+        'http://localhost:5176',      // Dashboard dev server
         'https://doai.me',            // 프로덕션 도메인
         'https://gateway.doai.me',    // Gateway 서브도메인
         /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // 로컬 네트워크
@@ -169,8 +200,17 @@ app.use('/api/devices', devicesRouter);
 app.use('/api/control', controlRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/dispatch', dispatchRouter);
-app.use('/api/discovery', discoveryRouter);  // v3.0
+app.use('/api/discovery', discoveryRouter);
 app.use('/stream', streamRouter);
+
+// YouTube API
+app.use('/api/youtube', youtubeRouter);
+
+// Kernel API (placeholder for Chrome automation)
+app.use('/api/kernel', kernelRouter);
+
+// Chrome Automation API (Puppeteer + CDP over ADB)
+app.use('/api/chrome', chromeRouter);
 
 // OpenAI Integration
 app.use('/api/ai', aiRouter);
@@ -375,6 +415,36 @@ async function start() {
             logger.info('[Gateway] ⏭️ Vultr 연결 비활성화 (로컬 모드)');
         }
 
+        // 5.7. Chrome Automation Service (Puppeteer + CDP over ADB)
+        if (process.env.CHROME_ENABLED === 'true') {
+            logger.info('[Gateway] Chrome Automation 초기화...');
+
+            chromeService = createChromeService({
+                logger,
+                basePort: parseInt(process.env.CHROME_BASE_PORT) || 9300,
+                maxConnections: parseInt(process.env.CHROME_MAX_CONNECTIONS) || 50,
+                idleTimeout: parseInt(process.env.CHROME_IDLE_TIMEOUT) || 300000
+            });
+
+            chromeTaskHandler = new ChromeTaskHandler({
+                chromeService,
+                logger,
+                maxConcurrent: parseInt(process.env.CHROME_MAX_CONCURRENT_TASKS) || 10
+            });
+
+            // Initialize Chrome API routes
+            initializeChromeRoutes({
+                chromeService,
+                chromeTaskHandler,
+                logger
+            });
+
+            chromeService.start();
+            logger.info('[Gateway] ✅ Chrome Automation 초기화 완료');
+        } else {
+            logger.info('[Gateway] ⏭️ Chrome Automation 비활성화');
+        }
+
         // 6. HTTP 서버 및 WebSocket 시작
         const port = config.get('port') || 3100;
         const server = http.createServer(app);
@@ -391,7 +461,14 @@ async function start() {
         // 참고: WSMultiplexer가 /ws/stream/{deviceId} 경로를 이미 처리하므로 비활성화
         // h264StreamServer.initialize(server, '/ws/stream');
         logger.info('[Gateway] 📺 H.264 Stream: WSMultiplexer 사용 (/ws/stream/{deviceId})');
-        
+
+        // Dashboard WebSocket Handler (NodeContext 프로토콜)
+        dashboardHandler.initialize(server);
+        if (laixiAdapter) {
+            dashboardHandler.setLaixiAdapter(laixiAdapter);
+        }
+        logger.info('[Gateway] 🖥️ Dashboard Handler 초기화 (/ws/dashboard)');
+
         server.listen(port, () => {
             logger.info(`[Gateway] 🚀 서버 시작: http://0.0.0.0:${port}`);
         });
@@ -401,6 +478,7 @@ async function start() {
         logger.info('✅ DoAi-Gateway v2.0 Ready');
         logger.info(`📱 발견된 디바이스: ${deviceCount.total}대 (Online: ${deviceCount.online})`);
         logger.info(`🔗 WebSocket: ws://0.0.0.0:${port}/ws`);
+        logger.info(`🖥️ Dashboard WS: ws://0.0.0.0:${port}/ws/dashboard`);
         logger.info(`🌐 Dashboard: http://0.0.0.0:${port}/`);
         logger.info('═'.repeat(55));
 
@@ -420,8 +498,13 @@ async function shutdown(signal) {
         laixiAdapter.disconnect();
         logger.info('[Gateway] Laixi 연결 종료');
     }
+    if (chromeService) {
+        await chromeService.stop();
+        logger.info('[Gateway] Chrome Automation 종료');
+    }
     shutdownVultrConnection(); // Vultr 연결 종료
     wsMultiplexer.shutdown();
+    dashboardHandler.shutdown();
     streamServer.shutdown();
     h264StreamServer.shutdown();
     discoveryManager.shutdown();

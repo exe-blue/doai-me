@@ -9,9 +9,8 @@
 
 import os
 import sys
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Generator
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -21,12 +20,14 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
+
 load_dotenv(project_root / ".env")
 
 
 # =============================================================================
 # 공통 Fixtures
 # =============================================================================
+
 
 @pytest.fixture(scope="session")
 def project_root_path() -> Path:
@@ -37,6 +38,7 @@ def project_root_path() -> Path:
 # =============================================================================
 # Unit Test Fixtures (Mock 기반)
 # =============================================================================
+
 
 @pytest.fixture
 def reset_settings_cache():
@@ -102,10 +104,12 @@ def mock_laixi_client():
 # 샘플 데이터 Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_video_queue_create():
     """샘플 VideoQueueCreate 데이터"""
-    from shared.schemas.youtube_queue import VideoQueueCreate, QueueSource
+    from shared.schemas.youtube_queue import QueueSource, VideoQueueCreate
+
     return VideoQueueCreate(
         youtube_video_id="dQw4w9WgXcQ",
         title="테스트 영상",
@@ -113,7 +117,7 @@ def sample_video_queue_create():
         duration_seconds=180,
         target_device_percent=0.5,
         like_probability=0.20,
-        comment_probability=0.05
+        comment_probability=0.05,
     )
 
 
@@ -121,6 +125,7 @@ def sample_video_queue_create():
 def sample_device_info():
     """샘플 DeviceInfo 데이터"""
     from shared.device_registry import DeviceInfo
+
     return DeviceInfo(
         id="device-001",
         serial_number="R58M12345678",
@@ -130,7 +135,7 @@ def sample_device_info():
         slot_number=1,
         device_group="A",
         status="idle",
-        model="SM-G960N"
+        model="SM-G960N",
     )
 
 
@@ -138,11 +143,12 @@ def sample_device_info():
 def sample_video_target():
     """샘플 VideoTarget 데이터"""
     from shared.batch_executor import VideoTarget
+
     return VideoTarget(
         video_id="dQw4w9WgXcQ",
         url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         title="테스트 영상",
-        duration_seconds=180
+        duration_seconds=180,
     )
 
 
@@ -150,28 +156,27 @@ def sample_video_target():
 def sample_batch_config():
     """샘플 BatchConfig 데이터"""
     from shared.schemas.workload import BatchConfig
-    return BatchConfig(
-        batch_size_percent=50,
-        batch_interval_seconds=60,
-        cycle_interval_seconds=300
-    )
+
+    return BatchConfig(batch_size_percent=50, batch_interval_seconds=60, cycle_interval_seconds=300)
 
 
 @pytest.fixture
 def sample_watch_config():
     """샘플 WatchConfig 데이터"""
     from shared.schemas.workload import WatchConfig
+
     return WatchConfig(
         watch_duration_min=30,
         watch_duration_max=120,
         like_probability=0.05,
-        comment_probability=0.02
+        comment_probability=0.02,
     )
 
 
 # =============================================================================
 # Integration Test Fixtures (실제 DB 연결)
 # =============================================================================
+
 
 @pytest.fixture(scope="session")
 def supabase_client():
@@ -183,15 +188,17 @@ def supabase_client():
         pytest.skip("SUPABASE_URL/KEY 환경변수가 필요합니다")
 
     from supabase import create_client
+
     client = create_client(url, key)
     # Use 'api' schema instead of default 'public'
-    return client.schema('api')
+    return client.schema("api")
 
 
 @pytest.fixture
 def youtube_queue_service(supabase_client):
     """YouTubeQueueService 인스턴스"""
     from shared.youtube_queue_service import YouTubeQueueService
+
     return YouTubeQueueService()
 
 
@@ -199,6 +206,7 @@ def youtube_queue_service(supabase_client):
 def device_registry(supabase_client):
     """DeviceRegistry 인스턴스"""
     from shared.device_registry import DeviceRegistry
+
     return DeviceRegistry()
 
 
@@ -206,14 +214,16 @@ def device_registry(supabase_client):
 # E2E Test Fixtures (실제 디바이스 연결)
 # =============================================================================
 
+
 @pytest.fixture
 def laixi_client():
     """실제 Laixi 클라이언트 (E2E 테스트용)"""
     laixi_url = os.getenv("LAIXI_WS_URL")
     if not laixi_url:
         pytest.skip("LAIXI_WS_URL 환경변수가 필요합니다")
-    
+
     from shared.laixi_client import LaixiClient
+
     return LaixiClient(laixi_url)
 
 
@@ -221,12 +231,14 @@ def laixi_client():
 def youtube_automation(laixi_client):
     """YouTubeAppAutomation 인스턴스"""
     from shared.scripts.youtube_app_automation import YouTubeAppAutomation
+
     return YouTubeAppAutomation(laixi_client)
 
 
 # =============================================================================
 # 테스트 유틸리티
 # =============================================================================
+
 
 @pytest.fixture
 def unique_video_id():
@@ -238,9 +250,9 @@ def unique_video_id():
 def cleanup_video_queue(supabase_client):
     """테스트 후 video_queue 정리"""
     created_ids = []
-    
+
     yield created_ids
-    
+
     # 테스트 후 정리
     for video_id in created_ids:
         try:

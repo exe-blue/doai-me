@@ -7,7 +7,8 @@
  * @spec docs/IMPLEMENTATION_SPEC.md Section 2.1
  */
 
-const logger = require('../../utils/logger');
+const Logger = require('../../utils/logger');
+const logger = new Logger();
 
 // ============================================================================
 // 상수 정의

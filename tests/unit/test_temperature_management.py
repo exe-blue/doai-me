@@ -10,38 +10,41 @@ PR #4: 디바이스 온도 관리 자동화
 NOTE: 온도 관리 기능이 아직 구현되지 않아 이 테스트는 스킵됩니다.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
+
+import pytest
 
 # 온도 관리 스키마 (구현된 경우에만 테스트)
 try:
-    from shared.schemas.workload import (
-        TemperatureConfig,
-        TemperatureStatus,
-        CooldownQueueItem,
-        CooldownQueueStatus,
-    )
     from shared.batch_executor import (
-        TemperatureGate,
-        TemperatureCheckResult,
         CooldownQueue,
+        TemperatureCheckResult,
+        TemperatureGate,
         reset_batch_executor,
     )
     from shared.device_registry import DeviceInfo
+    from shared.schemas.workload import (
+        CooldownQueueItem,
+        CooldownQueueStatus,
+        TemperatureConfig,
+        TemperatureStatus,
+    )
+
     TEMPERATURE_MANAGEMENT_AVAILABLE = True
 except ImportError:
     TEMPERATURE_MANAGEMENT_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(
     not TEMPERATURE_MANAGEMENT_AVAILABLE,
-    reason="Temperature management features not yet implemented"
+    reason="Temperature management features not yet implemented",
 )
 
 
 # =========================================
 # TemperatureConfig 테스트
 # =========================================
+
 
 class TestTemperatureConfig:
     """TemperatureConfig 스키마 테스트"""
@@ -89,6 +92,7 @@ class TestTemperatureStatus:
 # =========================================
 # TemperatureGate 테스트
 # =========================================
+
 
 class TestTemperatureGate:
     """TemperatureGate 클래스 테스트"""
@@ -293,6 +297,7 @@ class TestTemperatureGate:
 # CooldownQueue 테스트
 # =========================================
 
+
 class TestCooldownQueue:
     """CooldownQueue 클래스 테스트"""
 
@@ -490,6 +495,7 @@ class TestCooldownQueueExpiry:
 # CooldownQueueItem 테스트
 # =========================================
 
+
 class TestCooldownQueueItem:
     """CooldownQueueItem 스키마 테스트"""
 
@@ -529,6 +535,7 @@ class TestCooldownQueueStatus:
 # =========================================
 # 통합 시나리오 테스트
 # =========================================
+
 
 class TestTemperatureManagementIntegration:
     """온도 관리 통합 테스트"""

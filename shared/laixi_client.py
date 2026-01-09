@@ -16,11 +16,12 @@ API 문서: ws://127.0.0.1:22221/
 import asyncio
 import json
 import logging
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 try:
     import websockets
+
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class LaixiConfig:
     """Laixi 설정"""
+
     websocket_url: str = "ws://127.0.0.1:22221/"
     timeout: float = 10.0
     reconnect_interval: float = 5.0
@@ -60,8 +62,7 @@ class LaixiClient:
         """Laixi WebSocket 서버에 연결"""
         try:
             self._websocket = await asyncio.wait_for(
-                websockets.connect(self.config.websocket_url),
-                timeout=self.config.timeout
+                websockets.connect(self.config.websocket_url), timeout=self.config.timeout
             )
             logger.info(f"Laixi 연결 성공: {self.config.websocket_url}")
             return True
@@ -111,8 +112,7 @@ class LaixiClient:
 
                 # 응답 수신
                 response_text = await asyncio.wait_for(
-                    self._websocket.recv(),
-                    timeout=self.config.timeout
+                    self._websocket.recv(), timeout=self.config.timeout
                 )
 
                 return json.loads(response_text)
@@ -154,44 +154,42 @@ class LaixiClient:
             성공 여부
         """
         # Press
-        await self.send_command({
-            "action": "PointerEvent",
-            "comm": {
-                "deviceIds": device_ids,
-                "mask": "0",  # press
-                "x": str(x),
-                "y": str(y),
-                "endx": "0",
-                "endy": "0",
-                "delta": "0"
+        await self.send_command(
+            {
+                "action": "PointerEvent",
+                "comm": {
+                    "deviceIds": device_ids,
+                    "mask": "0",  # press
+                    "x": str(x),
+                    "y": str(y),
+                    "endx": "0",
+                    "endy": "0",
+                    "delta": "0",
+                },
             }
-        })
+        )
         await asyncio.sleep(0.1)
 
         # Release
-        response = await self.send_command({
-            "action": "PointerEvent",
-            "comm": {
-                "deviceIds": device_ids,
-                "mask": "2",  # release
-                "x": str(x),
-                "y": str(y),
-                "endx": "0",
-                "endy": "0",
-                "delta": "0"
+        response = await self.send_command(
+            {
+                "action": "PointerEvent",
+                "comm": {
+                    "deviceIds": device_ids,
+                    "mask": "2",  # release
+                    "x": str(x),
+                    "y": str(y),
+                    "endx": "0",
+                    "endy": "0",
+                    "delta": "0",
+                },
             }
-        })
+        )
 
         return response is not None
 
     async def swipe(
-        self,
-        device_ids: str,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        duration_ms: int = 300
+        self, device_ids: str, x1: float, y1: float, x2: float, y2: float, duration_ms: int = 300
     ) -> bool:
         """
         스와이프 (백분율 좌표)
@@ -206,48 +204,54 @@ class LaixiClient:
             성공 여부
         """
         # Press
-        await self.send_command({
-            "action": "PointerEvent",
-            "comm": {
-                "deviceIds": device_ids,
-                "mask": "0",
-                "x": str(x1),
-                "y": str(y1),
-                "endx": "0",
-                "endy": "0",
-                "delta": "0"
+        await self.send_command(
+            {
+                "action": "PointerEvent",
+                "comm": {
+                    "deviceIds": device_ids,
+                    "mask": "0",
+                    "x": str(x1),
+                    "y": str(y1),
+                    "endx": "0",
+                    "endy": "0",
+                    "delta": "0",
+                },
             }
-        })
+        )
         await asyncio.sleep(0.05)
 
         # Move
-        await self.send_command({
-            "action": "PointerEvent",
-            "comm": {
-                "deviceIds": device_ids,
-                "mask": "1",
-                "x": str(x2),
-                "y": str(y2),
-                "endx": "0",
-                "endy": "0",
-                "delta": "0"
+        await self.send_command(
+            {
+                "action": "PointerEvent",
+                "comm": {
+                    "deviceIds": device_ids,
+                    "mask": "1",
+                    "x": str(x2),
+                    "y": str(y2),
+                    "endx": "0",
+                    "endy": "0",
+                    "delta": "0",
+                },
             }
-        })
+        )
         await asyncio.sleep(duration_ms / 1000.0)
 
         # Release
-        response = await self.send_command({
-            "action": "PointerEvent",
-            "comm": {
-                "deviceIds": device_ids,
-                "mask": "2",
-                "x": str(x2),
-                "y": str(y2),
-                "endx": "0",
-                "endy": "0",
-                "delta": "0"
+        response = await self.send_command(
+            {
+                "action": "PointerEvent",
+                "comm": {
+                    "deviceIds": device_ids,
+                    "mask": "2",
+                    "x": str(x2),
+                    "y": str(y2),
+                    "endx": "0",
+                    "endy": "0",
+                    "delta": "0",
+                },
             }
-        })
+        )
 
         return response is not None
 
@@ -264,13 +268,9 @@ class LaixiClient:
         Returns:
             성공 여부
         """
-        response = await self.send_command({
-            "action": "screen",
-            "comm": {
-                "deviceIds": device_ids,
-                "savePath": save_path
-            }
-        })
+        response = await self.send_command(
+            {"action": "screen", "comm": {"deviceIds": device_ids, "savePath": save_path}}
+        )
         return response is not None
 
     # ==================== 클립보드 ====================
@@ -285,12 +285,9 @@ class LaixiClient:
         Returns:
             클립보드 내용
         """
-        response = await self.send_command({
-            "action": "getclipboard",
-            "comm": {
-                "deviceIds": device_id
-            }
-        })
+        response = await self.send_command(
+            {"action": "getclipboard", "comm": {"deviceIds": device_id}}
+        )
         if response and "content" in response:
             return response["content"]
         return None
@@ -306,13 +303,9 @@ class LaixiClient:
         Returns:
             성공 여부
         """
-        response = await self.send_command({
-            "action": "writeclipboard",
-            "comm": {
-                "deviceIds": device_ids,
-                "content": text
-            }
-        })
+        response = await self.send_command(
+            {"action": "writeclipboard", "comm": {"deviceIds": device_ids, "content": text}}
+        )
         return response is not None
 
     # ==================== ADB 명령 ====================
@@ -328,13 +321,9 @@ class LaixiClient:
         Returns:
             성공 여부
         """
-        response = await self.send_command({
-            "action": "adb",
-            "comm": {
-                "command": command,
-                "deviceIds": device_id
-            }
-        })
+        response = await self.send_command(
+            {"action": "adb", "comm": {"command": command, "deviceIds": device_id}}
+        )
         return response is not None
 
     # ==================== 기본 작업 ====================
@@ -365,13 +354,12 @@ class LaixiClient:
 
     async def _basis_operate(self, device_id: str, operation_type: int) -> bool:
         """기본 작업 실행"""
-        response = await self.send_command({
-            "action": "BasisOperate",
-            "comm": {
-                "deviceIds": device_id,
-                "type": str(operation_type)
+        response = await self.send_command(
+            {
+                "action": "BasisOperate",
+                "comm": {"deviceIds": device_id, "type": str(operation_type)},
             }
-        })
+        )
         return response is not None
 
     # ==================== Toast ====================
@@ -387,13 +375,9 @@ class LaixiClient:
         Returns:
             성공 여부
         """
-        response = await self.send_command({
-            "action": "Toast",
-            "comm": {
-                "deviceIds": device_ids,
-                "content": message
-            }
-        })
+        response = await self.send_command(
+            {"action": "Toast", "comm": {"deviceIds": device_ids, "content": message}}
+        )
         return response is not None
 
     # ==================== 현재 앱 ====================
@@ -408,12 +392,9 @@ class LaixiClient:
         Returns:
             앱 정보
         """
-        return await self.send_command({
-            "action": "CurrentAppInfo",
-            "comm": {
-                "deviceIds": device_ids
-            }
-        })
+        return await self.send_command(
+            {"action": "CurrentAppInfo", "comm": {"deviceIds": device_ids}}
+        )
 
 
 # 싱글톤 인스턴스

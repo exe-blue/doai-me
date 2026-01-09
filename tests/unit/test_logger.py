@@ -3,8 +3,6 @@
 shared/utils/logger.py 테스트
 """
 
-import pytest
-
 
 class TestConfigureLogging:
     """configure_logging 함수 테스트"""

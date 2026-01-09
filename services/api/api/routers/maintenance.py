@@ -6,10 +6,7 @@ TODO: 구현 예정
 
 from fastapi import APIRouter
 
-router = APIRouter(
-    prefix="/maintenance",
-    tags=["maintenance"]
-)
+router = APIRouter(prefix="/maintenance", tags=["maintenance"])
 
 
 @router.get("/")

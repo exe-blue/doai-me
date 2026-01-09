@@ -10,12 +10,12 @@ P2: 페르소나 생성/수정/삭제 및 성격 분석
 @created 2026-01-09
 """
 
-import os
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import uuid4
+import os
 from collections import Counter
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 # Supabase 클라이언트 (Docker/standalone 호환)
 try:
@@ -25,21 +25,27 @@ except ImportError:
         from db import get_supabase_client as get_client
     except ImportError:
         import sys
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
         sys.path.insert(0, project_root)
         try:
             from shared.supabase_client import get_client
         except ImportError:
             from supabase import create_client
+
             def get_client():
                 url = os.getenv("SUPABASE_URL")
                 key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY")
                 return create_client(url, key)
 
+
 logger = logging.getLogger("persona_crud_service")
 
 
 # ==================== Mock Mode ====================
+
 
 def _is_mock_mode() -> bool:
     """런타임에 Mock 모드 확인"""
@@ -54,31 +60,58 @@ _mock_activity_logs: List[Dict[str, Any]] = []
 # 카테고리 매핑 (검색어 → 카테고리)
 KEYWORD_CATEGORY_MAP = {
     # 기술/IT
-    "AI": "기술", "인공지능": "기술", "GPT": "기술", "테크": "기술",
-    "IT": "기술", "개발": "기술", "코딩": "기술", "프로그래밍": "기술",
-    "스마트폰": "기술", "아이폰": "기술", "갤럭시": "기술",
-
+    "AI": "기술",
+    "인공지능": "기술",
+    "GPT": "기술",
+    "테크": "기술",
+    "IT": "기술",
+    "개발": "기술",
+    "코딩": "기술",
+    "프로그래밍": "기술",
+    "스마트폰": "기술",
+    "아이폰": "기술",
+    "갤럭시": "기술",
     # 게임
-    "게임": "게임", "롤": "게임", "발로란트": "게임", "오버워치": "게임",
-    "배그": "게임", "e스포츠": "게임", "LCK": "게임", "스팀": "게임",
-
+    "게임": "게임",
+    "롤": "게임",
+    "발로란트": "게임",
+    "오버워치": "게임",
+    "배그": "게임",
+    "e스포츠": "게임",
+    "LCK": "게임",
+    "스팀": "게임",
     # 음악/엔터
-    "음악": "음악", "노래": "음악", "플레이리스트": "음악", "뮤직비디오": "음악",
-    "영화": "영화", "넷플릭스": "영화", "드라마": "영화",
-
+    "음악": "음악",
+    "노래": "음악",
+    "플레이리스트": "음악",
+    "뮤직비디오": "음악",
+    "영화": "영화",
+    "넷플릭스": "영화",
+    "드라마": "영화",
     # 요리
-    "요리": "요리", "레시피": "요리", "먹방": "요리", "밀프렙": "요리",
-
+    "요리": "요리",
+    "레시피": "요리",
+    "먹방": "요리",
+    "밀프렙": "요리",
     # 운동/건강
-    "운동": "운동", "헬스": "운동", "다이어트": "운동", "홈트": "운동",
-
+    "운동": "운동",
+    "헬스": "운동",
+    "다이어트": "운동",
+    "홈트": "운동",
     # 뷰티/패션
-    "뷰티": "뷰티", "메이크업": "뷰티", "스킨케어": "뷰티",
-    "패션": "패션", "코디": "패션", "옷": "패션",
-
+    "뷰티": "뷰티",
+    "메이크업": "뷰티",
+    "스킨케어": "뷰티",
+    "패션": "패션",
+    "코디": "패션",
+    "옷": "패션",
     # 일상/여행
-    "브이로그": "일상", "일상": "일상", "루틴": "일상",
-    "여행": "여행", "호캉스": "여행", "맛집": "여행",
+    "브이로그": "일상",
+    "일상": "일상",
+    "루틴": "일상",
+    "여행": "여행",
+    "호캉스": "여행",
+    "맛집": "여행",
 }
 
 
@@ -116,7 +149,7 @@ class PersonaCrudService:
         gender: Optional[str] = None,
         interests: Optional[List[str]] = None,
         traits: Optional[Dict[str, float]] = None,
-        device_id: Optional[str] = None
+        device_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """페르소나 생성"""
         persona_id = str(uuid4())
@@ -124,9 +157,14 @@ class PersonaCrudService:
 
         # 기본 traits
         default_traits = {
-            "curiosity": 50.0, "enthusiasm": 50.0, "skepticism": 50.0,
-            "empathy": 50.0, "humor": 50.0, "expertise": 50.0,
-            "formality": 50.0, "verbosity": 50.0
+            "curiosity": 50.0,
+            "enthusiasm": 50.0,
+            "skepticism": 50.0,
+            "empathy": 50.0,
+            "humor": 50.0,
+            "expertise": 50.0,
+            "formality": 50.0,
+            "verbosity": 50.0,
         }
         if traits:
             default_traits.update(traits)
@@ -164,7 +202,7 @@ class PersonaCrudService:
                 "persona_id": persona_id,
                 "name": name,
                 "message": f"'{name}' 페르소나가 생성되었습니다.",
-                "data": persona_data
+                "data": persona_data,
             }
 
         try:
@@ -175,7 +213,7 @@ class PersonaCrudService:
                 "persona_id": persona_id,
                 "name": name,
                 "message": f"'{name}' 페르소나가 생성되었습니다.",
-                "data": persona_data
+                "data": persona_data,
             }
         except Exception as e:
             logger.error(f"페르소나 생성 실패: {e}")
@@ -192,7 +230,7 @@ class PersonaCrudService:
         gender: Optional[str] = None,
         interests: Optional[List[str]] = None,
         existence_state: Optional[str] = None,
-        traits: Optional[Dict[str, float]] = None
+        traits: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
         """페르소나 수정"""
         update_data = {}
@@ -227,7 +265,7 @@ class PersonaCrudService:
                 "success": False,
                 "persona_id": persona_id,
                 "updated_fields": [],
-                "message": "수정할 필드가 없습니다."
+                "message": "수정할 필드가 없습니다.",
             }
 
         update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -242,20 +280,18 @@ class PersonaCrudService:
                         "success": True,
                         "persona_id": persona_id,
                         "updated_fields": updated_fields,
-                        "message": "페르소나가 업데이트되었습니다."
+                        "message": "페르소나가 업데이트되었습니다.",
                     }
             raise ValueError(f"페르소나를 찾을 수 없습니다: {persona_id}")
 
         try:
-            self.client.table("personas").update(update_data).eq(
-                "id", persona_id
-            ).execute()
+            self.client.table("personas").update(update_data).eq("id", persona_id).execute()
             logger.info(f"페르소나 수정: {persona_id}, fields={updated_fields}")
             return {
                 "success": True,
                 "persona_id": persona_id,
                 "updated_fields": updated_fields,
-                "message": "페르소나가 업데이트되었습니다."
+                "message": "페르소나가 업데이트되었습니다.",
             }
         except Exception as e:
             logger.error(f"페르소나 수정 실패: {e}")
@@ -276,13 +312,11 @@ class PersonaCrudService:
                 raise ValueError(f"페르소나를 찾을 수 없습니다: {persona_id}")
 
             # Mock 활동 로그 삭제
-            activities_deleted = len([
-                log for log in _mock_activity_logs
-                if log.get("persona_id") == persona_id
-            ])
+            activities_deleted = len(
+                [log for log in _mock_activity_logs if log.get("persona_id") == persona_id]
+            )
             _mock_activity_logs[:] = [
-                log for log in _mock_activity_logs
-                if log.get("persona_id") != persona_id
+                log for log in _mock_activity_logs if log.get("persona_id") != persona_id
             ]
 
             logger.info(f"[Mock] 페르소나 삭제: {persona['name']} ({persona_id})")
@@ -292,20 +326,23 @@ class PersonaCrudService:
                 "name": persona["name"],
                 "message": f"'{persona['name']}' 페르소나가 삭제되었습니다.",
                 "activities_deleted": activities_deleted,
-                "search_logs_deleted": 0
+                "search_logs_deleted": 0,
             }
 
         try:
             # 페르소나 정보 조회
-            result = self.client.table("personas").select("name").eq(
-                "id", persona_id
-            ).single().execute()
+            result = (
+                self.client.table("personas").select("name").eq("id", persona_id).single().execute()
+            )
             name = result.data.get("name", "Unknown") if result.data else "Unknown"
 
             # 활동 로그 삭제
-            logs_result = self.client.table("persona_activity_logs").delete().eq(
-                "persona_id", persona_id
-            ).execute()
+            logs_result = (
+                self.client.table("persona_activity_logs")
+                .delete()
+                .eq("persona_id", persona_id)
+                .execute()
+            )
             activities_deleted = len(logs_result.data) if logs_result.data else 0
 
             # 페르소나 삭제
@@ -318,7 +355,7 @@ class PersonaCrudService:
                 "name": name,
                 "message": f"'{name}' 페르소나가 삭제되었습니다.",
                 "activities_deleted": activities_deleted,
-                "search_logs_deleted": 0
+                "search_logs_deleted": 0,
             }
         except Exception as e:
             logger.error(f"페르소나 삭제 실패: {e}")
@@ -326,11 +363,7 @@ class PersonaCrudService:
 
     # ==================== PERSONALITY DRIFT ====================
 
-    async def analyze_personality_drift(
-        self,
-        persona_id: str,
-        days: int = 30
-    ) -> Dict[str, Any]:
+    async def analyze_personality_drift(self, persona_id: str, days: int = 30) -> Dict[str, Any]:
         """
         성격 변화 분석 (Personality Drift)
 
@@ -358,7 +391,7 @@ class PersonaCrudService:
                 "interests_to_remove": [],
                 "analysis_period_days": days,
                 "total_searches_analyzed": 0,
-                "message": "분석할 검색 기록이 없습니다."
+                "message": "분석할 검색 기록이 없습니다.",
             }
 
         # 카테고리 분석
@@ -369,15 +402,18 @@ class PersonaCrudService:
         top_categories = []
         for category, count in category_counts.most_common(5):
             sample_keywords = [
-                log["search_keyword"] for log in search_logs
+                log["search_keyword"]
+                for log in search_logs
                 if self._get_category(log["search_keyword"]) == category
             ][:5]
-            top_categories.append({
-                "category": category,
-                "search_count": count,
-                "percentage": round((count / total_searches) * 100, 1),
-                "sample_keywords": sample_keywords
-            })
+            top_categories.append(
+                {
+                    "category": category,
+                    "search_count": count,
+                    "percentage": round((count / total_searches) * 100, 1),
+                    "sample_keywords": sample_keywords,
+                }
+            )
 
         # 현재 관심사와 비교
         original_interests = set(persona.get("interests", []))
@@ -387,8 +423,7 @@ class PersonaCrudService:
         suggested_interests = list(original_interests | search_categories)
         interests_to_add = list(search_categories - original_interests)
         interests_to_remove = [
-            i for i in original_interests
-            if i not in search_categories and len(search_logs) > 10
+            i for i in original_interests if i not in search_categories and len(search_logs) > 10
         ]
 
         # Drift 점수 계산
@@ -419,7 +454,7 @@ class PersonaCrudService:
             "interests_to_remove": interests_to_remove,
             "analysis_period_days": days,
             "total_searches_analyzed": total_searches,
-            "message": self._get_drift_message(drift_direction, interests_to_add)
+            "message": self._get_drift_message(drift_direction, interests_to_add),
         }
 
     def _categorize_searches(self, search_logs: List[Dict]) -> Counter:
@@ -440,12 +475,7 @@ class PersonaCrudService:
                 return category
         return "기타"
 
-    def _calculate_drift_score(
-        self,
-        original: set,
-        current: set,
-        search_count: int
-    ) -> float:
+    def _calculate_drift_score(self, original: set, current: set, search_count: int) -> float:
         """Drift 점수 계산 (0-1)"""
         if not original or search_count < 5:
             return 0.0
@@ -463,11 +493,7 @@ class PersonaCrudService:
         weight = min(1.0, search_count / 50)
         return round(drift * weight, 3)
 
-    def _get_drift_message(
-        self,
-        direction: str,
-        new_interests: List[str]
-    ) -> str:
+    def _get_drift_message(self, direction: str, new_interests: List[str]) -> str:
         """Drift 설명 메시지 생성"""
         if direction == "stable":
             return "관심사가 안정적입니다."
@@ -485,7 +511,7 @@ class PersonaCrudService:
         persona_id: str,
         min_search_count: int = 3,
         auto_remove_unused: bool = False,
-        confirm: bool = False
+        confirm: bool = False,
     ) -> Dict[str, Any]:
         """검색 기반 관심사 자동 업데이트"""
         # 분석 먼저 실행
@@ -500,7 +526,7 @@ class PersonaCrudService:
                 "interests_after": [],
                 "added": [],
                 "removed": [],
-                "message": "분석 실패"
+                "message": "분석 실패",
             }
 
         interests_before = analysis["original_interests"]
@@ -532,7 +558,7 @@ class PersonaCrudService:
                 "interests_after": interests_after,
                 "added": interests_to_add,
                 "removed": interests_to_remove,
-                "message": f"미리보기: {len(interests_to_add)}개 추가, {len(interests_to_remove)}개 제거 예정"
+                "message": f"미리보기: {len(interests_to_add)}개 추가, {len(interests_to_remove)}개 제거 예정",
             }
 
         # 실제 업데이트
@@ -547,7 +573,7 @@ class PersonaCrudService:
             "interests_after": interests_after,
             "added": interests_to_add,
             "removed": interests_to_remove,
-            "message": f"관심사가 업데이트되었습니다. {len(interests_to_add)}개 추가됨."
+            "message": f"관심사가 업데이트되었습니다. {len(interests_to_add)}개 추가됨.",
         }
 
     # ==================== Helper Methods ====================
@@ -561,35 +587,35 @@ class PersonaCrudService:
             return None
 
         try:
-            result = self.client.table("personas").select("*").eq(
-                "id", persona_id
-            ).single().execute()
+            result = (
+                self.client.table("personas").select("*").eq("id", persona_id).single().execute()
+            )
             return result.data
         except Exception:
             return None
 
-    async def _get_search_logs(
-        self,
-        persona_id: str,
-        days: int = 30
-    ) -> List[Dict[str, Any]]:
+    async def _get_search_logs(self, persona_id: str, days: int = 30) -> List[Dict[str, Any]]:
         """검색 로그 조회"""
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
         if self._mock_mode:
             return [
-                log for log in _mock_activity_logs
+                log
+                for log in _mock_activity_logs
                 if log.get("persona_id") == persona_id
                 and log.get("activity_type") == "idle_search"
                 and log.get("created_at", "") >= since
             ]
 
         try:
-            result = self.client.table("persona_activity_logs").select(
-                "search_keyword, created_at"
-            ).eq("persona_id", persona_id).eq(
-                "activity_type", "idle_search"
-            ).gte("created_at", since).execute()
+            result = (
+                self.client.table("persona_activity_logs")
+                .select("search_keyword, created_at")
+                .eq("persona_id", persona_id)
+                .eq("activity_type", "idle_search")
+                .gte("created_at", since)
+                .execute()
+            )
             return result.data or []
         except Exception as e:
             logger.error(f"검색 로그 조회 실패: {e}")

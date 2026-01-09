@@ -13,9 +13,15 @@ DoAi.Me Backend API Routers
 
 # Import 방식 변경: Docker/standalone 호환
 try:
-    from . import commissions, maintenance, personas, youtube, wifi, nocturne, laixi
+    from . import commissions, laixi, maintenance, nocturne, personas, wifi, youtube
 except ImportError:
-    import commissions, maintenance, personas, youtube, wifi, nocturne, laixi
+    import commissions
+    import laixi
+    import maintenance
+    import nocturne
+    import personas
+    import wifi
+    import youtube
 
 __all__ = [
     "commissions",

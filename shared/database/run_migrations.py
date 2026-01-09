@@ -8,7 +8,7 @@
 환경 변수:
     DATABASE_URL: PostgreSQL 연결 URL (Supabase 직접 연결)
     예: postgresql://postgres:[password]@db.[project].supabase.co:5432/postgres
-    
+
     또는 Supabase 대시보드 > Settings > Database > Connection string 에서 복사
 """
 import os
@@ -29,7 +29,7 @@ def get_database_url() -> str:
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
         return db_url
-    
+
     # .env 파일에서 로드 시도
     env_path = Path(__file__).parent.parent.parent / ".env"
     if env_path.exists():
@@ -38,7 +38,7 @@ def get_database_url() -> str:
                 line = line.strip()
                 if line.startswith("DATABASE_URL="):
                     return line.split("=", 1)[1].strip().strip('"').strip("'")
-    
+
     return ""
 
 
@@ -46,7 +46,7 @@ def run_migration(cursor, sql_file: Path) -> bool:
     """단일 마이그레이션 파일 실행"""
     print(f"\n📄 실행 중: {sql_file.name}")
     print("-" * 50)
-    
+
     try:
         sql_content = sql_file.read_text(encoding="utf-8")
         cursor.execute(sql_content)
@@ -63,7 +63,7 @@ def main():
     print("=" * 60)
     print("🚀 DoAi.Me 마이그레이션 실행")
     print("=" * 60)
-    
+
     # DATABASE_URL 확인
     db_url = get_database_url()
     if not db_url:
@@ -72,36 +72,38 @@ def main():
         print("  1. Supabase 대시보드 > Settings > Database")
         print("  2. Connection string (URI) 복사")
         print("  3. 환경 변수 설정:")
-        print('     set DATABASE_URL="postgresql://postgres:password@db.xxx.supabase.co:5432/postgres"')
+        print(
+            '     set DATABASE_URL="postgresql://postgres:password@db.xxx.supabase.co:5432/postgres"'
+        )
         print("\n  또는 .env 파일에 DATABASE_URL 추가")
         sys.exit(1)
-    
+
     # 연결 정보 마스킹 출력
     masked_url = db_url[:30] + "..." if len(db_url) > 30 else db_url
     print(f"\n🔗 데이터베이스: {masked_url}")
-    
+
     # 마이그레이션 파일 찾기
     migrations_dir = Path(__file__).parent / "migrations"
     if not migrations_dir.exists():
         print(f"❌ 마이그레이션 폴더를 찾을 수 없습니다: {migrations_dir}")
         sys.exit(1)
-    
+
     migration_files = sorted(migrations_dir.glob("*.sql"))
     if not migration_files:
         print("❌ 마이그레이션 파일이 없습니다.")
         sys.exit(1)
-    
+
     print(f"\n📁 마이그레이션 파일 ({len(migration_files)}개):")
     for f in migration_files:
         print(f"   - {f.name}")
-    
+
     # 사용자 확인
     print("\n⚠️  마이그레이션을 실행하시겠습니까? (y/N): ", end="")
     confirm = input().strip().lower()
     if confirm != "y":
         print("❌ 취소됨")
         sys.exit(0)
-    
+
     # 데이터베이스 연결
     try:
         conn = psycopg2.connect(db_url)
@@ -109,14 +111,14 @@ def main():
         cursor = conn.cursor()
         print("\n✅ 데이터베이스 연결 성공")
     except psycopg2.Error as e:
-        print(f"\n❌ 데이터베이스 연결 실패:")
+        print("\n❌ 데이터베이스 연결 실패:")
         print(f"   {e}")
         sys.exit(1)
-    
+
     # 마이그레이션 실행
     success_count = 0
     fail_count = 0
-    
+
     for sql_file in migration_files:
         if run_migration(cursor, sql_file):
             success_count += 1
@@ -127,7 +129,7 @@ def main():
             cursor.close()
             conn.close()
             sys.exit(1)
-    
+
     # 커밋
     print("\n" + "=" * 60)
     if fail_count == 0:
@@ -136,7 +138,7 @@ def main():
     else:
         conn.rollback()
         print(f"❌ 마이그레이션 실패 ({fail_count}개 오류)")
-    
+
     cursor.close()
     conn.close()
 

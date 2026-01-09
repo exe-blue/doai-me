@@ -11,8 +11,8 @@ Production Domain: doai.me
 Production Server: 158.247.210.152 (Vultr)
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
+
 from fastapi.testclient import TestClient
 
 
@@ -27,6 +27,7 @@ class TestRateLimiterConfiguration:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -49,6 +50,7 @@ class TestRateLimiterConfiguration:
         monkeypatch.setenv("RATE_LIMIT_ENABLED", "false")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -66,6 +68,7 @@ class TestRateLimiterConfiguration:
         monkeypatch.setenv("RATE_LIMIT_REDIS_URL", "redis://localhost:6379")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -85,10 +88,10 @@ class TestRateLimiterIdentifier:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import get_identifier
-        from unittest.mock import MagicMock
 
         mock_request = MagicMock()
         mock_request.headers = {}
@@ -105,10 +108,10 @@ class TestRateLimiterIdentifier:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import get_identifier
-        from unittest.mock import MagicMock
 
         mock_request = MagicMock()
         mock_request.headers = {"X-API-Key": "my-secret-api-key-12345"}
@@ -126,10 +129,10 @@ class TestRateLimiterIdentifier:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import get_real_client_ip
-        from unittest.mock import MagicMock
 
         mock_request = MagicMock()
         mock_request.headers = {}
@@ -146,10 +149,10 @@ class TestRateLimiterIdentifier:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import get_real_client_ip
-        from unittest.mock import MagicMock
 
         mock_request = MagicMock()
         mock_request.headers = {"X-Forwarded-For": "203.0.113.50, 70.41.3.18, 150.172.238.178"}
@@ -166,10 +169,10 @@ class TestRateLimiterIdentifier:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import get_real_client_ip
-        from unittest.mock import MagicMock
 
         mock_request = MagicMock()
         mock_request.headers = {"X-Real-IP": "198.51.100.25"}
@@ -190,10 +193,10 @@ class TestRateLimiterWhitelist:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
-        from backend.api.rate_limiter import is_whitelisted, RATE_LIMIT_WHITELIST_IPS
-        from unittest.mock import MagicMock
+        from backend.api.rate_limiter import RATE_LIMIT_WHITELIST_IPS, is_whitelisted
 
         assert "127.0.0.1" in RATE_LIMIT_WHITELIST_IPS
 
@@ -212,10 +215,10 @@ class TestRateLimiterWhitelist:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
-        from backend.api.rate_limiter import is_whitelisted, RATE_LIMIT_WHITELIST_IPS
-        from unittest.mock import MagicMock
+        from backend.api.rate_limiter import RATE_LIMIT_WHITELIST_IPS
 
         assert "158.247.210.152" in RATE_LIMIT_WHITELIST_IPS
 
@@ -227,10 +230,10 @@ class TestRateLimiterWhitelist:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
-        from backend.api.rate_limiter import is_whitelisted, RATE_LIMIT_WHITELIST_PATHS
-        from unittest.mock import MagicMock
+        from backend.api.rate_limiter import RATE_LIMIT_WHITELIST_PATHS, is_whitelisted
 
         assert "/docs" in RATE_LIMIT_WHITELIST_PATHS
         assert "/redoc" in RATE_LIMIT_WHITELIST_PATHS
@@ -254,6 +257,7 @@ class TestRateLimiterIntegration:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.main import app
@@ -269,6 +273,7 @@ class TestRateLimiterIntegration:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.main import app
@@ -290,6 +295,7 @@ class TestRateLimiterIntegration:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.main import app
@@ -309,15 +315,16 @@ class TestRateLimiterIntegration:
         monkeypatch.setenv("RATE_LIMIT_HEALTH", "2/minute")  # 매우 낮은 한도
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         # 새 limiter 인스턴스 필요 (설정 변경 반영)
         # 실제 테스트에서는 limiter 모듈도 재로드 필요
 
+        import asyncio
+
         from backend.api.rate_limiter import rate_limit_exceeded_handler
         from slowapi.errors import RateLimitExceeded
-        from unittest.mock import MagicMock, AsyncMock
-        import asyncio
 
         mock_request = MagicMock()
         mock_request.headers = {}
@@ -346,15 +353,16 @@ class TestRateLimiterDecorators:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import (
-            limit_default,
             limit_auth,
+            limit_custom,
+            limit_default,
+            limit_health,
             limit_read,
             limit_write,
-            limit_health,
-            limit_custom,
         )
 
         assert callable(limit_default)
@@ -372,6 +380,7 @@ class TestRateLimiterDecorators:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         from backend.api.rate_limiter import limit_custom
@@ -401,6 +410,7 @@ class TestRateLimiterProduction:
         monkeypatch.setenv("RATE_LIMIT_DEFAULT", "60/minute")  # 더 엄격
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -417,6 +427,7 @@ class TestRateLimiterProduction:
         monkeypatch.setenv("RATE_LIMIT_MESSAGE", "DoAi.Me 요청 한도 초과")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()

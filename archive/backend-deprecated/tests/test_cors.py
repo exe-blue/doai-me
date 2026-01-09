@@ -10,8 +10,6 @@ Production Server: 158.247.210.152 (Vultr)
 """
 
 import pytest
-from unittest.mock import patch
-import os
 
 
 class TestCorsConfigurationDevelopment:
@@ -27,6 +25,7 @@ class TestCorsConfigurationDevelopment:
 
         # 캐시 클리어 후 임포트
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -45,6 +44,7 @@ class TestCorsConfigurationDevelopment:
         monkeypatch.setenv("CORS_ORIGINS", "http://localhost:8080")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         # 에러 없이 설정 로드 가능
@@ -59,6 +59,7 @@ class TestCorsConfigurationDevelopment:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -72,6 +73,7 @@ class TestCorsConfigurationDevelopment:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -92,6 +94,7 @@ class TestCorsConfigurationDevelopment:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -112,9 +115,12 @@ class TestCorsConfigurationProduction:
         monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "test-service-key")
         monkeypatch.setenv("ENV", "production")
         monkeypatch.setenv("API_KEY", "secure-production-key-12345")
-        monkeypatch.setenv("CORS_ORIGINS", "https://doai.me,https://www.doai.me,https://admin.doai.me")
+        monkeypatch.setenv(
+            "CORS_ORIGINS", "https://doai.me,https://www.doai.me,https://admin.doai.me"
+        )
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -134,6 +140,7 @@ class TestCorsConfigurationProduction:
         monkeypatch.setenv("CORS_ORIGINS", "https://doai.me,http://158.247.210.152:3000")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -150,7 +157,8 @@ class TestCorsConfigurationProduction:
         monkeypatch.setenv("API_KEY", "secure-production-key-12345")
         monkeypatch.setenv("CORS_ORIGINS", "*")
 
-        from backend.api.config import get_settings, Settings
+        from backend.api.config import Settings, get_settings
+
         get_settings.cache_clear()
 
         with pytest.raises(ValueError) as exc_info:
@@ -167,7 +175,8 @@ class TestCorsConfigurationProduction:
         monkeypatch.setenv("API_KEY", "secure-production-key-12345")
         monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000")
 
-        from backend.api.config import get_settings, Settings
+        from backend.api.config import Settings, get_settings
+
         get_settings.cache_clear()
 
         with pytest.raises(ValueError) as exc_info:
@@ -184,7 +193,8 @@ class TestCorsConfigurationProduction:
         monkeypatch.setenv("API_KEY", "secure-production-key-12345")
         monkeypatch.setenv("CORS_ORIGINS", "http://127.0.0.1:5173")
 
-        from backend.api.config import get_settings, Settings
+        from backend.api.config import Settings, get_settings
+
         get_settings.cache_clear()
 
         with pytest.raises(ValueError) as exc_info:
@@ -205,6 +215,7 @@ class TestCorsOriginsParsing:
         monkeypatch.setenv("CORS_ORIGINS", "http://a.com,http://b.com,http://c.com")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -224,6 +235,7 @@ class TestCorsOriginsParsing:
         monkeypatch.setenv("CORS_ORIGINS", "http://a.com , http://b.com , http://c.com")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -244,6 +256,7 @@ class TestCorsOriginsParsing:
         monkeypatch.setenv("CORS_ORIGINS", "http://a.com,,http://b.com,")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -264,6 +277,7 @@ class TestCorsIntegrationWithFastAPI:
         monkeypatch.setenv("ENV", "development")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         # FastAPI 앱 임포트 시 CORS 미들웨어가 적용됨
@@ -282,10 +296,11 @@ class TestCorsIntegrationWithFastAPI:
         monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
-        from fastapi.testclient import TestClient
         from backend.api.main import app
+        from fastapi.testclient import TestClient
 
         client = TestClient(app)
 
@@ -295,7 +310,7 @@ class TestCorsIntegrationWithFastAPI:
             headers={
                 "Origin": "http://localhost:3000",
                 "Access-Control-Request-Method": "GET",
-            }
+            },
         )
 
         # CORS 헤더 확인
@@ -311,17 +326,15 @@ class TestCorsIntegrationWithFastAPI:
         monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
-        from fastapi.testclient import TestClient
         from backend.api.main import app
+        from fastapi.testclient import TestClient
 
         client = TestClient(app)
 
-        response = client.get(
-            "/health",
-            headers={"Origin": "http://localhost:3000"}
-        )
+        response = client.get("/health", headers={"Origin": "http://localhost:3000"})
 
         assert response.status_code == 200
         assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
@@ -335,17 +348,15 @@ class TestCorsIntegrationWithFastAPI:
         monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
-        from fastapi.testclient import TestClient
         from backend.api.main import app
+        from fastapi.testclient import TestClient
 
         client = TestClient(app)
 
-        response = client.get(
-            "/health",
-            headers={"Origin": "http://evil.com"}
-        )
+        response = client.get("/health", headers={"Origin": "http://evil.com"})
 
         # 요청은 처리되지만 CORS 헤더가 없거나 다름
         assert response.status_code == 200
@@ -366,10 +377,11 @@ class TestCorsProductionDoaiMe:
         monkeypatch.setenv("API_KEY", "secure-production-key-12345")
         monkeypatch.setenv(
             "CORS_ORIGINS",
-            "https://doai.me,https://www.doai.me,https://admin.doai.me,https://api.doai.me"
+            "https://doai.me,https://www.doai.me,https://admin.doai.me,https://api.doai.me",
         )
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -390,10 +402,11 @@ class TestCorsProductionDoaiMe:
         monkeypatch.setenv("API_KEY", "secure-production-key-12345")
         monkeypatch.setenv(
             "CORS_ORIGINS",
-            "https://doai.me,http://158.247.210.152:3000,http://158.247.210.152:8080"
+            "https://doai.me,http://158.247.210.152:3000,http://158.247.210.152:8080",
         )
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -415,6 +428,7 @@ class TestCorsEnvironmentVariableOverride:
         monkeypatch.setenv("CORS_ALLOW_METHODS", "GET,POST")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -432,6 +446,7 @@ class TestCorsEnvironmentVariableOverride:
         monkeypatch.setenv("CORS_ALLOW_HEADERS", "X-Custom-Header,Authorization")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()
@@ -449,6 +464,7 @@ class TestCorsEnvironmentVariableOverride:
         monkeypatch.setenv("CORS_ALLOW_CREDENTIALS", "false")
 
         from backend.api.config import get_settings
+
         get_settings.cache_clear()
 
         settings = get_settings()

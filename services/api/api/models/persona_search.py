@@ -12,46 +12,39 @@ P1: 대기 상태에서 OpenAI로 검색어를 생성하고,
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
-from uuid import UUID, uuid4
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 # SearchSource를 로컬에 정의 (shared 의존성 제거 - Docker 호환)
 class SearchSource(str, Enum):
     """검색어 생성 출처"""
-    AI_GENERATED = "ai_generated"      # OpenAI로 생성
-    TRAIT_BASED = "trait_based"        # Traits 기반 폴백
-    HISTORY_BASED = "history_based"    # 과거 검색 기반
-    FALLBACK = "fallback"              # 최종 폴백 키워드
+
+    AI_GENERATED = "ai_generated"  # OpenAI로 생성
+    TRAIT_BASED = "trait_based"  # Traits 기반 폴백
+    HISTORY_BASED = "history_based"  # 과거 검색 기반
+    FALLBACK = "fallback"  # 최종 폴백 키워드
 
 
 # ==================== Request Models ====================
 
+
 class IdleSearchRequest(BaseModel):
     """IDLE 검색 트리거 요청"""
 
-    force: bool = Field(
-        default=False,
-        description="IDLE 상태가 아니어도 강제 실행"
-    )
+    force: bool = Field(default=False, description="IDLE 상태가 아니어도 강제 실행")
     category_hint: Optional[str] = Field(
-        default=None,
-        max_length=50,
-        description="카테고리 힌트 (gaming, music, cooking 등)"
+        default=None, max_length=50, description="카테고리 힌트 (gaming, music, cooking 등)"
     )
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "force": False,
-                "category_hint": "gaming"
-            }
-        }
+        json_schema_extra = {"example": {"force": False, "category_hint": "gaming"}}
 
 
 # ==================== Response Models ====================
+
 
 class IdleSearchResponse(BaseModel):
     """IDLE 검색 트리거 응답"""
@@ -61,11 +54,7 @@ class IdleSearchResponse(BaseModel):
     generated_keyword: str = Field(..., description="생성된 검색어")
     search_source: str = Field(..., description="검색어 생성 출처")
     activity_log_id: str = Field(..., description="활동 로그 ID")
-    formative_impact: float = Field(
-        ...,
-        ge=0, le=1,
-        description="고유성 형성 영향도 (0-1)"
-    )
+    formative_impact: float = Field(..., ge=0, le=1, description="고유성 형성 영향도 (0-1)")
     message: str = Field(..., description="결과 메시지")
 
     class Config:
@@ -77,7 +66,7 @@ class IdleSearchResponse(BaseModel):
                 "search_source": "ai_generated",
                 "activity_log_id": "a1b2c3d4-5678-90ab-cdef-123456789012",
                 "formative_impact": 0.85,
-                "message": "'롤 시즌14 메타' 검색어로 검색 준비 완료"
+                "message": "'롤 시즌14 메타' 검색어로 검색 준비 완료",
             }
         }
 
@@ -91,11 +80,7 @@ class SearchHistoryItem(BaseModel):
     searched_at: datetime = Field(..., description="검색 시각")
     video_watched: Optional[str] = Field(None, description="시청한 영상 URL")
     video_title: Optional[str] = Field(None, description="영상 제목")
-    formative_impact: float = Field(
-        default=0.0,
-        ge=0, le=1,
-        description="고유성 형성 영향도"
-    )
+    formative_impact: float = Field(default=0.0, ge=0, le=1, description="고유성 형성 영향도")
 
 
 class SearchHistoryResponse(BaseModel):
@@ -104,13 +89,9 @@ class SearchHistoryResponse(BaseModel):
     success: bool = True
     persona_id: str
     total: int = Field(..., description="총 검색 수")
-    history: List[SearchHistoryItem] = Field(
-        default_factory=list,
-        description="검색 기록 목록"
-    )
+    history: List[SearchHistoryItem] = Field(default_factory=list, description="검색 기록 목록")
     traits_influence: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Traits가 검색에 미치는 영향 분석"
+        default_factory=dict, description="Traits가 검색에 미치는 영향 분석"
     )
 
     class Config:
@@ -127,13 +108,13 @@ class SearchHistoryResponse(BaseModel):
                         "searched_at": "2026-01-09T10:30:00Z",
                         "video_watched": None,
                         "video_title": None,
-                        "formative_impact": 0.85
+                        "formative_impact": 0.85,
                     }
                 ],
                 "traits_influence": {
                     "dominant_trait": "curiosity",
-                    "category_tendency": ["gaming", "tech"]
-                }
+                    "category_tendency": ["gaming", "tech"],
+                },
             }
         }
 
@@ -149,30 +130,20 @@ class PersonaSearchProfile(BaseModel):
     unique_keywords: int = Field(default=0, description="고유 키워드 수")
 
     # 카테고리 분석
-    top_categories: List[str] = Field(
-        default_factory=list,
-        description="주요 검색 카테고리"
-    )
+    top_categories: List[str] = Field(default_factory=list, description="주요 검색 카테고리")
 
     # 고유성 형성
     formative_period_searches: int = Field(
-        default=0,
-        description="형성기(초기) 검색 수 - 높은 영향력"
+        default=0, description="형성기(초기) 검색 수 - 높은 영향력"
     )
-    avg_formative_impact: float = Field(
-        default=0.0,
-        description="평균 고유성 형성 영향도"
-    )
+    avg_formative_impact: float = Field(default=0.0, description="평균 고유성 형성 영향도")
 
     # 성격 발달
     personality_drift: float = Field(
-        default=0.0,
-        ge=0, le=1,
-        description="검색 활동으로 인한 성격 변화 정도"
+        default=0.0, ge=0, le=1, description="검색 활동으로 인한 성격 변화 정도"
     )
     interests_evolved: List[str] = Field(
-        default_factory=list,
-        description="검색으로 발견된 새로운 관심사"
+        default_factory=list, description="검색으로 발견된 새로운 관심사"
     )
 
     # 시간 정보
@@ -190,14 +161,12 @@ class PersonaSearchProfileResponse(BaseModel):
 
 # ==================== Batch/Admin Models ====================
 
+
 class BatchIdleSearchRequest(BaseModel):
     """배치 IDLE 검색 요청 (여러 페르소나 동시)"""
 
     persona_ids: List[str] = Field(
-        ...,
-        min_length=1,
-        max_length=50,
-        description="대상 페르소나 ID 목록"
+        ..., min_length=1, max_length=50, description="대상 페르소나 ID 목록"
     )
     force: bool = Field(default=False)
     category_hint: Optional[str] = None

@@ -9,42 +9,36 @@ BatchExecutor 단위 테스트
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timezone
 
 from shared.batch_executor import (
-    BatchExecutor,
     BatchExecutionContext,
     VideoTarget,
 )
-from shared.device_registry import DeviceInfo, DeviceGroup
-from shared.schemas.workload import BatchConfig, WatchConfig, CommandStatus
+from shared.device_registry import DeviceInfo
+from shared.schemas.workload import BatchConfig, WatchConfig
 
 
 class TestVideoTarget:
     """VideoTarget 데이터클래스 테스트"""
-    
+
     def test_create_with_all_fields(self):
         """모든 필드로 생성"""
         target = VideoTarget(
             video_id="dQw4w9WgXcQ",
             url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             title="테스트 영상",
-            duration_seconds=180
+            duration_seconds=180,
         )
-        
+
         assert target.video_id == "dQw4w9WgXcQ"
         assert target.url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
         assert target.title == "테스트 영상"
         assert target.duration_seconds == 180
-    
+
     def test_create_with_required_fields(self):
         """필수 필드만으로 생성"""
-        target = VideoTarget(
-            video_id="abc123",
-            url="https://youtube.com/watch?v=abc123"
-        )
-        
+        target = VideoTarget(video_id="abc123", url="https://youtube.com/watch?v=abc123")
+
         assert target.video_id == "abc123"
         assert target.title is None
         assert target.duration_seconds is None
@@ -52,35 +46,31 @@ class TestVideoTarget:
 
 class TestBatchExecutionContext:
     """BatchExecutionContext 테스트"""
-    
+
     def test_create_with_defaults(self):
         """기본값으로 생성"""
         context = BatchExecutionContext()
-        
+
         assert context.workload_id is None
         assert context.video is None
         assert context.batch_config is not None
         assert context.watch_config is not None
-    
+
     def test_create_with_video(self):
         """영상 정보 포함"""
-        video = VideoTarget(
-            video_id="test123",
-            url="https://youtube.com/watch?v=test123"
-        )
+        video = VideoTarget(video_id="test123", url="https://youtube.com/watch?v=test123")
         context = BatchExecutionContext(video=video)
-        
+
         assert context.video.video_id == "test123"
-    
+
     def test_create_with_callbacks(self):
         """콜백 함수 포함"""
+
         async def on_start(device_id, hierarchy_id):
             pass
-        
-        context = BatchExecutionContext(
-            on_device_start=on_start
-        )
-        
+
+        context = BatchExecutionContext(on_device_start=on_start)
+
         assert context.on_device_start is not None
 
 
@@ -100,7 +90,7 @@ class TestBatchExecutorDeviceGrouping:
                 phoneboard_id="WS01-PB01",
                 slot_number=i + 1,
                 device_group="A" if i < 5 else "B",
-                status="idle"
+                status="idle",
             )
             devices.append(device)
         return devices
@@ -140,20 +130,14 @@ class TestBatchConfigValidation:
 
     def test_interval_settings(self):
         """인터벌 설정"""
-        config = BatchConfig(
-            batch_interval_seconds=120,
-            cycle_interval_seconds=400
-        )
+        config = BatchConfig(batch_interval_seconds=120, cycle_interval_seconds=400)
 
         assert config.batch_interval_seconds == 120
         assert config.cycle_interval_seconds == 400
 
     def test_retry_settings(self):
         """재시도 설정"""
-        config = BatchConfig(
-            max_retries=5,
-            retry_delay_seconds=60
-        )
+        config = BatchConfig(max_retries=5, retry_delay_seconds=60)
 
         assert config.max_retries == 5
         assert config.retry_delay_seconds == 60
@@ -164,30 +148,21 @@ class TestWatchConfigValidation:
 
     def test_valid_watch_duration(self):
         """유효한 시청 시간"""
-        config = WatchConfig(
-            watch_duration_min=30,
-            watch_duration_max=120
-        )
+        config = WatchConfig(watch_duration_min=30, watch_duration_max=120)
 
         assert config.watch_duration_min == 30
         assert config.watch_duration_max == 120
 
     def test_valid_probabilities(self):
         """유효한 확률값"""
-        config = WatchConfig(
-            like_probability=0.20,
-            comment_probability=0.05
-        )
+        config = WatchConfig(like_probability=0.20, comment_probability=0.05)
 
         assert config.like_probability == 0.20
         assert config.comment_probability == 0.05
 
     def test_human_pattern_settings(self):
         """휴먼 패턴 설정"""
-        config = WatchConfig(
-            enable_random_scroll=True,
-            enable_random_pause=False
-        )
+        config = WatchConfig(enable_random_scroll=True, enable_random_pause=False)
 
         assert config.enable_random_scroll is True
         assert config.enable_random_pause is False

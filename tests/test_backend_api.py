@@ -1,26 +1,28 @@
 """
 Backend API 테스트
 
-실행: 
+실행:
   cd backend/api && python -m pytest -v
 또는:
   uvicorn main:app --reload  # 서버 실행 후 수동 테스트
 """
 
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 
 class TestBackendConfig:
     """Backend 설정 테스트"""
-    
+
     def test_import_config(self):
         """config 모듈 import 테스트"""
         sys.path.insert(0, str(Path(__file__).parent.parent / "backend" / "api"))
 
         try:
             from config import Settings
+
             assert Settings is not None
         except ModuleNotFoundError as e:
             # config 모듈이 없을 수 있음 (deprecated backend)
@@ -36,30 +38,30 @@ class TestBackendConfig:
 class TestBackendAPIIntegration:
     """
     Backend API 통합 테스트
-    
+
     이 테스트들은 backend/api 디렉토리에서 실행해야 합니다.
     또는 실행 중인 서버에 HTTP 요청으로 테스트합니다.
     """
-    
+
     @pytest.mark.skip(reason="서버 실행 상태에서만 테스트 가능")
     def test_root_endpoint_live(self):
         """/ 엔드포인트 라이브 테스트"""
         import httpx
-        
+
         response = httpx.get("http://localhost:8001/")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["name"] == "DoAi.Me Backend API"
-    
+
     @pytest.mark.skip(reason="서버 실행 상태에서만 테스트 가능")
     def test_health_endpoint_live(self):
         """Health check 엔드포인트 라이브 테스트"""
         import httpx
-        
+
         response = httpx.get("http://localhost:8001/health")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["status"] == "healthy"
 

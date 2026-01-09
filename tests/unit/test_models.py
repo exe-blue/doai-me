@@ -171,7 +171,6 @@ class TestTaskModels:
     def test_task_duration(self):
         """작업 시간 계산"""
         from shared.models import Task, TaskType
-        from shared.models.task import TaskResult
 
         task = Task(type=TaskType.FEATURE, title="테스트")
         task.start()

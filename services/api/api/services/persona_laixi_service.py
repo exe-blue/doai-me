@@ -10,12 +10,12 @@ P2: 실제 YouTube 검색 실행
 @created 2026-01-09
 """
 
-import os
-import random
 import asyncio
 import logging
+import os
+import random
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 # Supabase 클라이언트
@@ -26,20 +26,26 @@ except ImportError:
         from db import get_supabase_client as get_client
     except ImportError:
         import sys
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
         sys.path.insert(0, project_root)
         try:
             from shared.supabase_client import get_client
         except ImportError:
             from supabase import create_client
+
             def get_client():
                 url = os.getenv("SUPABASE_URL")
                 key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY")
                 return create_client(url, key)
 
+
 # Laixi 클라이언트 (선택적)
 try:
     from shared.laixi_client import LaixiClient, get_laixi_client
+
     HAS_LAIXI = True
 except ImportError:
     HAS_LAIXI = False
@@ -100,7 +106,7 @@ class PersonaLaixiService:
         keyword: Optional[str] = None,
         watch_video: bool = True,
         watch_duration_seconds: Optional[int] = None,
-        like_probability: float = 0.1
+        like_probability: float = 0.1,
     ) -> Dict[str, Any]:
         """
         YouTube 검색 실행
@@ -127,8 +133,7 @@ class PersonaLaixiService:
         if not keyword:
             # IDLE search로 검색어 생성
             search_result = await self._search_service.execute_idle_search(
-                persona_id=persona_id,
-                force=True
+                persona_id=persona_id, force=True
             )
             keyword = search_result["generated_keyword"]
             keyword_source = search_result["search_source"]
@@ -141,7 +146,7 @@ class PersonaLaixiService:
                 persona_id=persona_id,
                 keyword=keyword,
                 source=keyword_source,
-                formative_impact=formative_impact
+                formative_impact=formative_impact,
             )
 
         # 3. Mock 모드 처리
@@ -155,7 +160,7 @@ class PersonaLaixiService:
                 watch_duration_seconds=watch_duration_seconds,
                 like_probability=like_probability,
                 formative_impact=formative_impact,
-                activity_log_id=activity_log_id
+                activity_log_id=activity_log_id,
             )
 
         # 4. 실제 Laixi 실행
@@ -168,7 +173,7 @@ class PersonaLaixiService:
             watch_duration_seconds=watch_duration_seconds,
             like_probability=like_probability,
             formative_impact=formative_impact,
-            activity_log_id=activity_log_id
+            activity_log_id=activity_log_id,
         )
 
     async def _mock_execute_search(
@@ -181,7 +186,7 @@ class PersonaLaixiService:
         watch_duration_seconds: Optional[int],
         like_probability: float,
         formative_impact: float,
-        activity_log_id: str
+        activity_log_id: str,
     ) -> Dict[str, Any]:
         """Mock 검색 실행 (테스트용)"""
         logger.info(f"[Mock] YouTube 검색 실행: '{keyword}'")
@@ -222,7 +227,7 @@ class PersonaLaixiService:
             "liked": liked,
             "formative_impact": formative_impact,
             "activity_log_id": activity_log_id,
-            "message": f"[Mock] '{keyword}' 검색 완료"
+            "message": f"[Mock] '{keyword}' 검색 완료",
         }
 
     async def _real_execute_search(
@@ -235,7 +240,7 @@ class PersonaLaixiService:
         watch_duration_seconds: Optional[int],
         like_probability: float,
         formative_impact: float,
-        activity_log_id: str
+        activity_log_id: str,
     ) -> Dict[str, Any]:
         """실제 Laixi 검색 실행"""
         if not device_id:
@@ -260,7 +265,7 @@ class PersonaLaixiService:
             # 1. YouTube 앱 열기
             await self.laixi.execute_adb(
                 device_id,
-                "am start -n com.google.android.youtube/com.google.android.youtube.HomeActivity"
+                "am start -n com.google.android.youtube/com.google.android.youtube.HomeActivity",
             )
             await asyncio.sleep(2)
 
@@ -273,10 +278,7 @@ class PersonaLaixiService:
             await asyncio.sleep(0.3)
 
             # 클립보드 붙여넣기 (Ctrl+V 에뮬레이션)
-            await self.laixi.execute_adb(
-                device_id,
-                f"input text '{keyword}'"
-            )
+            await self.laixi.execute_adb(device_id, f"input text '{keyword}'")
             await asyncio.sleep(0.5)
 
             # 4. 검색 실행 (Enter)
@@ -307,9 +309,7 @@ class PersonaLaixiService:
 
             # 활동 로그 업데이트
             await self._update_activity_log(
-                activity_log_id=activity_log_id,
-                video_url=video_watched,
-                video_title=video_title
+                activity_log_id=activity_log_id, video_url=video_watched, video_title=video_title
             )
 
             logger.info(
@@ -329,7 +329,7 @@ class PersonaLaixiService:
                 "liked": liked,
                 "formative_impact": formative_impact,
                 "activity_log_id": activity_log_id,
-                "message": f"'{keyword}' 검색 및 시청 완료"
+                "message": f"'{keyword}' 검색 및 시청 완료",
             }
 
         except Exception as e:
@@ -337,11 +337,7 @@ class PersonaLaixiService:
             raise
 
     async def _log_search_activity(
-        self,
-        persona_id: str,
-        keyword: str,
-        source: str,
-        formative_impact: float
+        self, persona_id: str, keyword: str, source: str, formative_impact: float
     ) -> str:
         """검색 활동 로그 저장"""
         log_id = str(uuid4())
@@ -369,20 +365,16 @@ class PersonaLaixiService:
         return log_id
 
     async def _update_activity_log(
-        self,
-        activity_log_id: str,
-        video_url: Optional[str],
-        video_title: Optional[str]
+        self, activity_log_id: str, video_url: Optional[str], video_title: Optional[str]
     ) -> None:
         """활동 로그 업데이트 (시청 정보 추가)"""
         if self._mock_mode or not self.client:
             return
 
         try:
-            self.client.table("persona_activity_logs").update({
-                "target_url": video_url,
-                "target_title": video_title
-            }).eq("id", activity_log_id).execute()
+            self.client.table("persona_activity_logs").update(
+                {"target_url": video_url, "target_title": video_title}
+            ).eq("id", activity_log_id).execute()
         except Exception as e:
             logger.error(f"활동 로그 업데이트 실패: {e}")
 

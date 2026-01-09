@@ -38,13 +38,26 @@ class StreamServer {
      * WebSocket 서버 초기화
      */
     initialize(server) {
-        this.wss = new WebSocket.Server({ 
-            server,
-            path: '/stream'
+        // noServer 모드로 변경 (다른 WebSocket 핸들러와 충돌 방지)
+        this.wss = new WebSocket.Server({
+            noServer: true,
+            perMessageDeflate: false
         });
 
         this.wss.on('connection', (ws, req) => {
             this._handleConnection(ws, req);
+        });
+
+        // HTTP upgrade 이벤트 처리
+        server.on('upgrade', (request, socket, head) => {
+            const pathname = request.url.split('?')[0];
+
+            // /stream/* 경로만 처리
+            if (pathname.startsWith('/stream/') || pathname === '/stream') {
+                this.wss.handleUpgrade(request, socket, head, (ws) => {
+                    this.wss.emit('connection', ws, request);
+                });
+            }
         });
 
         this.logger.info('[Stream] WebSocket 서버 초기화');

@@ -11,17 +11,17 @@ P1: 대기 상태에서 OpenAI로 성격 기반 검색어를 생성하고,
 @created 2026-01-09
 """
 
-import asyncio
-import random
-import os
-from datetime import datetime, timezone, timedelta
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import uuid4
 import logging
+import os
+import random
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import uuid4
 
 # AI 클라이언트 옵셔널 임포트
 try:
     from openai import AsyncOpenAI
+
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
@@ -29,6 +29,7 @@ except ImportError:
 
 try:
     from anthropic import AsyncAnthropic
+
     HAS_ANTHROPIC = True
 except ImportError:
     HAS_ANTHROPIC = False
@@ -41,25 +42,31 @@ except ImportError:
     try:
         from db import get_supabase_client as get_client
     except ImportError:
-        import sys
         import os
+        import sys
+
         # 로컬 개발 환경 fallback
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
         sys.path.insert(0, project_root)
         try:
             from shared.supabase_client import get_client
         except ImportError:
             # 최후의 fallback: 직접 구현
             from supabase import create_client
+
             def get_client():
                 url = os.getenv("SUPABASE_URL")
                 key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY")
                 return create_client(url, key)
 
+
 logger = logging.getLogger("persona_search_service")
 
 
 # ==================== Mock Mode 설정 ====================
+
 
 def _is_mock_mode() -> bool:
     """런타임에 Mock 모드 확인"""
@@ -146,10 +153,26 @@ TRAIT_CATEGORY_MAP = {
 
 # 폴백 검색어 (AI 실패 시)
 FALLBACK_KEYWORDS = [
-    "브이로그", "먹방", "게임", "음악", "뉴스",
-    "요리", "운동", "영화 리뷰", "일상", "챌린지",
-    "ASMR", "공부", "여행", "펫", "뷰티",
-    "IT 리뷰", "토크쇼", "다큐", "코미디", "드라마 리뷰"
+    "브이로그",
+    "먹방",
+    "게임",
+    "음악",
+    "뉴스",
+    "요리",
+    "운동",
+    "영화 리뷰",
+    "일상",
+    "챌린지",
+    "ASMR",
+    "공부",
+    "여행",
+    "펫",
+    "뷰티",
+    "IT 리뷰",
+    "토크쇼",
+    "다큐",
+    "코미디",
+    "드라마 리뷰",
 ]
 
 
@@ -209,10 +232,7 @@ class PersonaSearchService:
     # ==================== 핵심 메서드 ====================
 
     async def execute_idle_search(
-        self,
-        persona_id: str,
-        force: bool = False,
-        category_hint: Optional[str] = None
+        self, persona_id: str, force: bool = False, category_hint: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         IDLE 상태 검색 실행
@@ -240,18 +260,14 @@ class PersonaSearchService:
         # 2. 상태 확인 (force가 아니면 WAITING 상태만 허용)
         existence_state = persona.get("existence_state", "active")
         if not force and existence_state not in ("waiting", "active"):
-            raise ValueError(
-                f"페르소나가 IDLE 상태가 아닙니다: {existence_state}"
-            )
+            raise ValueError(f"페르소나가 IDLE 상태가 아닙니다: {existence_state}")
 
         # 3. 최근 검색어 조회 (중복 방지)
         recent_keywords = await self._get_recent_search_keywords(persona_id, limit=10)
 
         # 4. 검색어 생성
         keyword, source = await self.generate_keyword_for_persona(
-            persona=persona,
-            category_hint=category_hint,
-            exclude_keywords=recent_keywords
+            persona=persona, category_hint=category_hint, exclude_keywords=recent_keywords
         )
 
         # 5. 고유성 형성 영향도 계산
@@ -259,10 +275,7 @@ class PersonaSearchService:
 
         # 6. 활동 로그 저장
         activity_log_id = await self._log_search_activity(
-            persona_id=persona_id,
-            keyword=keyword,
-            source=source,
-            formative_impact=formative_impact
+            persona_id=persona_id, keyword=keyword, source=source, formative_impact=formative_impact
         )
 
         # 7. 페르소나 상태 업데이트
@@ -280,14 +293,14 @@ class PersonaSearchService:
             "search_source": source,
             "activity_log_id": activity_log_id,
             "formative_impact": formative_impact,
-            "message": f"'{keyword}' 검색어로 검색 준비 완료"
+            "message": f"'{keyword}' 검색어로 검색 준비 완료",
         }
 
     async def generate_keyword_for_persona(
         self,
         persona: Dict[str, Any],
         category_hint: Optional[str] = None,
-        exclude_keywords: Optional[List[str]] = None
+        exclude_keywords: Optional[List[str]] = None,
     ) -> Tuple[str, str]:
         """
         페르소나 성격에 맞는 검색어 생성
@@ -330,7 +343,7 @@ class PersonaSearchService:
         self,
         persona: Dict[str, Any],
         category_hint: Optional[str],
-        exclude_keywords: Optional[List[str]]
+        exclude_keywords: Optional[List[str]],
     ) -> str:
         """페르소나 맞춤 프롬프트 구성 (description 기반)"""
         name = persona.get("name", "알 수 없음")
@@ -341,7 +354,11 @@ class PersonaSearchService:
         interests_str = ", ".join(interests) if interests else ""
 
         # description이 있으면 그것을 사용, 없으면 interests 사용
-        profile_info = description if description else f"관심사: {interests_str}" if interests_str else "다양한 주제에 관심"
+        profile_info = (
+            description
+            if description
+            else f"관심사: {interests_str}" if interests_str else "다양한 주제에 관심"
+        )
 
         prompt = f"""당신은 "{name}"이라는 페르소나입니다.
 
@@ -379,12 +396,12 @@ class PersonaSearchService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "유튜브 검색어만 출력하세요. 따옴표 없이, 설명 없이, 검색어만요."
+                        "content": "유튜브 검색어만 출력하세요. 따옴표 없이, 설명 없이, 검색어만요.",
                     },
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 max_tokens=30,
-                temperature=0.9  # 높은 온도로 다양성 확보
+                temperature=0.9,  # 높은 온도로 다양성 확보
             )
 
             keyword = response.choices[0].message.content.strip()
@@ -402,7 +419,7 @@ class PersonaSearchService:
         response = await self._anthropic.messages.create(
             model="claude-3-sonnet-20240229",
             max_tokens=30,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
         )
 
         keyword = response.content[0].text.strip()
@@ -415,10 +432,10 @@ class PersonaSearchService:
             return None
 
         # 따옴표 제거
-        keyword = keyword.strip('"\'')
+        keyword = keyword.strip("\"'")
 
         # 줄바꿈 제거 (첫 줄만)
-        keyword = keyword.split('\n')[0]
+        keyword = keyword.split("\n")[0]
 
         # 공백 정리
         keyword = keyword.strip()
@@ -434,9 +451,7 @@ class PersonaSearchService:
         return keyword
 
     def _generate_from_traits(
-        self,
-        persona: Dict[str, Any],
-        exclude_keywords: Optional[List[str]] = None
+        self, persona: Dict[str, Any], exclude_keywords: Optional[List[str]] = None
     ) -> str:
         """Description/Traits 기반 폴백 검색어 생성"""
         # description에서 키워드 추출 시도
@@ -493,31 +508,25 @@ class PersonaSearchService:
             "AI": ["AI 뉴스", "ChatGPT 활용법", "인공지능 미래"],
             "프로그래밍": ["코딩 튜토리얼", "개발자 일상", "파이썬 강의"],
             "개발": ["개발자 브이로그", "코딩 공부법", "주니어 개발자"],
-
             # 요리/음식
             "요리": ["초간단 레시피", "자취 요리", "원팬 요리"],
             "레시피": ["간단 저녁 메뉴", "10분 요리", "자취생 레시피"],
             "밀프렙": ["일주일 밀프렙", "도시락 준비", "건강 식단"],
             "혼밥": ["혼밥 메뉴 추천", "혼밥 브이로그", "1인분 요리"],
-
             # 게임
             "게임": ["게임 리뷰", "신작 게임", "게임 공략"],
             "FPS": ["발로란트 하이라이트", "오버워치 명장면", "배그 스쿼드"],
             "롤": ["롤 챌린저 경기", "롤 시즌 메타", "롤 하이라이트"],
             "e스포츠": ["LCK 하이라이트", "롤드컵", "e스포츠 명장면"],
-
             # 음악/엔터
             "음악": ["신곡 추천", "플레이리스트", "뮤직비디오"],
             "영화": ["영화 리뷰", "넷플릭스 추천", "영화 해석"],
-
             # 운동/건강
             "운동": ["홈트레이닝", "헬스 루틴", "다이어트 운동"],
             "헬스": ["헬스장 운동법", "웨이트 루틴", "벌크업 식단"],
-
             # 뷰티/패션
             "뷰티": ["데일리 메이크업", "스킨케어 루틴", "뷰티 하울"],
             "패션": ["코디 추천", "패션 하울", "데일리룩"],
-
             # 일반
             "일상": ["일상 브이로그", "퇴근 후 루틴", "주말 일상"],
             "여행": ["국내 여행지", "여행 브이로그", "호캉스 추천"],
@@ -549,7 +558,7 @@ class PersonaSearchService:
         # 문자열이면 파싱
         if isinstance(created_at_str, str):
             try:
-                created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
             except ValueError:
                 return 0.5
         else:
@@ -590,19 +599,16 @@ class PersonaSearchService:
             return None
 
         try:
-            result = self.client.table("personas").select("*").eq(
-                "id", persona_id
-            ).single().execute()
+            result = (
+                self.client.table("personas").select("*").eq("id", persona_id).single().execute()
+            )
             return result.data
         except Exception as e:
             logger.error(f"페르소나 조회 실패: {e}")
             return None
 
     async def list_personas(
-        self,
-        state: Optional[str] = None,
-        limit: int = 50,
-        offset: int = 0
+        self, state: Optional[str] = None, limit: int = 50, offset: int = 0
     ) -> Dict[str, Any]:
         """페르소나 목록 조회"""
         # Mock 모드
@@ -610,12 +616,12 @@ class PersonaSearchService:
             personas = MOCK_PERSONAS.copy()
             if state:
                 personas = [p for p in personas if p.get("existence_state") == state]
-            paginated = personas[offset:offset + limit]
+            paginated = personas[offset : offset + limit]
             return {
                 "success": True,
                 "personas": paginated,
                 "total": len(personas),
-                "mock_mode": True
+                "mock_mode": True,
             }
 
         try:
@@ -624,60 +630,43 @@ class PersonaSearchService:
             if state:
                 query = query.eq("existence_state", state)
 
-            result = query.order(
-                "created_at", desc=True
-            ).range(offset, offset + limit - 1).execute()
+            result = (
+                query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            )
 
-            return {
-                "success": True,
-                "personas": result.data or [],
-                "total": len(result.data or [])
-            }
+            return {"success": True, "personas": result.data or [], "total": len(result.data or [])}
         except Exception as e:
             logger.error(f"페르소나 목록 조회 실패: {e}")
             return {"success": False, "personas": [], "total": 0}
 
-    async def _get_recent_search_keywords(
-        self,
-        persona_id: str,
-        limit: int = 10
-    ) -> List[str]:
+    async def _get_recent_search_keywords(self, persona_id: str, limit: int = 10) -> List[str]:
         """최근 검색어 조회 (중복 방지용)"""
         # Mock 모드
         if self._mock_mode:
-            logs = [
-                log for log in _mock_search_logs
-                if log.get("persona_id") == persona_id
-            ]
+            logs = [log for log in _mock_search_logs if log.get("persona_id") == persona_id]
             logs.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-            return [
-                log["search_keyword"]
-                for log in logs[:limit]
-                if log.get("search_keyword")
-            ]
+            return [log["search_keyword"] for log in logs[:limit] if log.get("search_keyword")]
 
         try:
-            result = self.client.table("persona_activity_logs").select(
-                "search_keyword"
-            ).eq("persona_id", persona_id).eq(
-                "activity_type", "idle_search"
-            ).order("created_at", desc=True).limit(limit).execute()
+            result = (
+                self.client.table("persona_activity_logs")
+                .select("search_keyword")
+                .eq("persona_id", persona_id)
+                .eq("activity_type", "idle_search")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
 
             return [
-                row["search_keyword"]
-                for row in (result.data or [])
-                if row.get("search_keyword")
+                row["search_keyword"] for row in (result.data or []) if row.get("search_keyword")
             ]
         except Exception as e:
             logger.error(f"최근 검색어 조회 실패: {e}")
             return []
 
     async def _log_search_activity(
-        self,
-        persona_id: str,
-        keyword: str,
-        source: str,
-        formative_impact: float
+        self, persona_id: str, keyword: str, source: str, formative_impact: float
     ) -> str:
         """검색 활동 로그 저장"""
         log_id = str(uuid4())
@@ -724,34 +713,33 @@ class PersonaSearchService:
 
         try:
             # 현재 활동 수 조회
-            result = self.client.table("personas").select(
-                "total_activities"
-            ).eq("id", persona_id).single().execute()
+            result = (
+                self.client.table("personas")
+                .select("total_activities")
+                .eq("id", persona_id)
+                .single()
+                .execute()
+            )
 
             current_activities = (result.data or {}).get("total_activities", 0)
 
             # 업데이트
-            self.client.table("personas").update({
-                "last_called_at": datetime.now(timezone.utc).isoformat(),
-                "existence_state": "active",
-                "total_activities": current_activities + 1
-            }).eq("id", persona_id).execute()
+            self.client.table("personas").update(
+                {
+                    "last_called_at": datetime.now(timezone.utc).isoformat(),
+                    "existence_state": "active",
+                    "total_activities": current_activities + 1,
+                }
+            ).eq("id", persona_id).execute()
 
         except Exception as e:
             logger.error(f"페르소나 상태 업데이트 실패: {e}")
 
-    async def get_search_history(
-        self,
-        persona_id: str,
-        limit: int = 50
-    ) -> Dict[str, Any]:
+    async def get_search_history(self, persona_id: str, limit: int = 50) -> Dict[str, Any]:
         """검색 기록 조회"""
         # Mock 모드
         if self._mock_mode:
-            logs = [
-                log for log in _mock_search_logs
-                if log.get("persona_id") == persona_id
-            ]
+            logs = [log for log in _mock_search_logs if log.get("persona_id") == persona_id]
             logs.sort(key=lambda x: x.get("created_at", ""), reverse=True)
             history = [
                 {
@@ -761,7 +749,7 @@ class PersonaSearchService:
                     "searched_at": log["created_at"],
                     "video_watched": log.get("target_url"),
                     "video_title": log.get("target_title"),
-                    "formative_impact": log.get("formative_impact", 0.0)
+                    "formative_impact": log.get("formative_impact", 0.0),
                 }
                 for log in logs[:limit]
             ]
@@ -771,16 +759,22 @@ class PersonaSearchService:
                 "total": len(history),
                 "history": history,
                 "traits_influence": {},
-                "mock_mode": True
+                "mock_mode": True,
             }
 
         try:
-            result = self.client.table("persona_activity_logs").select(
-                "id, search_keyword, search_source, created_at, "
-                "target_url, target_title, formative_impact"
-            ).eq("persona_id", persona_id).eq(
-                "activity_type", "idle_search"
-            ).order("created_at", desc=True).limit(limit).execute()
+            result = (
+                self.client.table("persona_activity_logs")
+                .select(
+                    "id, search_keyword, search_source, created_at, "
+                    "target_url, target_title, formative_impact"
+                )
+                .eq("persona_id", persona_id)
+                .eq("activity_type", "idle_search")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
 
             history = [
                 {
@@ -790,7 +784,7 @@ class PersonaSearchService:
                     "searched_at": row["created_at"],
                     "video_watched": row.get("target_url"),
                     "video_title": row.get("target_title"),
-                    "formative_impact": row.get("formative_impact", 0.0)
+                    "formative_impact": row.get("formative_impact", 0.0),
                 }
                 for row in (result.data or [])
             ]
@@ -800,7 +794,7 @@ class PersonaSearchService:
                 "persona_id": persona_id,
                 "total": len(history),
                 "history": history,
-                "traits_influence": {}  # TODO: P2에서 구현
+                "traits_influence": {},  # TODO: P2에서 구현
             }
         except Exception as e:
             logger.error(f"검색 기록 조회 실패: {e}")
@@ -809,7 +803,7 @@ class PersonaSearchService:
                 "persona_id": persona_id,
                 "total": 0,
                 "history": [],
-                "traits_influence": {}
+                "traits_influence": {},
             }
 
     async def get_search_profile(self, persona_id: str) -> Dict[str, Any]:
@@ -822,18 +816,18 @@ class PersonaSearchService:
 
             # Mock 모드
             if self._mock_mode:
-                logs = [
-                    log for log in _mock_search_logs
-                    if log.get("persona_id") == persona_id
-                ]
+                logs = [log for log in _mock_search_logs if log.get("persona_id") == persona_id]
                 logs.sort(key=lambda x: x.get("created_at", ""))
             else:
                 # 검색 통계 조회
-                result = self.client.table("persona_activity_logs").select(
-                    "search_keyword, formative_impact, created_at"
-                ).eq("persona_id", persona_id).eq(
-                    "activity_type", "idle_search"
-                ).order("created_at").execute()
+                result = (
+                    self.client.table("persona_activity_logs")
+                    .select("search_keyword, formative_impact, created_at")
+                    .eq("persona_id", persona_id)
+                    .eq("activity_type", "idle_search")
+                    .order("created_at")
+                    .execute()
+                )
                 logs = result.data or []
 
             # 통계 계산
@@ -857,7 +851,7 @@ class PersonaSearchService:
                     "first_search_at": logs[0]["created_at"] if logs else None,
                     "last_search_at": logs[-1]["created_at"] if logs else None,
                 },
-                "mock_mode": self._mock_mode
+                "mock_mode": self._mock_mode,
             }
         except Exception as e:
             logger.error(f"검색 프로필 조회 실패: {e}")

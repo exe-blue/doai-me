@@ -6,71 +6,65 @@ Laixi WebSocket 서버 + 실제 디바이스 연결이 필요합니다.
 """
 
 import os
+
 import pytest
-from datetime import datetime
-from unittest.mock import AsyncMock, patch
 
 from shared.scripts.youtube_app_automation import (
-    YouTubeAppAutomation,
-    YouTubeCoordinates,
     ExecutionResult,
     WatchResult,
+    YouTubeAppAutomation,
+    YouTubeCoordinates,
 )
-
 
 pytestmark = pytest.mark.e2e
 
 
-@pytest.mark.skipif(
-    not os.getenv("LAIXI_WS_URL"),
-    reason="LAIXI_WS_URL 환경변수 필요"
-)
+@pytest.mark.skipif(not os.getenv("LAIXI_WS_URL"), reason="LAIXI_WS_URL 환경변수 필요")
 class TestYouTubeAppAutomation:
     """YouTube 앱 자동화 E2E 테스트"""
-    
+
     @pytest.fixture
     def automation(self, laixi_client):
         """YouTubeAppAutomation 인스턴스"""
         return YouTubeAppAutomation(laixi_client)
-    
+
     @pytest.fixture
     def test_device_serial(self):
         """테스트 디바이스 시리얼"""
         return os.getenv("TEST_DEVICE_SERIAL", "R58M00000001")
-    
+
     @pytest.mark.asyncio
     async def test_launch_youtube(self, automation, test_device_serial):
         """YouTube 앱 실행"""
         try:
             result = await automation._launch_youtube(test_device_serial)
-            
+
             assert result is True
         except Exception as e:
             pytest.skip(f"Laixi 연결 실패: {e}")
-    
+
     @pytest.mark.asyncio
     async def test_search_video(self, automation, test_device_serial):
         """영상 검색"""
         try:
             # 먼저 앱 실행
             await automation._launch_youtube(test_device_serial)
-            
+
             # 검색 수행
             result = await automation._search_video(
-                device_serial=test_device_serial,
-                keyword="테스트 영상"
+                device_serial=test_device_serial, keyword="테스트 영상"
             )
-            
+
             assert result is True
         except Exception as e:
             pytest.skip(f"검색 실패: {e}")
-    
+
     @pytest.mark.asyncio
     async def test_go_home(self, automation, test_device_serial):
         """홈으로 이동"""
         try:
             result = await automation._go_home(test_device_serial)
-            
+
             assert result is True
         except Exception as e:
             pytest.skip(f"홈 이동 실패: {e}")
@@ -78,19 +72,19 @@ class TestYouTubeAppAutomation:
 
 class TestYouTubeCoordinates:
     """YouTube 좌표 테스트"""
-    
+
     def test_default_coordinates(self):
         """기본 좌표값"""
         coords = YouTubeCoordinates()
-        
+
         # 검색 아이콘 (우상단)
         assert 0.9 <= coords.search_icon[0] <= 1.0
         assert 0 <= coords.search_icon[1] <= 0.1
-        
+
         # 플레이어 중앙 (화면 상단)
         assert 0.4 <= coords.player_center[0] <= 0.6
         assert 0.2 <= coords.player_center[1] <= 0.3
-    
+
     def test_coordinate_ranges(self):
         """좌표 범위 확인 (0.0 ~ 1.0)"""
         coords = YouTubeCoordinates()
@@ -112,7 +106,7 @@ class TestYouTubeCoordinates:
 
 class TestExecutionResult:
     """실행 결과 Enum 테스트"""
-    
+
     def test_result_values(self):
         """결과 값 확인"""
         assert ExecutionResult.SUCCESS.value == "success"
@@ -129,18 +123,14 @@ class TestWatchResult:
         """성공 결과 생성"""
         from shared.scripts.youtube_app_automation import WatchTask
 
-        task = WatchTask(
-            video_id="test123",
-            title="테스트",
-            search_keyword="테스트"
-        )
+        task = WatchTask(video_id="test123", title="테스트", search_keyword="테스트")
 
         result = WatchResult(
             task=task,
             status=ExecutionResult.SUCCESS,
             watch_duration_seconds=180,
             liked=True,
-            commented=False
+            commented=False,
         )
 
         assert result.status == ExecutionResult.SUCCESS
@@ -151,17 +141,13 @@ class TestWatchResult:
         """실패 결과 생성"""
         from shared.scripts.youtube_app_automation import WatchTask
 
-        task = WatchTask(
-            video_id="test123",
-            title="테스트",
-            search_keyword="테스트"
-        )
+        task = WatchTask(video_id="test123", title="테스트", search_keyword="테스트")
 
         result = WatchResult(
             task=task,
             status=ExecutionResult.FAILED,
             error_code="VIDEO_NOT_FOUND",
-            error_message="검색 결과에서 영상을 찾지 못함"
+            error_message="검색 결과에서 영상을 찾지 못함",
         )
 
         assert result.status == ExecutionResult.FAILED
@@ -198,7 +184,7 @@ class TestMockYouTubeAutomation:
             target_watch_percent=0.7,
             should_like=False,
             should_comment=False,
-            device_id="MOCK_DEVICE"
+            device_id="MOCK_DEVICE",
         )
 
         result = await mock_automation.execute(task)
@@ -209,7 +195,7 @@ class TestMockYouTubeAutomation:
             ExecutionResult.SUCCESS,
             ExecutionResult.PARTIAL,
             ExecutionResult.FAILED,
-            ExecutionResult.ERROR
+            ExecutionResult.ERROR,
         ]
 
     @pytest.mark.asyncio
@@ -219,10 +205,7 @@ class TestMockYouTubeAutomation:
         mock_automation.laixi.set_clipboard.return_value = {"success": True}
         mock_automation.laixi.execute_adb.return_value = {"success": True}
 
-        result = await mock_automation._search_video(
-            device_id="MOCK_DEVICE",
-            keyword="테스트 검색어"
-        )
+        await mock_automation._search_video(device_id="MOCK_DEVICE", keyword="테스트 검색어")
 
         # tap이 호출되었는지 확인
         assert mock_automation.laixi.tap.called
@@ -233,7 +216,7 @@ class TestMockYouTubeAutomation:
         mock_automation.laixi.tap.return_value = {"success": True}
         mock_automation.laixi.swipe.return_value = {"success": True}
 
-        result = await mock_automation._click_like("MOCK_DEVICE")
+        await mock_automation._click_like("MOCK_DEVICE")
 
         assert mock_automation.laixi.tap.called or mock_automation.laixi.swipe.called
 
@@ -245,10 +228,7 @@ class TestMockYouTubeAutomation:
         mock_automation.laixi.set_clipboard.return_value = {"success": True}
         mock_automation.laixi.execute_adb.return_value = {"success": True}
 
-        result = await mock_automation._write_comment(
-            device_id="MOCK_DEVICE",
-            comment_text="테스트 댓글"
-        )
+        await mock_automation._write_comment(device_id="MOCK_DEVICE", comment_text="테스트 댓글")
 
         assert mock_automation.laixi.set_clipboard.called
 
@@ -258,7 +238,7 @@ class TestAutomationHelpers:
 
     def test_calculate_watch_duration(self):
         """시청 시간 계산"""
-        from shared.scripts.youtube_app_automation import YouTubeAppAutomation, WatchTask
+        from shared.scripts.youtube_app_automation import WatchTask, YouTubeAppAutomation
 
         automation = YouTubeAppAutomation.__new__(YouTubeAppAutomation)
         automation.coords = None
@@ -269,7 +249,7 @@ class TestAutomationHelpers:
             title="Test",
             search_keyword="test",
             duration_seconds=180,
-            target_watch_percent=0.7
+            target_watch_percent=0.7,
         )
 
         duration = automation._calculate_watch_duration(task)
@@ -279,7 +259,7 @@ class TestAutomationHelpers:
 
     def test_calculate_watch_duration_short_video(self):
         """짧은 영상 시청 시간"""
-        from shared.scripts.youtube_app_automation import YouTubeAppAutomation, WatchTask
+        from shared.scripts.youtube_app_automation import WatchTask, YouTubeAppAutomation
 
         automation = YouTubeAppAutomation.__new__(YouTubeAppAutomation)
         automation.coords = None
@@ -289,7 +269,7 @@ class TestAutomationHelpers:
             title="Test",
             search_keyword="test",
             duration_seconds=30,
-            target_watch_percent=0.7
+            target_watch_percent=0.7,
         )
 
         duration = automation._calculate_watch_duration(task)
@@ -337,7 +317,7 @@ class TestErrorHandling:
         mock_automation.laixi.execute_adb.return_value = {"success": True}
 
         # 실패해도 예외가 발생하지 않아야 함
-        result = await mock_automation._search_video("MOCK", "test")
+        await mock_automation._search_video("MOCK", "test")
 
         # 메서드가 호출되었는지 확인
         assert mock_automation.laixi.tap.called

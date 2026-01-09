@@ -118,7 +118,12 @@ class WebSocketMultiplexer {
                 });
                 return;
             }
-            
+
+            // /ws/dashboard는 DashboardHandler에서 별도 처리
+            if (pathname === '/ws/dashboard') {
+                return;  // DashboardHandler의 upgrade 리스너가 처리
+            }
+
             // /stream 경로는 Legacy StreamServer가 처리 (path 옵션 사용)
             // 여기서 처리하지 않으면 다른 곳에서 처리하거나 연결 거부됨
         });

@@ -8,28 +8,28 @@ PR #5: 장애 대응 런북 자동화
 - L1 자동 실행 조건 테스트
 """
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
 
 # 테스트 대상 임포트
 from shared.monitoring.runbook import (
-    # Enums
-    AlertLevel,
-    RecoveryLevel,
-    IncidentStatus,
     ActionResult,
     # Dataclasses
     AlertConfig,
-    TimelineEvent,
-    Incident,
-    RunbookAction,
-    RunbookResult,
-    L1TriggerCondition,
+    # Enums
+    AlertLevel,
     # Classes
     AlertManager,
+    Incident,
+    IncidentStatus,
     IncidentTracker,
+    L1TriggerCondition,
+    RecoveryLevel,
+    RunbookAction,
     RunbookExecutor,
+    RunbookResult,
+    TimelineEvent,
     # Singletons
     get_alert_manager,
     get_incident_tracker,
@@ -37,10 +37,10 @@ from shared.monitoring.runbook import (
     reset_runbook_module,
 )
 
-
 # =========================================
 # Enum 테스트
 # =========================================
+
 
 class TestAlertLevel:
     """AlertLevel Enum 테스트"""
@@ -90,6 +90,7 @@ class TestActionResult:
 # AlertConfig 테스트
 # =========================================
 
+
 class TestAlertConfig:
     """AlertConfig 데이터클래스 테스트"""
 
@@ -122,6 +123,7 @@ class TestAlertConfig:
 # =========================================
 # TimelineEvent 테스트
 # =========================================
+
 
 class TestTimelineEvent:
     """TimelineEvent 데이터클래스 테스트"""
@@ -164,6 +166,7 @@ class TestTimelineEvent:
 # =========================================
 # Incident 테스트
 # =========================================
+
 
 class TestIncident:
     """Incident 데이터클래스 테스트"""
@@ -295,6 +298,7 @@ class TestIncident:
 # RunbookAction 테스트
 # =========================================
 
+
 class TestRunbookAction:
     """RunbookAction 데이터클래스 테스트"""
 
@@ -361,6 +365,7 @@ class TestRunbookResult:
 # AlertManager 테스트
 # =========================================
 
+
 class TestAlertManager:
     """AlertManager 클래스 테스트"""
 
@@ -373,9 +378,7 @@ class TestAlertManager:
 
     def test_init_with_config(self):
         """설정으로 초기화"""
-        config = AlertConfig(
-            slack_webhook="https://hooks.slack.com/test"
-        )
+        config = AlertConfig(slack_webhook="https://hooks.slack.com/test")
         manager = AlertManager(config=config)
 
         assert manager.config.slack_webhook == "https://hooks.slack.com/test"
@@ -475,6 +478,7 @@ class TestAlertManager:
 # =========================================
 # IncidentTracker 테스트
 # =========================================
+
 
 class TestIncidentTracker:
     """IncidentTracker 클래스 테스트"""
@@ -629,6 +633,7 @@ class TestIncidentTracker:
 # =========================================
 # RunbookExecutor 테스트
 # =========================================
+
 
 class TestRunbookExecutor:
     """RunbookExecutor 클래스 테스트"""
@@ -808,7 +813,7 @@ class TestRunbookExecutor:
 
         await executor.execute_l1_soft_reset(service="api")
 
-        active_incidents = executor.incident_tracker.get_active_incidents()
+        executor.incident_tracker.get_active_incidents()
         # L1이 성공하면 인시던트가 해결되어 활성 목록에 없음
         recent_incidents = executor.incident_tracker.get_recent_incidents(hours=1)
         assert len(recent_incidents) >= 1
@@ -837,6 +842,7 @@ class TestRunbookExecutor:
 # =========================================
 # 싱글톤 테스트
 # =========================================
+
 
 class TestSingletons:
     """싱글톤 함수 테스트"""
@@ -881,11 +887,13 @@ class TestSingletons:
 # L1TriggerCondition 테스트
 # =========================================
 
+
 class TestL1TriggerCondition:
     """L1TriggerCondition 테스트"""
 
     def test_create_condition(self):
         """조건 생성"""
+
         async def check():
             return True
 
@@ -905,6 +913,7 @@ class TestL1TriggerCondition:
 
     def test_default_values(self):
         """기본값 확인"""
+
         async def check():
             return True
 
@@ -921,6 +930,7 @@ class TestL1TriggerCondition:
 # =========================================
 # 통합 시나리오 테스트
 # =========================================
+
 
 class TestIntegrationScenarios:
     """통합 시나리오 테스트"""

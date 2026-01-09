@@ -14,12 +14,12 @@ DoAi.Me Backend Services
 # Docker/standalone 호환 import
 try:
     from .laixi_client import LaixiClient, get_laixi_client
-    from .wifi_service import WifiService, get_wifi_service
     from .persona_search_service import PersonaSearchService, get_persona_search_service
+    from .wifi_service import WifiService, get_wifi_service
 except ImportError:
     from laixi_client import LaixiClient, get_laixi_client
-    from wifi_service import WifiService, get_wifi_service
     from persona_search_service import PersonaSearchService, get_persona_search_service
+    from wifi_service import WifiService, get_wifi_service
 
 __all__ = [
     "LaixiClient",

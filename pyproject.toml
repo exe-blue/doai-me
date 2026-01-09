@@ -63,8 +63,18 @@ target-version = ['py311']
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I"]
-ignore = ["E501"]
+ignore = ["E501", "W293", "W291"]  # Allow trailing whitespace for now
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["E402", "F401"]  # Allow imports after sys.path manipulation
+"archive/**/*.py" = ["E402", "E722", "F401"]  # Deprecated code - minimal checks
+"scripts/**/*.py" = ["E402"]  # Scripts may need path setup
+"services/cloud-gateway/main.py" = ["E402"]  # Loads env before imports
+"services/api/api/routers/*.py" = ["F401"]  # Routers may import for re-export
+"local/**/*.py" = ["E402", "E722"]  # Local dev code
 
 [tool.mypy]
 python_version = "3.11"

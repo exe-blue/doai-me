@@ -5,8 +5,6 @@ shared/config/settings.py 테스트
 환경 변수 격리를 위해 conftest.py의 clean_env_for_settings fixture 사용
 """
 
-import pytest
-
 
 class TestSettings:
     """Settings 클래스 테스트"""
@@ -88,19 +86,14 @@ class TestSettings:
         settings = Settings()
         assert settings.debug is False
 
-    def test_settings_supabase_key_methods(
-        self, reset_settings_cache, sample_supabase_env
-    ):
+    def test_settings_supabase_key_methods(self, reset_settings_cache, sample_supabase_env):
         """Supabase 키 메서드 테스트"""
         from shared.config.settings import Settings
 
         settings = Settings()
 
         assert settings.get_supabase_anon_key_value() == "test-anon-key-12345"
-        assert (
-            settings.get_supabase_service_role_key_value()
-            == "test-service-role-key-67890"
-        )
+        assert settings.get_supabase_service_role_key_value() == "test-service-role-key-67890"
 
     def test_settings_optional_supabase_keys(self, reset_settings_cache, monkeypatch):
         """Supabase 키가 없을 때 None 반환"""

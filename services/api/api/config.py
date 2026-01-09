@@ -14,7 +14,6 @@ from typing import Optional
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
-
 # 안전하지 않은 기본값 상수 (프로덕션에서 거부됨)
 _INSECURE_DEFAULT_API_KEY = "dev-api-key-change-in-production"
 
@@ -59,9 +58,7 @@ class APISettings(BaseSettings):
 
     @field_validator("api_key", mode="after")
     @classmethod
-    def validate_api_key_not_default_in_production(
-        cls, v: Optional[str], info
-    ) -> Optional[str]:
+    def validate_api_key_not_default_in_production(cls, v: Optional[str], info) -> Optional[str]:
         """
         프로덕션 환경에서 안전하지 않은 기본 API 키 사용 방지
 

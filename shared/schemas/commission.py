@@ -11,19 +11,21 @@ AI 시민(디바이스)에게 위임하는 작업 정의
 @created 2026-01-09
 """
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from enum import Enum
-from pydantic import BaseModel, Field
 import uuid
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, Field
 
 # =========================================
 # Enums
 # =========================================
 
+
 class JobType(str, Enum):
     """작업 유형"""
+
     LIKE = "LIKE"
     COMMENT = "COMMENT"
     SUBSCRIBE = "SUBSCRIBE"
@@ -33,19 +35,21 @@ class JobType(str, Enum):
 
 class CommissionStatus(str, Enum):
     """Commission 상태"""
-    PENDING = "pending"          # 생성됨, 할당 대기
-    ASSIGNED = "assigned"        # 디바이스 할당됨
-    SENT = "sent"                # 디바이스에 전송됨
+
+    PENDING = "pending"  # 생성됨, 할당 대기
+    ASSIGNED = "assigned"  # 디바이스 할당됨
+    SENT = "sent"  # 디바이스에 전송됨
     IN_PROGRESS = "in_progress"  # 실행 중
-    SUCCESS = "success"          # 성공
-    FAILED = "failed"            # 실패
-    REFUSED = "refused"          # 거절됨 (페르소나 불일치)
-    TIMEOUT = "timeout"          # 타임아웃
-    CANCELLED = "cancelled"      # 취소됨
+    SUCCESS = "success"  # 성공
+    FAILED = "failed"  # 실패
+    REFUSED = "refused"  # 거절됨 (페르소나 불일치)
+    TIMEOUT = "timeout"  # 타임아웃
+    CANCELLED = "cancelled"  # 취소됨
 
 
 class PlatformType(str, Enum):
     """대상 플랫폼"""
+
     YOUTUBE = "youtube"
     INSTAGRAM = "instagram"
     TIKTOK = "tiktok"
@@ -55,6 +59,7 @@ class PlatformType(str, Enum):
 
 class ElementType(str, Enum):
     """UI 요소 유형"""
+
     BUTTON = "BUTTON"
     INPUT = "INPUT"
     VIDEO = "VIDEO"
@@ -65,8 +70,10 @@ class ElementType(str, Enum):
 # 작업 대상 (Target)
 # =========================================
 
+
 class CommissionTarget(BaseModel):
     """작업 대상 요소"""
+
     element_type: ElementType = Field(..., description="UI 요소 유형")
     selector_hint: Optional[str] = Field(None, description="요소 찾기 힌트 (id, desc, text)")
     fallback_coords: Optional[List[int]] = Field(None, description="폴백 좌표 [x, y]")
@@ -77,8 +84,10 @@ class CommissionTarget(BaseModel):
 # 작업 내용 (Content)
 # =========================================
 
+
 class CommissionContent(BaseModel):
     """작업 내용 (COMMENT 등에 사용)"""
+
     text: Optional[str] = Field(None, description="텍스트 내용")
     persona_voice: bool = Field(default=True, description="페르소나 말투 적용 여부")
     max_length: int = Field(default=200, description="최대 길이")
@@ -89,8 +98,10 @@ class CommissionContent(BaseModel):
 # 타이밍 설정
 # =========================================
 
+
 class CommissionTiming(BaseModel):
     """작업 타이밍 설정"""
+
     delay_before_ms: int = Field(default=2000, ge=0, description="작업 전 딜레이 (ms)")
     delay_after_ms: int = Field(default=1000, ge=0, description="작업 후 딜레이 (ms)")
     timeout_sec: int = Field(default=30, ge=5, le=300, description="작업 타임아웃 (초)")
@@ -101,8 +112,10 @@ class CommissionTiming(BaseModel):
 # 보상 설정
 # =========================================
 
+
 class BonusConditions(BaseModel):
     """보너스 조건"""
+
     first_of_day: int = Field(default=5, description="오늘 첫 작업 보너스")
     streak_bonus: int = Field(default=2, description="연속 작업 보너스")
     quality_bonus: int = Field(default=10, description="품질 보너스")
@@ -110,6 +123,7 @@ class BonusConditions(BaseModel):
 
 class CommissionReward(BaseModel):
     """보상 설정"""
+
     base_credits: int = Field(default=10, ge=0, description="기본 크레딧")
     bonus_conditions: Optional[BonusConditions] = None
 
@@ -118,14 +132,13 @@ class CommissionReward(BaseModel):
 # 윤리/컴플라이언스 설정
 # =========================================
 
+
 class CommissionCompliance(BaseModel):
     """윤리/컴플라이언스 설정"""
+
     ethical_check: bool = Field(default=True, description="윤리 검증 활성화")
     persona_alignment: float = Field(
-        default=0.7,
-        ge=0.0,
-        le=1.0,
-        description="필요 페르소나 적합도 (0.0 ~ 1.0)"
+        default=0.7, ge=0.0, le=1.0, description="필요 페르소나 적합도 (0.0 ~ 1.0)"
     )
     can_refuse: bool = Field(default=True, description="작업 거절 가능 여부")
 
@@ -134,8 +147,10 @@ class CommissionCompliance(BaseModel):
 # 작업 정의 (Job)
 # =========================================
 
+
 class CommissionJob(BaseModel):
     """작업 정의"""
+
     type: JobType = Field(..., description="작업 유형")
     platform: PlatformType = Field(default=PlatformType.YOUTUBE, description="대상 플랫폼")
     url: Optional[str] = Field(None, description="대상 URL")
@@ -147,8 +162,10 @@ class CommissionJob(BaseModel):
 # Commission 생성/응답 스키마
 # =========================================
 
+
 class CommissionCreate(BaseModel):
     """Commission 생성 요청"""
+
     # 작업 정의
     job: CommissionJob
 
@@ -157,17 +174,11 @@ class CommissionCreate(BaseModel):
     device_ids: Optional[List[str]] = Field(None, description="대상 디바이스 ID 목록 (배치)")
 
     # 대상 워크스테이션 (device_id가 없을 때 사용)
-    target_workstations: Optional[List[str]] = Field(
-        None,
-        description="대상 워크스테이션 ID 목록"
-    )
+    target_workstations: Optional[List[str]] = Field(None, description="대상 워크스테이션 ID 목록")
 
     # 할당 비율 (target_workstations 사용 시)
     device_percent: float = Field(
-        default=1.0,
-        ge=0.01,
-        le=1.0,
-        description="할당할 디바이스 비율 (0.01 ~ 1.0)"
+        default=1.0, ge=0.01, le=1.0, description="할당할 디바이스 비율 (0.01 ~ 1.0)"
     )
 
     # 작업 세부 설정
@@ -190,6 +201,7 @@ class CommissionCreate(BaseModel):
 
 class CommissionUpdate(BaseModel):
     """Commission 업데이트 요청"""
+
     status: Optional[CommissionStatus] = None
     priority: Optional[int] = Field(None, ge=1, le=10)
     scheduled_at: Optional[datetime] = None
@@ -199,6 +211,7 @@ class CommissionUpdate(BaseModel):
 
 class CommissionInDB(BaseModel):
     """DB 저장 Commission 스키마"""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
     # 작업 정의
@@ -254,6 +267,7 @@ class CommissionInDB(BaseModel):
 
 class CommissionResponse(CommissionInDB):
     """Commission 응답 스키마"""
+
     # 추가 계산 필드
     device_name: Optional[str] = None
     video_title: Optional[str] = None
@@ -268,8 +282,10 @@ class CommissionResponse(CommissionInDB):
 # 배치 Commission
 # =========================================
 
+
 class CommissionBatchCreate(BaseModel):
     """배치 Commission 생성 요청"""
+
     # 공통 작업 정의
     job: CommissionJob
 
@@ -291,6 +307,7 @@ class CommissionBatchCreate(BaseModel):
 
 class CommissionBatchResponse(BaseModel):
     """배치 Commission 생성 응답"""
+
     batch_id: str
     total_created: int
     total_devices: int
@@ -302,8 +319,10 @@ class CommissionBatchResponse(BaseModel):
 # 결과 및 통계
 # =========================================
 
+
 class CommissionResult(BaseModel):
     """Commission 결과 (디바이스 → 서버)"""
+
     commission_id: str
     device_id: str
     status: CommissionStatus
@@ -328,6 +347,7 @@ class CommissionResult(BaseModel):
 
 class CommissionStats(BaseModel):
     """Commission 통계"""
+
     total: int = 0
     pending: int = 0
     assigned: int = 0
@@ -353,6 +373,7 @@ class CommissionStats(BaseModel):
 
 class CommissionListResponse(BaseModel):
     """Commission 목록 응답"""
+
     total: int
     stats: CommissionStats
     commissions: List[CommissionResponse]
@@ -367,8 +388,10 @@ class CommissionListResponse(BaseModel):
 # 실시간 모니터링
 # =========================================
 
+
 class CommissionQueueStatus(BaseModel):
     """Commission 대기열 상태 (실시간)"""
+
     queue_length: int = 0
     processing_count: int = 0
     avg_wait_time_sec: float = 0.0
@@ -384,6 +407,7 @@ class CommissionQueueStatus(BaseModel):
 
 class ActiveCommissionsResponse(BaseModel):
     """활성 Commission 목록 (실시간 모니터링용)"""
+
     active_count: int
     queue_status: CommissionQueueStatus
     active_commissions: List[CommissionResponse]

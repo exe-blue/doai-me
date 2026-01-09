@@ -8,8 +8,6 @@ PR #2: Laixi 연결 회복력 개선
 """
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, AsyncMock, patch
 
 # 테스트 대상 임포트
 from services.api.api.services.laixi_client import (
@@ -293,4 +291,6 @@ class TestBackoffSequence:
         for i, expected_delay in enumerate(expected):
             client._metrics.consecutive_failures = i
             actual_delay = client._calculate_backoff()
-            assert actual_delay == expected_delay, f"failures={i}: expected {expected_delay}, got {actual_delay}"
+            assert (
+                actual_delay == expected_delay
+            ), f"failures={i}: expected {expected_delay}, got {actual_delay}"

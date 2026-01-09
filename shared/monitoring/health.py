@@ -16,10 +16,10 @@
     print(checker.to_dict(result))
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 
 from shared.utils import get_logger
 
@@ -239,7 +239,7 @@ async def check_supabase() -> Dict[str, Any]:
 
         client = get_client()
         # 간단한 쿼리로 연결 확인
-        result = client.table("devices").select("id").limit(1).execute()
+        client.table("devices").select("id").limit(1).execute()
         return {"status": "healthy", "message": "Supabase connected"}
     except Exception as e:
         return {"status": "unhealthy", "message": str(e)}

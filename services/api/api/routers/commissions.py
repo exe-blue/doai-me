@@ -6,10 +6,7 @@ TODO: 구현 예정
 
 from fastapi import APIRouter
 
-router = APIRouter(
-    prefix="/commissions",
-    tags=["commissions"]
-)
+router = APIRouter(prefix="/commissions", tags=["commissions"])
 
 
 @router.get("/")

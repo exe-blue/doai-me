@@ -13,19 +13,21 @@ PR #3: 네트워크 헬스 대시보드
 - 6 VLANs, 1 SSID
 """
 
-from datetime import datetime
-from typing import Optional, List, Dict, Any
-from enum import Enum
-from pydantic import BaseModel, Field
 import uuid
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, Field
 
 # =========================================
 # Enums
 # =========================================
 
+
 class NetworkStatus(str, Enum):
     """네트워크 상태"""
+
     HEALTHY = "healthy"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -34,6 +36,7 @@ class NetworkStatus(str, Enum):
 
 class APStatusValue(str, Enum):
     """AP 상태 값"""
+
     ONLINE = "online"
     OFFLINE = "offline"
     OVERLOADED = "overloaded"
@@ -42,6 +45,7 @@ class APStatusValue(str, Enum):
 
 class DHCPStatus(str, Enum):
     """DHCP 상태"""
+
     NORMAL = "normal"
     WARNING = "warning"  # 70% 이상
     CRITICAL = "critical"  # 90% 이상
@@ -52,8 +56,10 @@ class DHCPStatus(str, Enum):
 # VLAN 관련 스키마
 # =========================================
 
+
 class VLANConfig(BaseModel):
     """VLAN 설정"""
+
     vlan_id: int = Field(..., ge=1, le=4094, description="VLAN ID")
     name: str = Field(..., max_length=50, description="VLAN 이름")
     subnet: str = Field(..., description="서브넷 (예: 192.168.10.0/24)")
@@ -66,6 +72,7 @@ class VLANConfig(BaseModel):
 
 class VLANStatus(BaseModel):
     """VLAN 상태"""
+
     vlan_id: int
     name: str
     status: NetworkStatus = NetworkStatus.HEALTHY
@@ -95,6 +102,7 @@ class VLANStatus(BaseModel):
 
 class VLANDeviceDistribution(BaseModel):
     """VLAN별 디바이스 분포"""
+
     vlan_id: int
     vlan_name: str
     device_count: int
@@ -106,8 +114,10 @@ class VLANDeviceDistribution(BaseModel):
 # AP 관련 스키마
 # =========================================
 
+
 class APConfig(BaseModel):
     """AP 설정"""
+
     ap_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str = Field(..., max_length=50, description="AP 이름 (예: EAP-673-1)")
     mac_address: str = Field(..., description="MAC 주소")
@@ -119,6 +129,7 @@ class APConfig(BaseModel):
 
 class APStatus(BaseModel):
     """AP 상태"""
+
     ap_id: str
     name: str
     status: APStatusValue = APStatusValue.ONLINE
@@ -157,6 +168,7 @@ class APStatus(BaseModel):
 
 class APClientInfo(BaseModel):
     """AP에 연결된 클라이언트 정보"""
+
     ap_id: str
     ap_name: str
     connected_clients: int
@@ -167,8 +179,10 @@ class APClientInfo(BaseModel):
 # DHCP 관련 스키마
 # =========================================
 
+
 class DHCPPoolConfig(BaseModel):
     """DHCP 풀 설정"""
+
     pool_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     vlan_id: int
@@ -184,6 +198,7 @@ class DHCPPoolConfig(BaseModel):
 
 class DHCPPoolStatus(BaseModel):
     """DHCP 풀 상태"""
+
     pool_id: str
     name: str
     vlan_id: int
@@ -225,6 +240,7 @@ class DHCPPoolStatus(BaseModel):
 
 class DHCPLease(BaseModel):
     """DHCP 리스 정보"""
+
     ip_address: str
     mac_address: str
     hostname: Optional[str] = None
@@ -239,8 +255,10 @@ class DHCPLease(BaseModel):
 # 네트워크 헬스 종합 스키마
 # =========================================
 
+
 class NetworkHealthConfig(BaseModel):
     """네트워크 헬스 설정"""
+
     # DHCP 경고 임계값
     dhcp_warning_threshold: float = Field(default=70.0, ge=0, le=100)
     dhcp_critical_threshold: float = Field(default=90.0, ge=0, le=100)
@@ -260,6 +278,7 @@ class NetworkHealthConfig(BaseModel):
 
 class NetworkHealthSummary(BaseModel):
     """네트워크 헬스 요약"""
+
     overall_status: NetworkStatus = NetworkStatus.HEALTHY
 
     # VLAN 요약
@@ -298,14 +317,10 @@ class NetworkHealthSummary(BaseModel):
     def calculate_overall_status(self) -> NetworkStatus:
         """전체 상태 계산"""
         # Critical 조건
-        if (self.critical_vlans > 0 or
-            self.offline_aps > 0 or
-            self.dhcp_critical > 0):
+        if self.critical_vlans > 0 or self.offline_aps > 0 or self.dhcp_critical > 0:
             self.overall_status = NetworkStatus.CRITICAL
         # Warning 조건
-        elif (self.warning_vlans > 0 or
-              self.overloaded_aps > 0 or
-              self.dhcp_warning > 0):
+        elif self.warning_vlans > 0 or self.overloaded_aps > 0 or self.dhcp_warning > 0:
             self.overall_status = NetworkStatus.WARNING
         else:
             self.overall_status = NetworkStatus.HEALTHY
@@ -315,6 +330,7 @@ class NetworkHealthSummary(BaseModel):
 
 class NetworkHealthSnapshot(BaseModel):
     """네트워크 헬스 스냅샷 (DB 저장용)"""
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
     # 요약 데이터
@@ -341,8 +357,10 @@ class NetworkHealthSnapshot(BaseModel):
 # API 응답 스키마
 # =========================================
 
+
 class NetworkHealthResponse(BaseModel):
     """네트워크 헬스 API 응답"""
+
     status: NetworkStatus
     summary: NetworkHealthSummary
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -350,12 +368,14 @@ class NetworkHealthResponse(BaseModel):
 
 class VLANListResponse(BaseModel):
     """VLAN 목록 응답"""
+
     total: int
     vlans: List[VLANStatus]
 
 
 class APListResponse(BaseModel):
     """AP 목록 응답"""
+
     total: int
     online: int
     offline: int
@@ -364,6 +384,7 @@ class APListResponse(BaseModel):
 
 class DHCPPoolListResponse(BaseModel):
     """DHCP 풀 목록 응답"""
+
     total: int
     normal: int
     warning: int
@@ -373,6 +394,7 @@ class DHCPPoolListResponse(BaseModel):
 
 class NetworkAlertCreate(BaseModel):
     """네트워크 알림 생성"""
+
     alert_type: str  # dhcp_warning, ap_offline, vlan_issue
     severity: str  # info, warning, critical
     title: str
@@ -383,6 +405,7 @@ class NetworkAlertCreate(BaseModel):
 
 class NetworkAlertResponse(NetworkAlertCreate):
     """네트워크 알림 응답"""
+
     id: str
     acknowledged: bool = False
     acknowledged_at: Optional[datetime] = None

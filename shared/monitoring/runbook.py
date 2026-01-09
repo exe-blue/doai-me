@@ -28,17 +28,18 @@ Usage:
 """
 
 import asyncio
-import aiohttp
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Callable, Awaitable, Dict, List, Optional
-import json
+from typing import Any, Awaitable, Callable, Dict, List, Optional
+
+import aiohttp
 
 try:
     from loguru import logger
 except ImportError:
     import logging
+
     logger = logging.getLogger(__name__)
 
 
@@ -46,8 +47,10 @@ except ImportError:
 # Enums
 # =========================================
 
+
 class AlertLevel(str, Enum):
     """알림 레벨"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -56,6 +59,7 @@ class AlertLevel(str, Enum):
 
 class RecoveryLevel(str, Enum):
     """복구 레벨"""
+
     L1 = "L1"  # Soft Reset (자동)
     L2 = "L2"  # Service Reset (1단계 승인)
     L3 = "L3"  # Box Reset (2단계 승인)
@@ -63,6 +67,7 @@ class RecoveryLevel(str, Enum):
 
 class IncidentStatus(str, Enum):
     """인시던트 상태"""
+
     DETECTED = "detected"
     INVESTIGATING = "investigating"
     RECOVERING = "recovering"
@@ -72,6 +77,7 @@ class IncidentStatus(str, Enum):
 
 class ActionResult(str, Enum):
     """작업 결과"""
+
     SUCCESS = "success"
     FAILED = "failed"
     TIMEOUT = "timeout"
@@ -82,9 +88,11 @@ class ActionResult(str, Enum):
 # 데이터 클래스
 # =========================================
 
+
 @dataclass
 class AlertConfig:
     """알림 설정"""
+
     slack_webhook: Optional[str] = None
     discord_webhook: Optional[str] = None
     enable_slack: bool = True
@@ -97,6 +105,7 @@ class AlertConfig:
 @dataclass
 class TimelineEvent:
     """인시던트 타임라인 이벤트"""
+
     timestamp: datetime
     event_type: str
     message: str
@@ -116,6 +125,7 @@ class TimelineEvent:
 @dataclass
 class Incident:
     """인시던트"""
+
     id: str
     title: str
     description: str
@@ -197,6 +207,7 @@ class Incident:
 @dataclass
 class RunbookAction:
     """런북 작업"""
+
     name: str
     description: str
     level: RecoveryLevel
@@ -209,6 +220,7 @@ class RunbookAction:
 @dataclass
 class RunbookResult:
     """런북 실행 결과"""
+
     action: RunbookAction
     result: ActionResult
     started_at: datetime
@@ -227,6 +239,7 @@ class RunbookResult:
 @dataclass
 class L1TriggerCondition:
     """L1 자동 실행 조건"""
+
     name: str
     description: str
     check_fn: Callable[[], Awaitable[bool]]
@@ -242,6 +255,7 @@ class L1TriggerCondition:
 # =========================================
 # AlertManager
 # =========================================
+
 
 class AlertManager:
     """
@@ -308,8 +322,7 @@ class AlertManager:
                     "color": color,
                     "text": message,
                     "fields": [
-                        {"title": k, "value": v, "short": True}
-                        for k, v in (fields or {}).items()
+                        {"title": k, "value": v, "short": True} for k, v in (fields or {}).items()
                     ],
                     "ts": datetime.now(timezone.utc).timestamp(),
                 }
@@ -360,10 +373,7 @@ class AlertManager:
             "description": message,
             "color": color,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "fields": [
-                {"name": k, "value": v, "inline": True}
-                for k, v in (fields or {}).items()
-            ],
+            "fields": [{"name": k, "value": v, "inline": True} for k, v in (fields or {}).items()],
         }
 
         payload = {
@@ -441,6 +451,7 @@ class AlertManager:
 # IncidentTracker
 # =========================================
 
+
 class IncidentTracker:
     """
     인시던트 추적기
@@ -502,17 +513,13 @@ class IncidentTracker:
     def get_active_incidents(self) -> List[Incident]:
         """활성 인시던트 목록"""
         return [
-            inc for inc in self._incidents.values()
-            if inc.status not in (IncidentStatus.RESOLVED,)
+            inc for inc in self._incidents.values() if inc.status not in (IncidentStatus.RESOLVED,)
         ]
 
     def get_recent_incidents(self, hours: int = 24) -> List[Incident]:
         """최근 인시던트 목록"""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-        return [
-            inc for inc in self._incidents.values()
-            if inc.created_at >= cutoff
-        ]
+        return [inc for inc in self._incidents.values() if inc.created_at >= cutoff]
 
     async def update_incident(
         self,
@@ -584,9 +591,7 @@ class IncidentTracker:
         old_level = incident.level
         incident.escalate(new_level, reason)
 
-        logger.warning(
-            f"Incident escalated: {incident_id} {old_level.value} -> {new_level.value}"
-        )
+        logger.warning(f"Incident escalated: {incident_id} {old_level.value} -> {new_level.value}")
 
         if send_alert and self.alert_manager:
             await self.alert_manager.send_incident_alert(incident)
@@ -597,6 +602,7 @@ class IncidentTracker:
 # =========================================
 # RunbookExecutor
 # =========================================
+
 
 class RunbookExecutor:
     """
@@ -809,10 +815,7 @@ class RunbookExecutor:
         self._l1_execution_history.append(result)
         self._last_l1_execution = result.started_at
 
-        logger.info(
-            f"L1 Soft Reset 완료: {result.result.value} "
-            f"({result.duration_ms}ms)"
-        )
+        logger.info(f"L1 Soft Reset 완료: {result.result.value} " f"({result.duration_ms}ms)")
 
         return result
 

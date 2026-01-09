@@ -11,39 +11,40 @@ ADR-005 v2: The Void of Irrelevance
 @created 2026-01-09
 """
 
-from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
 import logging
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query
 
 # P1 모델
 try:
     from ..models.persona_search import (
         IdleSearchRequest,
         IdleSearchResponse,
-        SearchHistoryResponse,
         PersonaSearchProfileResponse,
+        SearchHistoryResponse,
     )
     from ..services.persona_search_service import get_persona_search_service
 except ImportError:
     from models.persona_search import (
         IdleSearchRequest,
         IdleSearchResponse,
-        SearchHistoryResponse,
         PersonaSearchProfileResponse,
+        SearchHistoryResponse,
     )
     from services.persona_search_service import get_persona_search_service
 
 # P2 모델
 try:
     from ..models.persona_crud import (
-        PersonaCreateRequest,
-        PersonaCreateResponse,
-        PersonaUpdateRequest,
-        PersonaUpdateResponse,
-        PersonaDeleteResponse,
         ExecuteSearchRequest,
         ExecuteSearchResponse,
+        PersonaCreateRequest,
+        PersonaCreateResponse,
+        PersonaDeleteResponse,
         PersonalityDriftResponse,
+        PersonaUpdateRequest,
+        PersonaUpdateResponse,
         UpdateInterestsRequest,
         UpdateInterestsResponse,
     )
@@ -51,14 +52,14 @@ try:
     from ..services.persona_laixi_service import get_persona_laixi_service
 except ImportError:
     from models.persona_crud import (
-        PersonaCreateRequest,
-        PersonaCreateResponse,
-        PersonaUpdateRequest,
-        PersonaUpdateResponse,
-        PersonaDeleteResponse,
         ExecuteSearchRequest,
         ExecuteSearchResponse,
+        PersonaCreateRequest,
+        PersonaCreateResponse,
+        PersonaDeleteResponse,
         PersonalityDriftResponse,
+        PersonaUpdateRequest,
+        PersonaUpdateResponse,
         UpdateInterestsRequest,
         UpdateInterestsResponse,
     )
@@ -82,18 +83,18 @@ router = APIRouter(
 # 기본 조회 엔드포인트
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @router.get(
     "",
     summary="페르소나 목록 조회",
-    description="모든 페르소나 목록을 조회합니다. 존재 상태(state)로 필터링 가능."
+    description="모든 페르소나 목록을 조회합니다. 존재 상태(state)로 필터링 가능.",
 )
 async def list_personas(
     state: Optional[str] = Query(
-        None,
-        description="존재 상태 필터 (active, waiting, fading, void)"
+        None, description="존재 상태 필터 (active, waiting, fading, void)"
     ),
     limit: int = Query(50, ge=1, le=200, description="조회 개수"),
-    offset: int = Query(0, ge=0, description="오프셋")
+    offset: int = Query(0, ge=0, description="오프셋"),
 ):
     """
     페르소나 목록 조회
@@ -109,11 +110,7 @@ async def list_personas(
         if not result["success"]:
             raise HTTPException(status_code=500, detail="목록 조회 실패")
 
-        return {
-            "success": True,
-            "total": result["total"],
-            "personas": result["personas"]
-        }
+        return {"success": True, "total": result["total"], "personas": result["personas"]}
 
     except HTTPException:
         raise
@@ -125,7 +122,7 @@ async def list_personas(
 @router.get(
     "/{persona_id}",
     summary="페르소나 상세 조회",
-    description="특정 페르소나의 상세 정보를 조회합니다."
+    description="특정 페르소나의 상세 정보를 조회합니다.",
 )
 async def get_persona(persona_id: str):
     """
@@ -139,14 +136,10 @@ async def get_persona(persona_id: str):
 
         if not persona:
             raise HTTPException(
-                status_code=404,
-                detail=f"페르소나를 찾을 수 없습니다: {persona_id}"
+                status_code=404, detail=f"페르소나를 찾을 수 없습니다: {persona_id}"
             )
 
-        return {
-            "success": True,
-            "data": persona
-        }
+        return {"success": True, "data": persona}
 
     except HTTPException:
         raise
@@ -158,6 +151,7 @@ async def get_persona(persona_id: str):
 # ═══════════════════════════════════════════════════════════════════════════════
 # IDLE 검색 엔드포인트 (P1 핵심)
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @router.post(
     "/{persona_id}/idle-search",
@@ -177,12 +171,9 @@ async def get_persona(persona_id: str):
 - **생성 후 7일 이내**: 80~100% 영향력 (유아기)
 - **7~30일**: 40~80% 영향력 (아동기)
 - **30일 이후**: 10~40% 영향력 (성인기)
-"""
+""",
 )
-async def trigger_idle_search(
-    persona_id: str,
-    request: IdleSearchRequest
-):
+async def trigger_idle_search(persona_id: str, request: IdleSearchRequest):
     """
     IDLE 상태 검색 트리거
 
@@ -194,9 +185,7 @@ async def trigger_idle_search(
         service = get_persona_search_service()
 
         result = await service.execute_idle_search(
-            persona_id=persona_id,
-            force=request.force,
-            category_hint=request.category_hint
+            persona_id=persona_id, force=request.force, category_hint=request.category_hint
         )
 
         return IdleSearchResponse(
@@ -206,7 +195,7 @@ async def trigger_idle_search(
             search_source=result["search_source"],
             activity_log_id=result["activity_log_id"],
             formative_impact=result["formative_impact"],
-            message=result["message"]
+            message=result["message"],
         )
 
     except ValueError as e:
@@ -227,11 +216,10 @@ async def trigger_idle_search(
 - 검색어, 검색 시각, 출처 (AI 생성/Traits 기반)
 - 시청한 영상 정보 (있는 경우)
 - 고유성 형성 영향도 (formative_impact)
-"""
+""",
 )
 async def get_search_history(
-    persona_id: str,
-    limit: int = Query(50, ge=1, le=200, description="조회 개수")
+    persona_id: str, limit: int = Query(50, ge=1, le=200, description="조회 개수")
 ):
     """
     검색 기록 조회
@@ -248,7 +236,7 @@ async def get_search_history(
             persona_id=result["persona_id"],
             total=result["total"],
             history=result["history"],
-            traits_influence=result.get("traits_influence", {})
+            traits_influence=result.get("traits_influence", {}),
         )
 
     except Exception as e:
@@ -268,7 +256,7 @@ async def get_search_history(
 - 주요 카테고리 (P2 예정)
 - 형성기 검색 수 (높은 영향력 활동)
 - 평균 고유성 형성 영향도
-"""
+""",
 )
 async def get_search_profile(persona_id: str):
     """
@@ -280,10 +268,7 @@ async def get_search_profile(persona_id: str):
         service = get_persona_search_service()
         result = await service.get_search_profile(persona_id)
 
-        return PersonaSearchProfileResponse(
-            success=result["success"],
-            data=result["data"]
-        )
+        return PersonaSearchProfileResponse(success=result["success"], data=result["data"])
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -295,6 +280,7 @@ async def get_search_profile(persona_id: str):
 # ═══════════════════════════════════════════════════════════════════════════════
 # CRUD 엔드포인트 (P2)
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @router.post(
     "",
@@ -313,7 +299,7 @@ async def get_search_profile(persona_id: str):
 - **interests**: 관심사 목록
 - **traits**: 성격 특성 (미입력시 기본값 50)
 - **device_id**: 할당할 기기 ID
-"""
+""",
 )
 async def create_persona(request: PersonaCreateRequest):
     """
@@ -337,7 +323,7 @@ async def create_persona(request: PersonaCreateRequest):
             gender=request.gender,
             interests=request.interests,
             traits=traits_dict,
-            device_id=request.device_id
+            device_id=request.device_id,
         )
 
         return PersonaCreateResponse(
@@ -345,7 +331,7 @@ async def create_persona(request: PersonaCreateRequest):
             persona_id=result["persona_id"],
             name=result["name"],
             message=result["message"],
-            data=result.get("data")
+            data=result.get("data"),
         )
 
     except ValueError as e:
@@ -359,7 +345,7 @@ async def create_persona(request: PersonaCreateRequest):
     "/{persona_id}",
     response_model=PersonaUpdateResponse,
     summary="페르소나 수정",
-    description="페르소나 정보를 수정합니다."
+    description="페르소나 정보를 수정합니다.",
 )
 async def update_persona(persona_id: str, request: PersonaUpdateRequest):
     """
@@ -397,7 +383,7 @@ async def update_persona(persona_id: str, request: PersonaUpdateRequest):
             success=result["success"],
             persona_id=result["persona_id"],
             updated_fields=result["updated_fields"],
-            message=result["message"]
+            message=result["message"],
         )
 
     except ValueError as e:
@@ -420,7 +406,7 @@ async def update_persona(persona_id: str, request: PersonaUpdateRequest):
 - 페르소나 기본 정보
 - 활동 로그 (persona_activity_logs)
 - 검색 기록
-"""
+""",
 )
 async def delete_persona(persona_id: str):
     """
@@ -438,7 +424,7 @@ async def delete_persona(persona_id: str):
             name=result["name"],
             message=result["message"],
             activities_deleted=result.get("activities_deleted", 0),
-            search_logs_deleted=result.get("search_logs_deleted", 0)
+            search_logs_deleted=result.get("search_logs_deleted", 0),
         )
 
     except ValueError as e:
@@ -451,6 +437,7 @@ async def delete_persona(persona_id: str):
 # ═══════════════════════════════════════════════════════════════════════════════
 # Laixi 연동 엔드포인트 (P2)
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @router.post(
     "/{persona_id}/execute-search",
@@ -469,7 +456,7 @@ Laixi를 통해 할당된 기기에서 실제 YouTube 검색을 실행합니다.
 ## 참고
 - device_id가 없으면 Mock 모드로 실행
 - MOCK_MODE=true 환경변수로 강제 Mock 가능
-"""
+""",
 )
 async def execute_search(persona_id: str, request: ExecuteSearchRequest):
     """
@@ -489,7 +476,7 @@ async def execute_search(persona_id: str, request: ExecuteSearchRequest):
             keyword=request.keyword,
             watch_video=request.watch_video,
             watch_duration_seconds=request.watch_duration_seconds,
-            like_probability=request.like_probability
+            like_probability=request.like_probability,
         )
 
         return ExecuteSearchResponse(
@@ -504,7 +491,7 @@ async def execute_search(persona_id: str, request: ExecuteSearchRequest):
             liked=result.get("liked", False),
             formative_impact=result["formative_impact"],
             activity_log_id=result["activity_log_id"],
-            message=result["message"]
+            message=result["message"],
         )
 
     except ValueError as e:
@@ -519,6 +506,7 @@ async def execute_search(persona_id: str, request: ExecuteSearchRequest):
 # ═══════════════════════════════════════════════════════════════════════════════
 # 성격 변화 분석 엔드포인트 (P2)
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @router.get(
     "/{persona_id}/personality-drift",
@@ -536,11 +524,10 @@ async def execute_search(persona_id: str, request: ExecuteSearchRequest):
   - stable: 안정적
 - **top_categories**: 상위 검색 카테고리
 - **suggested_interests**: 검색 기반 추천 관심사
-"""
+""",
 )
 async def get_personality_drift(
-    persona_id: str,
-    days: int = Query(30, ge=7, le=365, description="분석 기간 (일)")
+    persona_id: str, days: int = Query(30, ge=7, le=365, description="분석 기간 (일)")
 ):
     """
     성격 변화 분석
@@ -565,7 +552,7 @@ async def get_personality_drift(
             interests_to_remove=result.get("interests_to_remove", []),
             analysis_period_days=result.get("analysis_period_days", days),
             total_searches_analyzed=result.get("total_searches_analyzed", 0),
-            message=result["message"]
+            message=result["message"],
         )
 
     except ValueError as e:
@@ -590,7 +577,7 @@ async def get_personality_drift(
 ## 사용 예시
 1. confirm=false로 미리보기 확인
 2. 결과 검토 후 confirm=true로 실제 업데이트
-"""
+""",
 )
 async def update_interests(persona_id: str, request: UpdateInterestsRequest):
     """
@@ -608,7 +595,7 @@ async def update_interests(persona_id: str, request: UpdateInterestsRequest):
             persona_id=persona_id,
             min_search_count=request.min_search_count,
             auto_remove_unused=request.auto_remove_unused,
-            confirm=request.confirm
+            confirm=request.confirm,
         )
 
         return UpdateInterestsResponse(
@@ -619,7 +606,7 @@ async def update_interests(persona_id: str, request: UpdateInterestsRequest):
             interests_after=result["interests_after"],
             added=result["added"],
             removed=result["removed"],
-            message=result["message"]
+            message=result["message"],
         )
 
     except ValueError as e:

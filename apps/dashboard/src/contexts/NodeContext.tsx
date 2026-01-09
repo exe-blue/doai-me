@@ -412,6 +412,7 @@ export function NodeProvider({ children, wsEndpoint }: NodeProviderProps) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isConnectingRef = useRef(false);
+  const isMountedRef = useRef(true);
   const lastLogRef = useRef<{ message: string; time: number }>({ message: '', time: 0 });
   
   // 설정
@@ -506,11 +507,17 @@ export function NodeProvider({ children, wsEndpoint }: NodeProviderProps) {
         clearTimeout(connectionTimeout);
         isConnectingRef.current = false;
         reconnectAttemptsRef.current = 0;
-        
+
+        // StrictMode 대응: 언마운트된 경우 무시
+        if (!isMountedRef.current) {
+          ws.close(1000, 'Component already unmounted');
+          return;
+        }
+
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: 'connected' });
         dispatch({ type: 'SET_RECONNECT_ATTEMPT', payload: 0 });
         dispatch({ type: 'SET_ERROR', payload: null });
-        
+
         addLogInternal('success', '✅ Bridge 연결 성공', { category: 'connection' });
 
         // 초기 상태 요청
@@ -518,6 +525,7 @@ export function NodeProvider({ children, wsEndpoint }: NodeProviderProps) {
       };
 
       ws.onmessage = (event) => {
+        if (!isMountedRef.current) return;
         try {
           const data = JSON.parse(event.data);
           handleWebSocketMessage(data);
@@ -558,16 +566,21 @@ export function NodeProvider({ children, wsEndpoint }: NodeProviderProps) {
           default: closeReason = event.reason || `코드: ${event.code}`;
         }
 
+        // StrictMode 대응: 언마운트된 경우 재연결 안함
+        if (!isMountedRef.current) {
+          return;
+        }
+
         // 재연결 시도
         if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
           const delay = getReconnectDelay(reconnectAttemptsRef.current);
           reconnectAttemptsRef.current++;
-          
+
           dispatch({ type: 'SET_RECONNECT_ATTEMPT', payload: reconnectAttemptsRef.current });
-          
+
           addLogInternal(
-            'warn', 
-            `🔌 연결 끊김 (${closeReason}). ${(delay / 1000).toFixed(1)}초 후 재연결...`, 
+            'warn',
+            `🔌 연결 끊김 (${closeReason}). ${(delay / 1000).toFixed(1)}초 후 재연결...`,
             { category: 'connection' }
           );
 
@@ -575,8 +588,8 @@ export function NodeProvider({ children, wsEndpoint }: NodeProviderProps) {
         } else {
           dispatch({ type: 'SET_ERROR', payload: '최대 재연결 횟수 초과' });
           addLogInternal(
-            'error', 
-            `❌ 재연결 실패 (${MAX_RECONNECT_ATTEMPTS}회 시도). 수동으로 재연결하세요.`, 
+            'error',
+            `❌ 재연결 실패 (${MAX_RECONNECT_ATTEMPTS}회 시도). 수동으로 재연결하세요.`,
             { category: 'connection' }
           );
         }
@@ -944,14 +957,17 @@ export function NodeProvider({ children, wsEndpoint }: NodeProviderProps) {
 
   useEffect(() => {
     // 컴포넌트 마운트 시 연결
+    isMountedRef.current = true;
     connect();
-    
+
     // 컴포넌트 언마운트 시 정리
     return () => {
+      isMountedRef.current = false;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      if (wsRef.current) {
+      // WebSocket이 OPEN 상태일 때만 정상 종료
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.close(1000, 'Component unmount');
       }
     };

@@ -6,47 +6,38 @@ Supabase 연결이 필요합니다.
 """
 
 import os
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timezone, timedelta
 
 from shared.device_registry import (
     DeviceRegistry,
-    DeviceInfo,
     DeviceStatus,
-    DeviceGroup,
 )
-
 
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL"),
-    reason="SUPABASE_URL 환경변수 필요"
-)
+@pytest.mark.skipif(not os.getenv("SUPABASE_URL"), reason="SUPABASE_URL 환경변수 필요")
 class TestDeviceCRUD:
     """Device CRUD 테스트"""
-    
+
     @pytest.fixture
     def registry(self, supabase_client):
         """DeviceRegistry 인스턴스"""
         return DeviceRegistry()
-    
+
     @pytest.fixture
     def test_serial(self):
         """테스트용 시리얼 번호"""
         return f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    
+
     @pytest.mark.asyncio
     async def test_register_device(self, registry, test_serial):
         """디바이스 등록"""
         try:
             result = await registry.register_device(
-                serial=test_serial,
-                workstation="WS01",
-                board=1,
-                slot=1,
-                model="SM-G960N"
+                serial=test_serial, workstation="WS01", board=1, slot=1, model="SM-G960N"
             )
 
             if result is None:
@@ -134,10 +125,7 @@ class TestDeviceCRUD:
         pytest.skip("update_heartbeat 메서드가 구현되지 않았습니다")
 
 
-@pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL"),
-    reason="SUPABASE_URL 환경변수 필요"
-)
+@pytest.mark.skipif(not os.getenv("SUPABASE_URL"), reason="SUPABASE_URL 환경변수 필요")
 class TestDeviceQuery:
     """디바이스 조회 테스트"""
 
@@ -234,10 +222,7 @@ class TestDeviceQuery:
             raise
 
 
-@pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL"),
-    reason="SUPABASE_URL 환경변수 필요"
-)
+@pytest.mark.skipif(not os.getenv("SUPABASE_URL"), reason="SUPABASE_URL 환경변수 필요")
 class TestDeviceHierarchy:
     """디바이스 계층 구조 테스트"""
 
@@ -301,10 +286,7 @@ class TestDeviceHierarchy:
             raise
 
 
-@pytest.mark.skipif(
-    not os.getenv("SUPABASE_URL"),
-    reason="SUPABASE_URL 환경변수 필요"
-)
+@pytest.mark.skipif(not os.getenv("SUPABASE_URL"), reason="SUPABASE_URL 환경변수 필요")
 class TestYouTubeLoginStatus:
     """YouTube 로그인 상태 테스트"""
 

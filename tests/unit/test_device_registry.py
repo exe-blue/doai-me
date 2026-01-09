@@ -8,22 +8,21 @@ DeviceRegistry 단위 테스트
 - DeviceStatus 상태 전이
 """
 
-import pytest
 from datetime import datetime, timezone
 
 from shared.device_registry import (
-    DeviceRegistry,
+    DeviceGroup,
     DeviceInfo,
+    DeviceRegistry,
+    DeviceStatus,
     PhoneboardInfo,
     WorkstationInfo,
-    DeviceStatus,
-    DeviceGroup,
 )
 
 
 class TestDeviceInfo:
     """DeviceInfo 데이터클래스 테스트"""
-    
+
     def test_create_with_all_fields(self):
         """모든 필드로 생성"""
         device = DeviceInfo(
@@ -36,15 +35,15 @@ class TestDeviceInfo:
             device_group="A",
             status="idle",
             model="SM-G960N",
-            last_heartbeat=datetime.now(timezone.utc)
+            last_heartbeat=datetime.now(timezone.utc),
         )
-        
+
         assert device.id == "device-001"
         assert device.serial_number == "R58M12345678"
         assert device.hierarchy_id == "WS01-PB01-S01"
         assert device.slot_number == 1
         assert device.device_group == "A"
-    
+
     def test_create_with_required_fields(self):
         """필수 필드만으로 생성"""
         device = DeviceInfo(
@@ -55,16 +54,16 @@ class TestDeviceInfo:
             phoneboard_id="WS01-PB01",
             slot_number=2,
             device_group="A",
-            status="idle"
+            status="idle",
         )
-        
+
         assert device.model is None
         assert device.last_heartbeat is None
 
 
 class TestPhoneboardInfo:
     """PhoneboardInfo 데이터클래스 테스트"""
-    
+
     def test_create_phoneboard(self):
         """폰보드 정보 생성"""
         phoneboard = PhoneboardInfo(
@@ -73,9 +72,9 @@ class TestPhoneboardInfo:
             board_number=1,
             slot_count=20,
             connected_count=18,
-            status="online"
+            status="online",
         )
-        
+
         assert phoneboard.id == "pb-001"
         assert phoneboard.board_number == 1
         assert phoneboard.slot_count == 20
@@ -95,7 +94,7 @@ class TestWorkstationInfo:
             laixi_connected=True,
             status="online",
             total_devices=60,
-            online_devices=55
+            online_devices=55,
         )
 
         assert workstation.id == "ws-001"
@@ -107,7 +106,7 @@ class TestWorkstationInfo:
 
 class TestDeviceStatus:
     """DeviceStatus Enum 테스트"""
-    
+
     def test_status_values(self):
         """상태 값 확인"""
         assert DeviceStatus.IDLE.value == "idle"
@@ -116,7 +115,7 @@ class TestDeviceStatus:
         assert DeviceStatus.ERROR.value == "error"
         assert DeviceStatus.OVERHEAT.value == "overheat"
         assert DeviceStatus.MAINTENANCE.value == "maintenance"
-    
+
     def test_status_from_string(self):
         """문자열에서 상태 변환"""
         assert DeviceStatus("idle") == DeviceStatus.IDLE
@@ -125,7 +124,7 @@ class TestDeviceStatus:
 
 class TestDeviceGroup:
     """DeviceGroup Enum 테스트"""
-    
+
     def test_group_values(self):
         """그룹 값 확인"""
         assert DeviceGroup.A.value == "A"
@@ -209,7 +208,7 @@ class TestHierarchyIdFormat:
 
 class TestDeviceStatusTransition:
     """디바이스 상태 전이 테스트"""
-    
+
     def test_idle_to_busy(self):
         """idle -> busy 전이"""
         device = DeviceInfo(
@@ -220,17 +219,17 @@ class TestDeviceStatusTransition:
             phoneboard_id="WS01-PB01",
             slot_number=1,
             device_group="A",
-            status="idle"
+            status="idle",
         )
-        
+
         # 상태 변경 (실제로는 DB 업데이트)
         assert device.status == "idle"
         # 작업 시작 시 busy로 변경됨
-    
+
     def test_valid_status_values(self):
         """유효한 상태 값만 허용"""
         valid_statuses = ["idle", "busy", "offline", "error", "overheat", "maintenance"]
-        
+
         for status in valid_statuses:
             device = DeviceInfo(
                 id="device-001",
@@ -240,7 +239,7 @@ class TestDeviceStatusTransition:
                 phoneboard_id="WS01-PB01",
                 slot_number=1,
                 device_group="A",
-                status=status
+                status=status,
             )
             assert device.status == status
 
@@ -258,7 +257,7 @@ class TestDeviceGroupAssignment:
             phoneboard_id="WS01-PB01",
             slot_number=1,
             device_group="A",
-            status="idle"
+            status="idle",
         )
 
         assert device.device_group == "A"
@@ -274,7 +273,7 @@ class TestDeviceGroupAssignment:
             phoneboard_id="WS01-PB01",
             slot_number=11,
             device_group="B",
-            status="idle"
+            status="idle",
         )
 
         assert device.device_group == "B"
@@ -287,26 +286,26 @@ class TestDeviceGroupAssignment:
 
 class TestHierarchyStructure:
     """계층 구조 테스트"""
-    
+
     def test_workstation_naming(self):
         """워크스테이션 명명 규칙"""
         # WS01 ~ WS05
         valid_names = ["WS01", "WS02", "WS03", "WS04", "WS05"]
-        
+
         for name in valid_names:
             assert name.startswith("WS")
             assert name[2:].isdigit()
-    
+
     def test_phoneboard_naming(self):
         """폰보드 명명 규칙"""
         # WS01-PB01 ~ WS01-PB03
         hierarchy_id = "WS01-PB02-S15"
         parts = hierarchy_id.split("-")
-        
+
         assert parts[0].startswith("WS")
         assert parts[1].startswith("PB")
         assert parts[2].startswith("S")
-    
+
     def test_slot_range(self):
         """슬롯 번호 범위"""
         # 1 ~ 20
@@ -317,20 +316,20 @@ class TestHierarchyStructure:
 
 class TestDeviceCapacity:
     """디바이스 용량 테스트"""
-    
+
     def test_total_capacity(self):
         """총 디바이스 수"""
         workstations = 5
         phoneboards_per_ws = 3
         slots_per_pb = 20
-        
+
         total = workstations * phoneboards_per_ws * slots_per_pb
         assert total == 300
-    
+
     def test_per_workstation_capacity(self):
         """워크스테이션당 디바이스 수"""
         phoneboards = 3
         slots = 20
-        
+
         per_ws = phoneboards * slots
         assert per_ws == 60

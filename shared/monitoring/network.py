@@ -16,37 +16,33 @@ Usage:
     summary = await checker.get_health_summary()
 """
 
-import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
-from typing import Any, Callable, Dict, List, Optional
 import ipaddress
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from typing import Any, Callable, Dict, List, Optional
 
 try:
     from loguru import logger
 except ImportError:
     import logging
+
     logger = logging.getLogger(__name__)
 
 from shared.schemas.network import (
-    NetworkStatus,
-    APStatusValue,
-    DHCPStatus,
-    VLANConfig,
-    VLANStatus,
-    VLANDeviceDistribution,
+    APClientInfo,
     APConfig,
     APStatus,
-    APClientInfo,
-    DHCPPoolConfig,
+    APStatusValue,
     DHCPPoolStatus,
-    DHCPLease,
+    DHCPStatus,
     NetworkHealthConfig,
-    NetworkHealthSummary,
     NetworkHealthSnapshot,
-    NetworkAlertCreate,
+    NetworkHealthSummary,
+    NetworkStatus,
+    VLANConfig,
+    VLANDeviceDistribution,
+    VLANStatus,
 )
-
 
 # =========================================
 # 기본 설정 (DoAi.Me 환경)
@@ -177,9 +173,11 @@ DEFAULT_AP_CONFIGS = [
 # 데이터 클래스
 # =========================================
 
+
 @dataclass
 class DeviceNetworkInfo:
     """디바이스 네트워크 정보"""
+
     device_id: str
     ip_address: Optional[str] = None
     mac_address: Optional[str] = None
@@ -192,6 +190,7 @@ class DeviceNetworkInfo:
 @dataclass
 class NetworkAlert:
     """네트워크 알림"""
+
     alert_type: str
     severity: str  # info, warning, critical
     title: str
@@ -204,6 +203,7 @@ class NetworkAlert:
 # =========================================
 # NetworkHealthChecker
 # =========================================
+
 
 class NetworkHealthChecker:
     """
@@ -324,13 +324,15 @@ class NetworkHealthChecker:
 
         for vlan_id, device_ids in distribution.items():
             config = self._vlan_configs.get(vlan_id)
-            result.append(VLANDeviceDistribution(
-                vlan_id=vlan_id,
-                vlan_name=config.name if config else f"VLAN-{vlan_id}",
-                device_count=len(device_ids),
-                percentage=(len(device_ids) / total_devices * 100) if total_devices > 0 else 0,
-                devices=device_ids,
-            ))
+            result.append(
+                VLANDeviceDistribution(
+                    vlan_id=vlan_id,
+                    vlan_name=config.name if config else f"VLAN-{vlan_id}",
+                    device_count=len(device_ids),
+                    percentage=(len(device_ids) / total_devices * 100) if total_devices > 0 else 0,
+                    devices=device_ids,
+                )
+            )
 
         return sorted(result, key=lambda x: x.device_count, reverse=True)
 
@@ -404,16 +406,15 @@ class NetworkHealthChecker:
         """AP별 클라이언트 분포"""
         result = []
         for ap_id, status in self._ap_statuses.items():
-            clients = [
-                d.device_id for d in self._device_network_info.values()
-                if d.ap_id == ap_id
-            ]
-            result.append(APClientInfo(
-                ap_id=ap_id,
-                ap_name=status.name,
-                connected_clients=status.connected_clients,
-                client_device_ids=clients,
-            ))
+            clients = [d.device_id for d in self._device_network_info.values() if d.ap_id == ap_id]
+            result.append(
+                APClientInfo(
+                    ap_id=ap_id,
+                    ap_name=status.name,
+                    connected_clients=status.connected_clients,
+                    client_device_ids=clients,
+                )
+            )
         return sorted(result, key=lambda x: x.connected_clients, reverse=True)
 
     # =========================================
@@ -616,19 +617,25 @@ class NetworkHealthChecker:
             if status.status == DHCPStatus.EXHAUSTED:
                 issues.append(f"DHCP pool exhausted for VLAN {status.vlan_id}")
             elif status.status == DHCPStatus.CRITICAL:
-                issues.append(f"DHCP pool critical ({status.usage_percent:.1f}%) for VLAN {status.vlan_id}")
+                issues.append(
+                    f"DHCP pool critical ({status.usage_percent:.1f}%) for VLAN {status.vlan_id}"
+                )
 
         # AP 이슈
         for status in self._ap_statuses.values():
             if status.status == APStatusValue.OFFLINE:
                 issues.append(f"AP {status.name} is offline")
             elif status.status == APStatusValue.OVERLOADED:
-                issues.append(f"AP {status.name} is overloaded ({status.connected_clients} clients)")
+                issues.append(
+                    f"AP {status.name} is overloaded ({status.connected_clients} clients)"
+                )
 
         # VLAN 이슈
         for status in self._vlan_statuses.values():
             if status.status == NetworkStatus.CRITICAL:
-                issues.append(f"VLAN {status.vlan_id} has critical issues ({status.offline_devices} offline)")
+                issues.append(
+                    f"VLAN {status.vlan_id} has critical issues ({status.offline_devices} offline)"
+                )
 
         return issues
 
