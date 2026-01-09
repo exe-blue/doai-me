@@ -9,6 +9,8 @@ interface OfferingTier {
   hearts: number;
 }
 
+const HEARTS_PER_AMOUNT_RATIO = 5000;
+
 const OFFERING_TIERS: OfferingTier[] = [
   { amount: 5000, hearts: 1 },
   { amount: 10000, hearts: 2 },
@@ -31,6 +33,7 @@ function CustomAmountInput({ value, onChange, onFocus }: CustomAmountInputProps)
       onFocus={onFocus}
       placeholder="Custom amount"
       className="w-full px-4 py-2 border rounded"
+      min="0"
     />
   );
 }
@@ -44,7 +47,7 @@ export default function SacredSwitch() {
     setCustomAmount(value);
     const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue > 0) {
-      setFinalHearts(Math.floor(numValue / 5000));
+      setFinalHearts(Math.floor(numValue / HEARTS_PER_AMOUNT_RATIO));
     } else {
       setFinalHearts(0);
     }
