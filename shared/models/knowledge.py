@@ -14,11 +14,16 @@ Agent 간 공유되는 지식 정의
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+
+def _utc_now() -> datetime:
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class KnowledgeType(str, Enum):
@@ -76,8 +81,8 @@ class Knowledge(BaseModel):
     usage_count: int = Field(default=0, ge=0)
     is_archived: bool = False
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
+    updated_at: datetime = Field(default_factory=_utc_now)
     expires_at: Optional[datetime] = None
 
     class Config:
@@ -88,17 +93,17 @@ class Knowledge(BaseModel):
         """만료 여부"""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     def increment_usage(self) -> None:
         """사용 횟수 증가"""
         self.usage_count += 1
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def archive(self) -> None:
         """아카이브"""
         self.is_archived = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def matches_tags(self, search_tags: List[str]) -> bool:
         """태그 매칭 여부"""
