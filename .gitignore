@@ -146,3 +146,4 @@ load_tests/
 # ==================== WIP Schemas & Migrations ====================
 shared/schemas/gateway.py
 supabase/migrations/20260111_user_memberships.sql
+.hintrc
