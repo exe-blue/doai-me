@@ -19,7 +19,7 @@ Galaxy S9 (1440x2960) 기준으로 측정되었으나, 백분율이므로 다른
 import asyncio
 import random
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional, Tuple
 
@@ -171,7 +171,7 @@ class YouTubeAppAutomation:
         Returns:
             시청 결과
         """
-        result = WatchResult(task=task, started_at=datetime.utcnow())
+        result = WatchResult(task=task, started_at=datetime.now(timezone.utc))
         device_id = task.device_id
 
         try:
@@ -272,7 +272,7 @@ class YouTubeAppAutomation:
             logger.error(f"[{device_id}] 오류: {e}")
 
         finally:
-            result.completed_at = datetime.utcnow()
+            result.completed_at = datetime.now(timezone.utc)
 
         return result
 
