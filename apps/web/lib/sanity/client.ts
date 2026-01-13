@@ -4,7 +4,9 @@
 
 import { createClient } from '@sanity/client';
 import imageUrlBuilder from '@sanity/image-url';
-import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
+
+// SanityImageSource type - compatible with @sanity/image-url
+type SanityImageSource = Parameters<ReturnType<typeof imageUrlBuilder>['image']>[0];
 
 // ============================================
 // Sanity 클라이언트 설정

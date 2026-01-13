@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function MembersPage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: Promise<{ tab?: string }>;
 }) {
   // Auth check (SSR)
   const auth = await checkAdminAuth();
@@ -25,15 +25,16 @@ export default async function MembersPage({
   }
 
   const { permissions } = auth;
-  
+
   // 회원 관리 페이지 접근 권한 체크
   const canViewMembers = checkPermission(permissions.tier, permissions.adminRole, 'view', 'members');
   if (!canViewMembers) {
     redirect('/admin/unauthorized');
   }
 
+  const resolvedParams = await searchParams;
   const canEditMembers = checkPermission(permissions.tier, permissions.adminRole, 'edit', 'members');
-  const activeTab = searchParams.tab || 'members';
+  const activeTab = resolvedParams.tab || 'members';
 
   // Fetch data
   const [members, adminUsers] = await Promise.all([

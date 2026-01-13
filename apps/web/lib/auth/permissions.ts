@@ -1,14 +1,17 @@
 // lib/auth/permissions.ts
 // 권한 체크 로직
 
-import type { 
-  MembershipTier, 
-  AdminRole, 
-  Action, 
+import type {
+  MembershipTier,
+  AdminRole,
+  Action,
   Resource,
   UserPermissions,
-  PermissionMatrix 
+  PermissionMatrix
 } from './types';
+
+// Re-export types for convenience
+export type { Action, Resource } from './types';
 
 // ============================================
 // 권한 매트릭스 정의

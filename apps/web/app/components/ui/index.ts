@@ -13,10 +13,3 @@ export {
 
 // Animated Shader Background
 export { default as AnimatedShaderBackground } from './animated-shader-background';
-
-// Aceternity 컴포넌트
-export { SparklesCore } from './aceternity/Sparkles';
-export { TypewriterEffect, TypewriterEffectSmooth } from './aceternity/TypewriterEffect';
-export { TracingBeam } from './aceternity/TracingBeam';
-export { StickyScroll } from './aceternity/StickyScrollReveal';
-export { PlaceholdersAndVanishInput } from './aceternity/VanishInput';

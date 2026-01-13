@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function DevicesPage({
   searchParams,
 }: {
-  searchParams: { node?: string; status?: string };
+  searchParams: Promise<{ node?: string; status?: string }>;
 }) {
   // Auth check (SSR)
   const auth = await checkAdminAuth();
@@ -20,10 +20,12 @@ export default async function DevicesPage({
     redirect('/admin/unauthorized');
   }
 
+  const resolvedParams = await searchParams;
+
   // Get devices
   const devices = await getDevicesList(
-    searchParams.node,
-    searchParams.status
+    resolvedParams.node,
+    resolvedParams.status
   );
 
   return (
@@ -40,9 +42,9 @@ export default async function DevicesPage({
           
           {/* Filters */}
           <Suspense fallback={<div className="h-10 w-48 bg-neutral-800 rounded animate-pulse" />}>
-            <DeviceFilters 
-              currentNode={searchParams.node}
-              currentStatus={searchParams.status}
+            <DeviceFilters
+              currentNode={resolvedParams.node}
+              currentStatus={resolvedParams.status}
             />
           </Suspense>
         </div>

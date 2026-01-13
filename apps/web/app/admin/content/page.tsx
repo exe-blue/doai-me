@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function ContentPage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: Promise<{ tab?: string }>;
 }) {
   // Auth check (SSR)
   const auth = await checkAdminAuth();
@@ -25,7 +25,8 @@ export default async function ContentPage({
   }
 
   const { permissions } = auth;
-  const activeTab = searchParams.tab || 'channels';
+  const resolvedParams = await searchParams;
+  const activeTab = resolvedParams.tab || 'channels';
 
   // 권한 체크
   const canCreate = checkPermission(permissions.tier, permissions.adminRole, 'create', 'content');

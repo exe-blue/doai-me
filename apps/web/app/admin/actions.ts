@@ -10,7 +10,8 @@ import type {
   MembershipTier, 
   AdminRole 
 } from '@/lib/auth/types';
-import { checkPermission, type Action, type Resource } from '@/lib/auth/permissions';
+import { checkPermission } from '@/lib/auth/permissions';
+import type { Action, Resource } from '@/lib/auth/permissions';
 
 // Supabase Admin Client (service role)
 const supabaseAdmin = createClient(
