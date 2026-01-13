@@ -3,12 +3,13 @@
 
 import { Suspense } from 'react';
 import { BookOpen, Clock, Tag, ChevronRight, Search } from 'lucide-react';
-import { 
-  getPhilosophyDocuments, 
+import {
+  getPhilosophyDocuments,
   PHILOSOPHY_CATEGORIES,
-  type PhilosophyDocument 
+  type PhilosophyDocument
 } from '@/lib/sanity/client';
 import Link from 'next/link';
+import { Header } from '@/components/header';
 
 // ============================================
 // 메타데이터
@@ -28,8 +29,11 @@ export default async function PhilosophyPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      {/* 전역 헤더 */}
+      <Header />
+
       {/* Hero Section */}
-      <header className="relative overflow-hidden border-b border-neutral-800">
+      <section className="relative overflow-hidden border-b border-neutral-800 pt-16">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-neutral-950 to-neutral-950" />
         <div className="relative max-w-7xl mx-auto px-6 py-16 lg:py-24">
           <div className="flex items-center gap-3 mb-4">
@@ -56,7 +60,7 @@ export default async function PhilosophyPage() {
             </div>
           </div>
         </div>
-      </header>
+      </section>
 
       {/* Categories */}
       <section className="border-b border-neutral-800">

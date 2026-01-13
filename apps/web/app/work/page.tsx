@@ -4,9 +4,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Play, History, ListVideo } from 'lucide-react';
+import { Play, History, ListVideo } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Header } from '@/components/header';
 import { RegisterVideoForm } from './components/RegisterVideoForm';
 import { VideoQueueList } from './components/VideoQueueList';
 import { WorkHistoryPanel } from './components/WorkHistoryPanel';
@@ -18,30 +18,12 @@ export default function WorkPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] text-white flex flex-col">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-black/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto h-full px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Home</span>
-            </Link>
-            <div className="h-6 w-px bg-white/20" />
-            <h1 className="text-lg font-bold text-[#FFCC00] flex items-center gap-2">
-              <Play className="w-5 h-5" />
-              Work
-            </h1>
-          </div>
-
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-[#FFCC00]">DoAi</span>
-            <span className="text-xl font-light text-white">.Me</span>
-          </Link>
-        </div>
-      </header>
+      {/* 전역 헤더 */}
+      <Header
+        variant="back"
+        pageTitle="Work"
+        pageIcon={<Play className="w-5 h-5" />}
+      />
 
       {/* Main Content */}
       <div className="flex-1 pt-16">

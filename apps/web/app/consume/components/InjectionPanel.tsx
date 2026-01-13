@@ -335,15 +335,15 @@ export function InjectionPanel({ isDark }: InjectionPanelProps) {
 
       {/* 메시지 */}
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-400 text-sm">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div role="alert" className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
-      
+
       {successMessage && (
-        <div className="mx-6 mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-2 text-green-400 text-sm">
-          <CheckCircle className="w-4 h-4 shrink-0" />
+        <div role="status" className="mx-6 mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-2 text-green-400 text-sm">
+          <CheckCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
           {successMessage}
         </div>
       )}
@@ -476,17 +476,20 @@ export function InjectionPanel({ isDark }: InjectionPanelProps) {
             
             {/* 토글 스위치 */}
             <button
+              role="switch"
+              aria-checked={kernelEnabled}
+              aria-label="Kernel 웹 자동화 활성화"
               onClick={() => setKernelEnabled(!kernelEnabled)}
               disabled={kernelConfigured === false}
               className={`relative w-12 h-6 rounded-full transition-colors ${
-                kernelEnabled 
-                  ? 'bg-cyan-500' 
+                kernelEnabled
+                  ? 'bg-cyan-500'
                   : isDark ? 'bg-white/20' : 'bg-black/20'
               } ${kernelConfigured === false ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all ${
                 kernelEnabled ? 'left-7' : 'left-1'
-              }`} />
+              }`} aria-hidden="true" />
             </button>
           </div>
 

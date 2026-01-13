@@ -131,8 +131,8 @@ export function RegisterVideoForm() {
             </button>
           </div>
           {error && (
-            <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p role="alert" className="mt-2 text-sm text-red-400 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {error}
             </p>
           )}
@@ -214,8 +214,8 @@ export function RegisterVideoForm() {
 
         {/* Success Message */}
         {success && (
-          <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-400" />
+          <div role="status" className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-400" aria-hidden="true" />
             <div>
               <p className="text-green-400 font-medium">Video Registered!</p>
               <p className="text-sm text-green-400/70">

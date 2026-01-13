@@ -1,38 +1,18 @@
 // apps/web/app/economy/page.tsx
 // 보상 구조 대시보드 페이지 - v0.dev 연동 대기
 
-'use client';
-
-import Link from 'next/link';
-import { Coins, ArrowLeft, Construction } from 'lucide-react';
+import { Coins, Construction } from 'lucide-react';
+import { Header } from '@/components/header';
 
 export default function EconomyPage() {
   return (
     <main className="min-h-screen bg-[#050505] text-white flex flex-col">
-      {/* 헤더 */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-black/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto h-full px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/"
-              className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">홈으로</span>
-            </Link>
-            <div className="h-6 w-px bg-white/20" />
-            <h1 className="text-lg font-bold text-[#FFCC00] flex items-center gap-2">
-              <Coins className="w-5 h-5" />
-              Economy
-            </h1>
-          </div>
-          
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-[#FFCC00]">DoAi</span>
-            <span className="text-xl font-light text-white">.Me</span>
-          </Link>
-        </div>
-      </header>
+      {/* 전역 헤더 */}
+      <Header
+        variant="back"
+        pageTitle="Economy"
+        pageIcon={<Coins className="w-5 h-5" />}
+      />
 
       {/* 메인 콘텐츠 - Placeholder */}
       <div className="flex-1 flex items-center justify-center pt-16">

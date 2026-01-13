@@ -1,17 +1,18 @@
 'use client';
 
 // ============================================
-// DoAi.ME - Infra 페이지
+// DoAi.ME - Channel 페이지
 // Smart TV 스타일 채널 관리 인터페이스
 // ============================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  Tv, Plus, Settings, Trash2, RefreshCw, Clock, Video, 
-  ChevronLeft, ChevronRight, Eye, Calendar, ExternalLink,
+import {
+  Tv, Plus, Trash2, RefreshCw, Clock, Video,
+  Eye, Calendar, ExternalLink,
   Loader2, AlertCircle, CheckCircle, Rss, TrendingUp
 } from 'lucide-react';
+import { Header } from '@/components/header';
 
 // ============================================
 // Types
@@ -184,52 +185,8 @@ export default function InfraPage() {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#F5F5F5]'}`}>
-      {/* 헤더 */}
-      <header className={`fixed top-0 left-0 right-0 z-50 h-16 ${isDark ? 'bg-black/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-        <div className="max-w-7xl mx-auto h-full px-4 md:px-6 flex items-center justify-between">
-          {/* 로고 & 네비게이션 */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-[#FFCC00]">DoAi</span>
-              <span className={`text-2xl font-light ${isDark ? 'text-white' : 'text-black'}`}>.Me</span>
-            </Link>
-            
-            <nav className="hidden md:flex items-center gap-1">
-              <Link 
-                href="/market" 
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isDark ? 'text-neutral-400 hover:text-white hover:bg-white/5' : 'text-neutral-600 hover:text-black hover:bg-black/5'}`}
-              >
-                Market
-              </Link>
-              <Link 
-                href="/infra" 
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-[#FFCC00]/10 text-[#FFCC00]`}
-              >
-                Infra
-              </Link>
-            </nav>
-          </div>
-
-          {/* 통계 요약 */}
-          <div className="flex items-center gap-6 text-sm font-mono">
-            <div className="flex items-center gap-2">
-              <Rss className="w-4 h-4 text-[#FFCC00]" />
-              <span className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>채널</span>
-              <span className="text-[#FFCC00] font-bold">{stats.totalChannels}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Video className="w-4 h-4 text-green-400" />
-              <span className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>영상</span>
-              <span className="text-green-400 font-bold">{stats.totalVideos}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-blue-400" />
-              <span className={isDark ? 'text-neutral-400' : 'text-neutral-600'}>시청</span>
-              <span className="text-blue-400 font-bold">{stats.totalWatched}</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* 전역 헤더 */}
+      <Header />
 
       {/* 메인 콘텐츠 */}
       <main className="pt-24 pb-12 px-4 md:px-6">
@@ -267,10 +224,10 @@ export default function InfraPage() {
 
           {/* 에러 메시지 */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3 text-red-400">
-              <AlertCircle className="w-5 h-5 shrink-0" />
+            <div role="alert" className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3 text-red-400">
+              <AlertCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
               <span>{error}</span>
-              <button onClick={() => setError(null)} className="ml-auto hover:text-red-300">×</button>
+              <button onClick={() => setError(null)} className="ml-auto hover:text-red-300" aria-label="에러 닫기">×</button>
             </div>
           )}
 
@@ -624,14 +581,19 @@ interface AddChannelModalProps {
 
 function AddChannelModal({ isDark, value, onChange, onSubmit, onClose, isLoading }: AddChannelModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-channel-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
       {/* 백드롭 */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+
       {/* 모달 */}
       <div className={`relative w-full max-w-md p-6 rounded-2xl ${isDark ? 'bg-neutral-900 border border-white/10' : 'bg-white border border-black/10'} shadow-2xl animate-fadeIn`}>
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-[#FFCC00]" />
+        <h2 id="add-channel-modal-title" className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Plus className="w-5 h-5 text-[#FFCC00]" aria-hidden="true" />
           채널 추가
         </h2>
         
