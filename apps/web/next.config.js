@@ -2,8 +2,19 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias['@'] = path.resolve(__dirname);
+
+    // Vercel에서 사용 불가능한 모듈들을 external로 처리
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        '@onkernel/sdk': 'commonjs @onkernel/sdk',
+        'playwright': 'commonjs playwright',
+        'playwright-core': 'commonjs playwright-core',
+      });
+    }
+
     return config;
   },
   reactStrictMode: true,
