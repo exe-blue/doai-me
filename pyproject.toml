@@ -68,6 +68,8 @@ exclude = [
     "scripts/",
     "autox-scripts/",
     "tests/",
+    "services/",
+    "shared/",
 ]
 
 [tool.ruff.lint]
