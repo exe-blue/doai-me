@@ -6,9 +6,10 @@ import { auth } from '@/lib/supabase';
 import { useTheme } from '@/lib/theme/ThemeProvider';
 import { themes, ThemeName } from '@/lib/theme';
 import { LogOut, Palette, ChevronDown, User } from 'lucide-react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface DashboardHeaderProps {
-  user: any;
+  user: SupabaseUser | null;
 }
 
 export const DashboardHeader = ({ user }: DashboardHeaderProps) => {

@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase-client';
+import { logger } from '@/lib/logger';
 
 interface Props {
     deviceSerial: string;
     nodeId: string;
 }
 
+interface DeviceDetails {
+    batteryLevel?: number;
+    battery?: number;
+    wifiSsid?: string;
+    temperature?: number;
+    [key: string]: unknown;
+}
+
 export default function DeviceStatusManager({ deviceSerial, nodeId }: Props) {
     const [isRequesting, setIsRequesting] = useState(false);
-    const [deviceDetails, setDeviceDetails] = useState<any | null>(null);
+    const [deviceDetails, setDeviceDetails] = useState<DeviceDetails | null>(null);
     const [showModal, setShowModal] = useState(false);
 
     const handleCheckStatus = async () => {
@@ -30,7 +39,7 @@ export default function DeviceStatusManager({ deviceSerial, nodeId }: Props) {
         });
 
         if (error || !job || job.length === 0) {
-            console.error('Error creating status check job:', error);
+            logger.error('[DeviceStatus]', 'Error creating status check job:', error);
             setIsRequesting(false);
             return;
         }
@@ -42,14 +51,14 @@ export default function DeviceStatusManager({ deviceSerial, nodeId }: Props) {
             .channel(`job-updates-${newJobId}`)
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'job_queue', filter: `job_id=eq.${newJobId}` },
                 (payload) => {
-                    const updatedJob = payload.new as { status: string; result: any };
+                    const updatedJob = payload.new as { status: string; result: DeviceDetails };
                     if (updatedJob.status === 'COMPLETED' && updatedJob.result) {
                         setDeviceDetails(updatedJob.result);
                         setIsRequesting(false);
                         setShowModal(true);
                         channel.unsubscribe();
                     } else if (updatedJob.status === 'FAILED' || updatedJob.status === 'TIMEOUT') {
-                        console.error('Status check job failed.');
+                        logger.error('[DeviceStatus]', 'Status check job failed.');
                         setIsRequesting(false);
                         channel.unsubscribe();
                     }
@@ -62,7 +71,7 @@ export default function DeviceStatusManager({ deviceSerial, nodeId }: Props) {
             if (isRequesting) {
                 setIsRequesting(false);
                 channel.unsubscribe();
-                console.warn('Status check request timed out.');
+                logger.warn('[DeviceStatus]', 'Status check request timed out.');
             }
         }, 30000);
     };

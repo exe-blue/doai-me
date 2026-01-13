@@ -58,8 +58,9 @@ export default function DashboardPage() {
         totalAttentionPoints: personas?.reduce((sum, p) => sum + (p.attention_points || 0), 0) || 0,
       });
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '알 수 없는 오류';
+      setError(message);
     } finally {
       setLoading(false);
     }

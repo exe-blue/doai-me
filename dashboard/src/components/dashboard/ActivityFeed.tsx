@@ -4,12 +4,19 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Activity, Eye, Heart, MessageSquare, User, Loader2 } from 'lucide-react';
 
+interface ActivityDetails {
+  duration?: number;
+  comment?: string;
+  points?: number;
+  [key: string]: unknown;
+}
+
 interface ActivityLog {
   id: string;
   persona_id: string;
   activity_type: string;
   video_id: string | null;
-  details: any;
+  details: ActivityDetails | null;
   created_at: string;
   persona?: {
     name: string;

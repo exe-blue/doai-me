@@ -118,8 +118,9 @@ export default function TasksPage() {
         setBulkUrls('');
         fetchTasks();
       }, 1500);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '알 수 없는 오류';
+      setError(message);
     } finally {
       setCreating(false);
     }

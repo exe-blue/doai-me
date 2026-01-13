@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase-client'; // Assuming a client setup file
+import { logger } from '@/lib/logger';
 
 interface Props {
     deviceSerial: string;
@@ -28,7 +29,7 @@ export default function DeviceScreenshotManager({ deviceSerial, nodeId }: Props)
             if (data) {
                 setScreenshotUrl(getPublicUrl(data));
             } else if (error) {
-                console.error('Error fetching latest screenshot:', error);
+                logger.error('[Screenshot]', 'Error fetching latest screenshot:', error);
             }
             setIsLoading(false);
         }
@@ -56,7 +57,7 @@ export default function DeviceScreenshotManager({ deviceSerial, nodeId }: Props)
         });
 
         if (error || !job || job.length === 0) {
-            console.error('Error creating screenshot job:', error);
+            logger.error('[Screenshot]', 'Error creating screenshot job:', error);
             setIsRequesting(false);
             return;
         }
@@ -74,7 +75,7 @@ export default function DeviceScreenshotManager({ deviceSerial, nodeId }: Props)
                         setIsRequesting(false);
                         channel.unsubscribe();
                     } else if (updatedJob.status === 'FAILED' || updatedJob.status === 'TIMEOUT') {
-                        console.error('Screenshot job failed.');
+                        logger.error('[Screenshot]', 'Screenshot job failed.');
                         setIsRequesting(false);
                         channel.unsubscribe();
                     }
@@ -87,7 +88,7 @@ export default function DeviceScreenshotManager({ deviceSerial, nodeId }: Props)
             if (isRequesting) {
                 setIsRequesting(false);
                 channel.unsubscribe();
-                console.warn('Screenshot request timed out.');
+                logger.warn('[Screenshot]', 'Screenshot request timed out.');
             }
         }, 30000); // 30 second timeout
     };

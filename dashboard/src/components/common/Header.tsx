@@ -9,6 +9,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Menu, X, Plus, Youtube, Tv, Link2 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 type Language = "ko" | "en";
 type ModalType = "url" | "channel" | null;
@@ -68,12 +69,12 @@ export const Header = ({ onLanguageChange }: HeaderProps) => {
     setIsSubmitting(true);
     try {
       // TODO: Supabase에 URL 등록 API 호출
-      console.log("Registering URL:", urlInput);
+      logger.info('[Header]', 'Registering URL:', urlInput);
       // 성공 시 모달 닫기
       setUrlInput("");
       setActiveModal(null);
     } catch (error) {
-      console.error("URL 등록 실패:", error);
+      logger.error('[Header]', 'URL 등록 실패:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -85,12 +86,12 @@ export const Header = ({ onLanguageChange }: HeaderProps) => {
     setIsSubmitting(true);
     try {
       // TODO: Supabase에 채널 등록 API 호출
-      console.log("Registering Channel:", channelInput);
+      logger.info('[Header]', 'Registering Channel:', channelInput);
       // 성공 시 모달 닫기
       setChannelInput("");
       setActiveModal(null);
     } catch (error) {
-      console.error("채널 등록 실패:", error);
+      logger.error('[Header]', '채널 등록 실패:', error);
     } finally {
       setIsSubmitting(false);
     }

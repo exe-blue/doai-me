@@ -12,6 +12,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase, RealtimeChannel } from '@/lib/supabase';
 import { loadSystemConfig, FEATURE_FLAGS } from '@/lib/config';
+import { logger } from '@/lib/logger';
 
 // ═══════════════════════════════════════════════════════════
 // Type Definitions
@@ -123,7 +124,7 @@ export function useDevices(options: UseDevicesOptions = {}): UseDevicesReturn {
         .order('node_id');
 
       if (nodeError) {
-        console.warn('[useDevices] 노드 뷰 조회 실패, node_health 직접 조회:', nodeError.message);
+        logger.warn('[useDevices]', '노드 뷰 조회 실패, node_health 직접 조회:', nodeError.message);
         // 뷰 실패 시 직접 조회
         const { data: fallbackNodes, error: fallbackError } = await supabase
           .from('node_health')
@@ -143,7 +144,7 @@ export function useDevices(options: UseDevicesOptions = {}): UseDevicesReturn {
         .order('first_seen', { ascending: false });
 
       if (deviceError) {
-        console.warn('[useDevices] 디바이스 뷰 조회 실패, devices 직접 조회:', deviceError.message);
+        logger.warn('[useDevices]', '디바이스 뷰 조회 실패, devices 직접 조회:', deviceError.message);
         // 뷰 실패 시 직접 조회
         const { data: fallbackDevices, error: fallbackError } = await supabase
           .from('devices')
@@ -158,7 +159,7 @@ export function useDevices(options: UseDevicesOptions = {}): UseDevicesReturn {
 
       setError(null);
     } catch (e) {
-      console.error('[useDevices] 데이터 로드 실패:', e);
+      logger.error('[useDevices]', '데이터 로드 실패:', e);
       setError(e as Error);
     } finally {
       setIsLoading(false);

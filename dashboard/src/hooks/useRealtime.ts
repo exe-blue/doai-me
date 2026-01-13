@@ -19,6 +19,7 @@ export interface RealtimePersona {
   existence_state: ExistenceState;
   attention_points: number;
   priority_level: number;
+  [key: string]: unknown;
 }
 
 export interface RealtimeTask {
@@ -28,6 +29,7 @@ export interface RealtimeTask {
   status: string;
   device_serial: string | null;
   persona_id: string | null;
+  [key: string]: unknown;
 }
 
 export interface RealtimeActivity {
@@ -37,6 +39,7 @@ export interface RealtimeActivity {
   video_title: string | null;
   points_earned: number;
   created_at: string;
+  [key: string]: unknown;
 }
 
 type PostgresChangesPayload<T> = {
@@ -361,7 +364,8 @@ export function useRealtimeDashboard(options?: {
 
   // 태스크 완료/실패 감지
   const handleTaskUpdate = useCallback(
-    (task: RealtimeTask, oldStatus: string) => {
+    (task: RealtimeTask, old: Partial<RealtimeTask>) => {
+      const oldStatus = old.status as string | undefined;
       if (oldStatus === 'running') {
         if (task.status === 'completed') {
           setStats((prev) => ({
