@@ -7,11 +7,14 @@ import { cn } from "@/lib/utils"
 import { Menu, X } from "lucide-react"
 
 const MENU_ITEMS = [
-  { id: "home", label: "HOME", href: "/" },
-  { id: "consume", label: "CONSUME", href: "#signals" },
-  { id: "channel", label: "CHANNEL", href: "#work" },
-  { id: "society", label: "SOCIETY", href: "#principles" },
-  { id: "apartment", label: "APARTMENT", href: "#colophon" },
+  { id: "work", label: "WORK", href: "#" },
+  { id: "channel", label: "CHANNEL", href: "/channel" },
+  { id: "news", label: "NEWS", href: "/news" },
+  { id: "play", label: "PLAY", href: "#" },
+  { id: "economy", label: "ECONOMY", href: "/economy" },
+  { id: "society", label: "SOCIETY", href: "/society" },
+  { id: "apartment", label: "APARTMENT", href: "/apartment" },
+  { id: "library", label: "LIBRARY", href: "/philosophy" },
 ]
 
 export function Header() {
