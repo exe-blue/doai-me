@@ -12,7 +12,7 @@ from functools import lru_cache
 from typing import Optional
 
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -65,11 +65,12 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4-turbo-preview"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        extra = "ignore"  # 정의되지 않은 환경변수 무시
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",  # 정의되지 않은 환경변수 무시
+    )
 
     def get_supabase_anon_key_value(self) -> Optional[str]:
         """Supabase Anon Key의 실제 값 반환 (SecretStr에서 추출)"""

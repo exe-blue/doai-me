@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class QueueSource(str, Enum):
@@ -131,8 +131,7 @@ class VideoQueueInDB(VideoQueueBase):
     first_executed_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class VideoQueueResponse(VideoQueueInDB):
@@ -196,8 +195,7 @@ class ExecutionLogInDB(ExecutionLogCreate):
     watch_percent: Optional[float] = None
     completed_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExecutionLogResponse(ExecutionLogInDB):
@@ -240,8 +238,7 @@ class CommentPoolInDB(CommentPoolCreate):
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # =====================================================

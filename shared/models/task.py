@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .message import Priority
 
@@ -99,9 +99,7 @@ class Task(BaseModel):
     completed_at: Optional[datetime] = None
     timeout_seconds: int = Field(default=3600, ge=60, le=86400)  # 1분 ~ 24시간
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     @field_validator("priority")
     @classmethod

@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _utc_now() -> datetime:
@@ -118,9 +118,7 @@ class AgentStatus(BaseModel):
     started_at: datetime = Field(default_factory=_utc_now)
     uptime_seconds: Optional[float] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def is_available(self, max_concurrent: int = 1) -> bool:
         """작업 할당 가능 여부"""

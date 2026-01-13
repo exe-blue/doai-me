@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def _utc_now() -> datetime:
@@ -85,9 +85,7 @@ class Knowledge(BaseModel):
     updated_at: datetime = Field(default_factory=_utc_now)
     expires_at: Optional[datetime] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def is_expired(self) -> bool:
         """만료 여부"""

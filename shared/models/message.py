@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def _utc_now() -> datetime:
@@ -76,9 +76,7 @@ class AgentMessage(BaseModel):
     reply_to: Optional[str] = None
     ttl_seconds: Optional[int] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def is_expired(self) -> bool:
         """메시지 만료 여부"""
