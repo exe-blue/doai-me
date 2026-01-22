@@ -71,15 +71,17 @@ cd backend
 `backend/.env` 파일 생성:
 
 ```env
-SUPABASE_URL=https://hycynmzdrngsozxdmyxi.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
+SUPABASE_URL=${SUPABASE_URL}
+SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
 
 # API 설정
 API_HOST=0.0.0.0
 API_PORT=8001
 DEBUG=false
 ```
+
+**⚠️ Security Note**: Replace the placeholder values above with your actual Supabase credentials. **Never commit real API keys to version control.** Use environment variables or GitHub Secrets for production deployments.
 
 ### 3.2 의존성 설치
 
@@ -288,6 +290,71 @@ cd gateway && node src/adapters/laixi/test-adapter.js
 # 4. 브라우저에서 테스트
 # gateway/public/laixi-test.html 열기
 ```
+
+---
+
+## 🔒 Security Notes
+
+### Credential Management
+
+**Important**: If you have accidentally committed sensitive credentials (API keys, tokens, passwords) to this repository:
+
+1. **Immediately rotate all exposed credentials:**
+   - Regenerate Supabase API keys (both `anon` and `service_role` keys)
+   - Rotate any OpenAI API keys
+   - Change SSH keys and passwords
+   - Regenerate any other tokens or secrets
+
+2. **Remove secrets from git history:**
+   
+   Committed secrets remain in git history even after you delete them from current files. Use one of these tools to clean the history:
+
+   **Option A: Using BFG Repo-Cleaner (Recommended)**
+   ```bash
+   # Install BFG
+   # Download from: https://rtyley.github.io/bfg-repo-cleaner/
+   
+   # Clone a fresh copy
+   git clone --mirror https://github.com/exe-blue/doai-me.git
+   
+   # Remove secrets (replace with your actual secret patterns)
+   java -jar bfg.jar --replace-text passwords.txt doai-me.git
+   
+   # Clean up and force push
+   cd doai-me.git
+   git reflog expire --expire=now --all && git gc --prune=now --aggressive
+   git push --force
+   ```
+
+   **Option B: Using git-filter-repo**
+   ```bash
+   # Install git-filter-repo
+   pip install git-filter-repo
+   
+   # Clone a fresh copy
+   git clone https://github.com/exe-blue/doai-me.git
+   cd doai-me
+   
+   # Remove specific secrets
+   git filter-repo --path-glob '*.md' --replace-text <(echo "ACTUAL_SECRET_KEY==>REDACTED")
+   
+   # Force push
+   git push --force --all
+   ```
+
+3. **Best Practices:**
+   - Always use environment variables for sensitive configuration
+   - Store secrets in GitHub Secrets for CI/CD workflows
+   - Use a secrets manager (e.g., HashiCorp Vault, AWS Secrets Manager) for production
+   - Never commit `.env` files with real credentials
+   - Add sensitive files to `.gitignore`
+   - Enable secret scanning on your GitHub repository
+
+4. **Where to store secrets:**
+   - **Local development**: Use `.env` files (add to `.gitignore`)
+   - **CI/CD pipelines**: Use GitHub Secrets (Settings → Secrets and variables → Actions)
+   - **Production servers**: Use environment variables or a secrets manager
+   - **Supabase keys**: Regenerate at https://supabase.com/dashboard → Project Settings → API
 
 ---
 

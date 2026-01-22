@@ -42,8 +42,8 @@
 이미 Vultr에서 실행 중이라면 이 단계를 건너뛰세요.
 
 ```bash
-# 서버 상태 확인
-curl http://158.247.210.152:8000/health
+# 서버 상태 확인 (replace with your actual server IP)
+curl http://${VULTR_HOST}:8000/health
 ```
 
 ### 옵션 B: 로컬에서 실행
@@ -84,7 +84,7 @@ cp config.example.env .env
 # 로컬에서 cloud-gateway 실행 시:
 #   VULTR_URL=ws://localhost:8000/ws/node
 # Vultr 서버 사용 시:
-#   VULTR_URL=ws://158.247.210.152:8000/ws/node
+#   VULTR_URL=ws://${VULTR_HOST}:8000/ws/node
 
 # 의존성 설치
 npm install
@@ -116,7 +116,7 @@ cd apps/web
 # 환경 변수 설정
 echo "NEXT_PUBLIC_GATEWAY_URL=http://localhost:8000" > .env.local
 # 또는 Vultr 사용 시:
-# echo "NEXT_PUBLIC_GATEWAY_URL=http://158.247.210.152:8000" > .env.local
+# echo "NEXT_PUBLIC_GATEWAY_URL=http://${VULTR_HOST}:8000" > .env.local
 
 # 의존성 설치
 npm install
@@ -386,6 +386,21 @@ scripts\test_1_cloud_gateway.bat
 scripts\test_2_local_gateway.bat
 
 # Frontend만 테스트
-scripts\test_3_frontend.bat# 전체 통합 테스트
+scripts\test_3_frontend.bat
+
+# 전체 통합 테스트
 scripts\test_all.bat
 ```
+
+---
+
+## 🔒 Security Notes
+
+**Important**: This guide references server IPs and URLs using placeholders like `${VULTR_HOST}`.
+
+- Replace `${VULTR_HOST}` with your actual Vultr server IP address or hostname
+- **Never commit** real server IPs, API keys, or credentials to version control
+- Use environment variables or `.env` files (add to `.gitignore`)
+- For production deployments, use GitHub Secrets or a secrets manager
+
+If credentials were accidentally committed, see the Security Notes sections in the database setup guides for instructions on rotating credentials and cleaning git history.

@@ -45,9 +45,11 @@ Password: [설정한 비밀번호]
 **Settings > API**에서:
 ```
 Project URL: https://xxxxxxxxxxxxx.supabase.co
-anon (public) key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-service_role key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (비공개!)
+anon (public) key: ${SUPABASE_ANON_KEY}
+service_role key: ${SUPABASE_SERVICE_ROLE_KEY} (비공개!)
 ```
+
+**⚠️ Security**: Copy these values securely and never commit them to version control.
 
 ---
 
@@ -422,9 +424,11 @@ npm install @supabase/supabase-js
 
 ```env
 # frontend/.env.local
-VITE_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 ```
+
+**⚠️ Security**: Replace placeholders with actual values from Supabase dashboard. Never commit this file to git.
 
 ### Supabase 클라이언트 생성
 
@@ -737,8 +741,8 @@ export function useDeviceRealtime() {
 
 ```env
 # Supabase
-VITE_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 
 # n8n (선택사항)
 VITE_N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/xxxxx
@@ -748,8 +752,8 @@ VITE_N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/xxxxx
 
 ```env
 # Supabase
-SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... # service_role key
+SUPABASE_URL=${SUPABASE_URL}
+SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_ROLE_KEY}  # service_role key
 
 # PostgreSQL 직접 연결 (필요시)
 DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
@@ -757,6 +761,8 @@ DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxxx.supabase.co:
 # n8n Webhook
 N8N_WEBHOOK_BASE_URL=https://your-n8n-instance.com/webhook
 ```
+
+**⚠️ Security**: Replace all placeholder values with actual credentials. Add `.env` files to `.gitignore`.
 
 ---
 
@@ -863,3 +869,60 @@ supabase start
 # 상태 확인
 supabase status
 ```
+
+---
+
+## 🔒 Security Notes
+
+### Important: Protect Your Credentials
+
+**If you have accidentally committed sensitive credentials to this repository:**
+
+1. **Immediately rotate all exposed credentials:**
+   - Supabase API keys: Go to https://supabase.com/dashboard → Project Settings → API → Generate new keys
+   - Database passwords: Reset in Supabase dashboard → Settings → Database
+   - Any other exposed tokens or secrets
+
+2. **Remove secrets from git history:**
+   
+   Even after deleting secrets from files, they remain in git history. Clean them using:
+
+   **Using git-filter-repo (Recommended)**
+   ```bash
+   pip install git-filter-repo
+   
+   git clone https://github.com/exe-blue/doai-me.git
+   cd doai-me
+   
+   # Replace actual secrets with REDACTED
+   git filter-repo --replace-text <(echo "your-actual-secret==>REDACTED")
+   
+   git push --force --all
+   ```
+
+   **Using BFG Repo-Cleaner**
+   ```bash
+   # Download from https://rtyley.github.io/bfg-repo-cleaner/
+   
+   git clone --mirror https://github.com/exe-blue/doai-me.git
+   java -jar bfg.jar --replace-text secrets.txt doai-me.git
+   
+   cd doai-me.git
+   git reflog expire --expire=now --all && git gc --prune=now --aggressive
+   git push --force
+   ```
+
+3. **Best Practices:**
+   - ✅ Use environment variables for all sensitive data
+   - ✅ Add `.env*` to `.gitignore` (except `.env.example`)
+   - ✅ Use GitHub Secrets for CI/CD
+   - ✅ Enable GitHub secret scanning
+   - ✅ Never commit API keys, passwords, or tokens
+   - ✅ Use placeholder values in documentation
+   - ✅ Regularly rotate credentials
+
+4. **Where to store secrets:**
+   - **Local dev**: `.env` files (gitignored)
+   - **CI/CD**: GitHub Secrets
+   - **Production**: Environment variables or secrets manager (Vault, AWS Secrets Manager)
+

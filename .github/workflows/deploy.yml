@@ -41,18 +41,27 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.VULTR_SSH_KEY }}
-
-      - name: Add Vultr to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.VULTR_HOST }} >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          
+          # Write SSH private key to file with proper permissions
+          echo "${{ secrets.VULTR_SSH_KEY }}" > ~/.ssh/vultr_deploy
+          chmod 600 ~/.ssh/vultr_deploy
+          
+          # Add host to known_hosts with StrictHostKeyChecking
+          echo "🔐 Adding Vultr host to known_hosts..."
+          if ssh-keyscan -H ${{ secrets.VULTR_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
+            echo "✅ Host key added successfully"
+          else
+            echo "⚠️ Warning: Failed to add host key, continuing with fallback"
+          fi
+          
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Vultr
         run: |
-          ssh ${{ secrets.VULTR_USER }}@${{ secrets.VULTR_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/vultr_deploy -o StrictHostKeyChecking=yes ${{ secrets.VULTR_USER }}@${{ secrets.VULTR_HOST }} << 'ENDSSH'
             set -e
             
             echo "=========================================="

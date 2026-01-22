@@ -16,7 +16,7 @@ deploy_to_vultr.bat
 
 #### 1.1 서버 SSH 접속
 ```bash
-ssh root@158.247.210.152
+ssh root@${VULTR_HOST}
 ```
 
 #### 1.2 설정 스크립트 실행
@@ -45,7 +45,7 @@ sudo bash /tmp/aifarm_setup.sh
 ```bash
 # 방법 2: 로컬에서 SCP로 업로드 후 실행
 # (로컬 PC에서)
-scp d:\exe.blue\ai-fram\deploy\aifarm_setup.sh root@158.247.210.152:/tmp/
+scp d:\exe.blue\ai-fram\deploy\aifarm_setup.sh root@${VULTR_HOST}:/tmp/
 
 # (서버에서)
 chmod +x /tmp/aifarm_setup.sh
@@ -66,7 +66,7 @@ sudo bash /tmp/aifarm_setup.sh
 > 수동으로 업로드하는 경우에만 아래 명령을 사용하세요.
 
 ```cmd
-scp -r d:\exe.blue\ai-fram\aifarm root@158.247.210.152:/tmp/
+scp -r d:\exe.blue\ai-fram\aifarm root@${VULTR_HOST}:/tmp/
 
 # 서버에서 파일 이동 및 권한 설정 (aifarm 사용자 소유로)
 sudo mv /tmp/aifarm/* /opt/aifarm/
@@ -235,7 +235,7 @@ print(f'연결된 디바이스: {len(dm.get_connected_ips())}')
 
 #### 5.1 대시보드 접속
 ```
-http://158.247.210.152:8080/dashboard
+http://${VULTR_HOST}:8080/dashboard
 ```
 
 #### 5.2 활동 시작
@@ -406,3 +406,40 @@ deploy/
 ├── DEPLOY_GUIDE.md      # 이 문서
 └── vultr_setup.sh       # 기존 설정 스크립트 (deprecated - aifarm_setup.sh 사용 권장)
 ```
+
+---
+
+## 🔒 Security Notes
+
+### Protecting Server Credentials
+
+**Important**: This guide uses `${VULTR_HOST}` as a placeholder for your server IP or hostname.
+
+1. **Replace placeholders with actual values:**
+   - `${VULTR_HOST}` → Your actual Vultr server IP or domain
+   - Never commit real IPs, SSH keys, or API keys to version control
+
+2. **SSH Key Management:**
+   - Use SSH key authentication instead of passwords
+   - Store private keys securely (never commit to git)
+   - Rotate SSH keys regularly
+   - Use different keys for different environments (dev/staging/prod)
+
+3. **Environment Variables:**
+   - Store all sensitive configuration in `.env` files (gitignored)
+   - Use GitHub Secrets for CI/CD workflows
+   - For production servers, use a secrets manager
+
+4. **If credentials were exposed:**
+   - Immediately change all passwords and rotate SSH keys
+   - Regenerate any API keys or tokens
+   - Review server access logs for unauthorized access
+   - See database setup guides for git history cleanup instructions
+
+5. **Best Practices:**
+   - ✅ Enable firewall (UFW) and limit exposed ports
+   - ✅ Disable root SSH login after setup
+   - ✅ Use non-root service users (as shown in this guide)
+   - ✅ Keep systems updated with security patches
+   - ✅ Enable fail2ban or similar intrusion prevention
+   - ✅ Use VPN (Tailscale) for internal network access

@@ -40,10 +40,12 @@
 ```env
 # Vultr 연결
 VULTR_ENABLED=true
-VULTR_URL=ws://158.247.210.152:8000/ws/node
+VULTR_URL=ws://${VULTR_HOST}:8000/ws/node
 NODE_ID=node_runner_001
-NODE_SECRET=bXlfc3VwZXJfc2VjcmV0X2tleV8xMjM0NTY=
+NODE_SECRET=${NODE_SECRET}
 ```
+
+**⚠️ Security**: Replace `${VULTR_HOST}` with your Vultr server IP and `${NODE_SECRET}` with a secure random string. Never commit real values to git.
 
 ### 2. index.js 수정
 
@@ -159,7 +161,7 @@ CommandExecutor가 자동으로 ADB fallback 사용:
 
 ```bash
 # Vultr 서버 확인
-curl http://158.247.210.152:8000/health
+curl http://${VULTR_HOST}:8000/health
 
 # 환경 변수 확인
 echo $VULTR_URL
