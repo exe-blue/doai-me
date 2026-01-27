@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Build / Dist
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# Claude
+.claude/
+.sisyphus/
