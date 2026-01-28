@@ -1,0 +1,41 @@
+# DoAi.Me Backend API - Production
+# P1: Persona IDLE Search System
+#
+# Usage: docker-compose up -d --build
+
+version: '3.8'
+
+services:
+  doai-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: doai-api
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - ENV=${ENV:-development}
+      - DEBUG=${DEBUG:-false}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - API_KEY=${API_KEY:-dev-api-key-change-in-production}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: doai-network
+    external: true

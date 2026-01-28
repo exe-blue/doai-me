@@ -1,0 +1,14 @@
+{
+  "name": "wsapi-node",
+  "version": "1.0.0",
+  "description": "wsapi-node-sample from Laixi",
+  "main": "wsapi.js",
+  "scripts": {
+    "test": "node test.js || echo \"No test file found\""
+  },
+  "author": "uercal",
+  "license": "ISC",
+  "dependencies": {
+    "ws": ">=8.17.1"
+  }
+}

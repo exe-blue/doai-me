@@ -22,6 +22,12 @@ __pycache__/
 Thumbs.db
 nul
 
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
 # Build / Dist
 dist/
 build/

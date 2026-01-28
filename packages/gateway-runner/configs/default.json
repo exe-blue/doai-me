@@ -1,0 +1,36 @@
+{
+  "workstation_id": "workstation-1",
+  "laixi": {
+    "host": "127.0.0.1",
+    "port": 22221,
+    "reconnect_interval_ms": 5000,
+    "max_reconnect_attempts": 10
+  },
+  "gateway": {
+    "host": "0.0.0.0",
+    "port": 3100,
+    "cors_origins": ["*"]
+  },
+  "backend": {
+    "url": "",
+    "token": "",
+    "report_interval_ms": 30000
+  },
+  "youtube": {
+    "default_watch_duration": 180,
+    "like_probability": 0.7,
+    "comment_probability": 0.3,
+    "screen_resolution": {
+      "width": 1080,
+      "height": 1920
+    }
+  },
+  "devices": {
+    "auto_discover": true,
+    "health_check_interval_ms": 10000
+  },
+  "logging": {
+    "level": "info",
+    "file": "logs/gateway.log"
+  }
+}

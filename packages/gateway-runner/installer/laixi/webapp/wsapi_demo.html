@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>wsapi_demo</title>
+  <script src="./wsapi.js"></script>
+  <style>
+    html {
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 900px;
+      height: auto;
+      overflow: auto;
+      background: #eff1f5;
+    }
+
+    body {
+      font-size: 14px;
+    }
+
+    *,
+    *:before,
+    *:after {
+      box-sizing: inherit;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    ul,
+    li,
+    p,
+    blockquote,
+    div {
+      position: relative;
+      margin: 0;
+      padding: 0;
+    }
+
+    .btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 12px;
+      height: 30px;
+      line-height: 30px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+      color: #fff;
+      background: #308cf7;
+      box-shadow: 0px 3px 4px 0px rgba(26, 113, 214, 0.3);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      background: #71b3ff;
+    }
+
+    .btn:active {
+      background: #1a6ac7;
+    }
+
+    .btn.is-disabled,
+    .btn.is-disabled:hover,
+    .btn.is-disabled:active {
+      color: #a4a4a4;
+      background: #ebebeb;
+      box-shadow: 0px 3px 4px 0px rgba(235, 235, 235, 0.3);
+    }
+
+    .connect {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin-top: 45vh;
+      transform: translateY(-50%);
+    }
+
+    .connect-title {
+      margin-bottom: 12px;
+      font-size: 1.4em;
+    }
+
+    .connect-btn {
+      margin-bottom: 16px;
+      width: 108px;
+    }
+
+    .wsapi {
+      display: none;
+      margin: 0 auto;
+      padding: 32px 0 0;
+      width: 100%;
+    }
+
+    .wsapi-info {
+      margin: 0 0 24px;
+      text-align: center;
+    }
+
+    .wsapi-btns {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 0 24px;
+    }
+
+    .wsapi-btn {
+      margin: 0 24px 0 0;
+    }
+
+    .wsapi-btn:last-of-type {
+      margin: 0;
+    }
+
+    .wsapi-textareas {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 auto;
+      padding: 16px;
+      width: 65%;
+      height: 300px;
+      resize: none;
+    }
+
+    .wsapi-textarea {
+      width: 49%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="connect js-connect">
+    <p class="connect-title">连接WSAPI之前，请先确保来喜正在运行！</p>
+    <div class="btn connect-btn js-connect-btn" btn-disabled="false">
+      连接WSAPI
+    </div>
+  </div>
+
+  <div v-else class="wsapi js-wsapi">
+    <div class="wsapi-info js-wsapi-deviceTotal" deviceTotal>
+      当前一共有： 0台设备
+    </div>
+    <div class="wsapi-btns">
+      <div class="btn wsapi-btn js-toast-btn" btn-disabled="false">
+        发送 laixi toast
+      </div>
+      <div class="btn wsapi-btn js-keywordPackages-btn" btn-disabled="false">
+        获取来喜包名
+      </div>
+      <div class="btn wsapi-btn js-launchApp-btn" btn-disabled="false">
+        启动来喜APP
+      </div>
+      <div class="btn wsapi-btn js-slideTop-btn" btn-disabled="false">
+        屏幕上滑
+      </div>
+    </div>
+    <textarea class="wsapi-textareas js-wsapi-textareas" placeholder="WSAPI返回结果" readonly textareaText></textarea>
+  </div>
+
+  <script>
+    const wsapi = new Wsapi({
+      onConnectSuccess: handleConnectSuccess,
+      onConnectFail: handleConnected,
+      onConnectClose: handleConnectClose
+    });
+
+    const connectElm = document.querySelector('.js-connect');
+    const wsapiElm = document.querySelector('.js-wsapi');
+
+    const btnDisabled = new Proxy(
+      { value: false },
+      {
+        set(target, property, value) {
+          document.querySelectorAll('*[btn-disabled]').forEach(elm => {
+            if (value) {
+              elm.classList.add('is-disabled');
+            } else {
+              elm.classList.remove('is-disabled');
+            }
+          });
+        }
+      }
+    );
+    const connectBtn = document.querySelector('.js-connect-btn');
+    const toastBtn = document.querySelector('.js-toast-btn');
+    const keywordPackagesBtn = document.querySelector(
+      '.js-keywordPackages-btn'
+    );
+    const launchAppBtn = document.querySelector('.js-launchApp-btn');
+    const slideTopBtn = document.querySelector('.js-slideTop-btn');
+
+    const deviceTotal = new Proxy(
+      { value: 0 },
+      {
+        set(target, property, value) {
+          const deviceTOtalElm = document.querySelector(
+            '.js-wsapi-deviceTotal'
+          );
+          deviceTOtalElm.textContent = `当前一共有： ${value}台设备`;
+        }
+      }
+    );
+
+    const textareaText = new Proxy(
+      { value: false },
+      {
+        set(target, property, value) {
+          const textareaElm = document.querySelector('.js-wsapi-textareas');
+          textareaElm.textContent = value;
+        }
+      }
+    );
+
+    connectBtn.addEventListener('click', () => {
+      if (btnDisabled.value) return;
+      btnDisabled.value = true;
+      wsapi.connectWs();
+      connectBtn.textContent = wsapi.loading;
+    });
+
+    function handleConnected() {
+      connectBtn.textContent = '连接WSAPI';
+      btnDisabled.value = false;
+    }
+
+    function handleConnectFail() {
+      handleConnected();
+      alert(
+        `${wsapi.CONNECT_IP}连接失败，请确认来喜是否打开，并尝试重新连接！`
+      );
+    }
+
+    function handleConnectSuccess(deviceList) {
+      handleConnected();
+      connectElm.style.display = 'none';
+      wsapiElm.style.display = 'block';
+      deviceTotal.value = deviceList.length;
+      setTimeout(() => {
+        alert('WebSocket已开启！');
+      }, 50);
+    }
+
+    function handleConnectClose() {
+      handleConnected();
+      if (!this.connected) return;
+      connectElm.style.display = 'block';
+      wsapiElm.style.display = 'none';
+      alert('WebSocket已关闭！');
+    }
+
+    toastBtn.addEventListener('click', async () => {
+      if (btnDisabled.value) return;
+      btnDisabled.value = true;
+      try {
+        const res = await wsapi.toastMsg();
+        deviceTotal.value = res[0].length;
+        textareaText.value = res[1];
+      } catch (error) {
+        console.error(error.message);
+        alert(error.message);
+      } finally {
+        btnDisabled.value = false;
+      }
+    });
+
+    keywordPackagesBtn.addEventListener('click', async () => {
+      if (btnDisabled.value) return;
+      btnDisabled.value = true;
+      try {
+        const res = await wsapi.listKeywordPackages({
+          keyword: 'laixi'
+        });
+        deviceTotal.value = res[0].length;
+        textareaText.value = res[1];
+      } catch (error) {
+        console.error(error.message);
+        alert(error.message);
+      } finally {
+        btnDisabled.value = false;
+      }
+    });
+
+    launchAppBtn.addEventListener('click', async () => {
+      if (btnDisabled.value) return;
+      btnDisabled.value = true;
+      try {
+        const res = await wsapi.launchApp({
+          appName: 'youhu.laixijs'
+        });
+        deviceTotal.value = res[0].length;
+        textareaText.value = res[1];
+      } catch (error) {
+        console.error(error.message);
+        alert(error.message);
+      } finally {
+        btnDisabled.value = false;
+      }
+    });
+
+    slideTopBtn.addEventListener('click', async () => {
+      if (btnDisabled.value) return;
+      btnDisabled.value = true;
+      try {
+        const res = await wsapi.pointEvent({
+          mask: 6,
+          x: 0.5,
+          y: 0.5,
+          endx: 0.5,
+          endy: 0.4,
+          delta: 0
+        });
+        deviceTotal.value = res[0].length;
+        textareaText.value = res[1];
+      } catch (error) {
+        console.error(error.message);
+        alert(error.message);
+      } finally {
+        btnDisabled.value = false;
+      }
+    });
+  </script>
+</body>
+
+</html>

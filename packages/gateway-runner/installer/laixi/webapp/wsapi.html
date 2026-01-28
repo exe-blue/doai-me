@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WS API</title>
+    <script src="https://unpkg.com/vue@3.2.47/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/vue-i18n@9.2.2/dist/vue-i18n.global.prod.js"></script>
+    <style>
+      html {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 900px;
+        height: auto;
+        overflow: auto;
+        background: #eff1f5;
+      }
+
+      body {
+        font-size: 14px;
+      }
+
+      *,
+      *:before,
+      *:after {
+        box-sizing: inherit;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      ul,
+      li,
+      p,
+      blockquote,
+      div {
+        position: relative;
+        margin: 0;
+        padding: 0;
+      }
+
+      input {
+        border: 0;
+        border-radius: 0;
+        outline: none;
+      }
+
+      .btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 14px;
+        color: #fff;
+        background: #308cf7;
+        box-shadow: 0px 3px 4px 0px rgba(26, 113, 214, 0.3);
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .btn:hover {
+        background: #71b3ff;
+      }
+
+      .btn:active {
+        background: #1a6ac7;
+      }
+
+      .btn.is-disabled,
+      .btn.is-disabled:hover,
+      .btn.is-disabled:active {
+        color: #a4a4a4;
+        background: #ebebeb;
+        box-shadow: 0px 3px 4px 0px rgba(235, 235, 235, 0.3);
+      }
+
+      .locale-btn {
+        display: flex;
+        z-index: 2;
+        position: fixed;
+        top: 10px;
+        left: 20px;
+        font-size: 20px;
+        cursor: pointer;
+      }
+
+      .locale-btn > span:nth-of-type(2) {
+        margin: 0 2px;
+      }
+
+      .locale-btn > span:not(:nth-of-type(2)):hover {
+        color: #71b3ff;
+      }
+
+      .locale-btn > span:not(:nth-of-type(2)):active {
+        color: #1a6ac7;
+      }
+
+      .locale-btn > span:not(:nth-of-type(2)).is-active {
+        color: #308cf7;
+      }
+
+      .connect {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 45vh;
+        transform: translateY(-50%);
+      }
+
+      .connect-title {
+        margin-bottom: 12px;
+        font-size: 2.2em;
+      }
+
+      .connect-subtitle {
+        margin-bottom: 12px;
+        font-size: 1.4em;
+      }
+
+      .connect-input {
+        margin-bottom: 16px;
+        width: 200px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 4px;
+        font-size: 14px;
+        text-align: center;
+      }
+
+      .connect-btn {
+        margin-bottom: 16px;
+        width: 108px;
+      }
+
+      .connect-tip {
+        margin-bottom: 8px;
+        color: #6c6c6c;
+      }
+
+      .connect-link {
+        display: inline-block;
+        margin: 6px 0 12px;
+        text-decoration: underline;
+        color: #1581ff;
+        cursor: pointer;
+      }
+
+      .connect-link:hover {
+        opacity: 0.5;
+      }
+
+      .connect-link:active {
+        opacity: 0.8;
+      }
+
+      .wsapi {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto;
+        padding: 32px 0 0;
+        flex-direction: column;
+        width: 1242px;
+      }
+
+      .wsapi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        width: 450px;
+      }
+
+      .wsapi-radio {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 150px;
+      }
+
+      .wsapi-radio[data-locale='en'] {
+        width: 200px;
+      }
+
+      .wsapi-radio .radio-wrap {
+        display: flex;
+        align-items: center;
+      }
+
+      .wsapi-radio .radio-wrap input,
+      .wsapi-radio .radio-wrap label {
+        cursor: pointer;
+      }
+
+      .wsapi-radio .radio-wrap label {
+        margin: 0 0 0 6px;
+      }
+
+      .wsapi-btn {
+        width: 100px;
+      }
+
+      .wsapi-textareas {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+
+      .wsapi-textarea {
+        width: 49%;
+      }
+
+      .wsapi-textarea .textarea-label {
+        margin-bottom: 6px;
+      }
+
+      .wsapi-textarea .textarea-input {
+        padding: 12px 10px;
+        width: 100%;
+        height: 200px;
+        resize: none;
+      }
+
+      .wsapi-textarea .textarea-input.is-result {
+        overflow: auto;
+        white-space: break-spaces;
+        color: #888;
+        background: #fff;
+        user-select: text;
+      }
+
+      .wsapi-devices {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 117px);
+        grid-auto-rows: 232px;
+        grid-gap: 12px 8px;
+        justify-content: center;
+        padding: 0 0 12px;
+        width: 100%;
+        min-height: 488px;
+      }
+
+      .wsapi-device .device-name {
+        padding: 0 4px;
+        height: 24px;
+        line-height: 24px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        word-break: break-all;
+        background: #fff;
+      }
+
+      .wsapi-device .device-screen {
+        width: 100%;
+        height: 208px;
+      }
+
+      .wsapi-empty {
+        width: 100%;
+        text-align: center;
+        font-size: 1.2em;
+        color: #aaa;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="locale-btn">
+        <span
+          :class="{'is-active': locale === 'zh'}"
+          @click="handleLocalChange('zh')"
+          >简中</span
+        >
+        <span>/</span>
+        <span
+          :class="{'is-active': locale === 'en'}"
+          @click="handleLocalChange('en')"
+          >EN</span
+        >
+      </div>
+
+      <div v-if="!connected" class="connect">
+        <h1 class="connect-title">{{$t('connect.title')}}</h1>
+        <p class="connect-subtitle">{{$t('connect.subtitle')}}</p>
+        <input v-model="connectVal" type="text" class="connect-input" />
+        <div
+          :class="['btn', 'connect-btn', {'is-disabled': loading}]"
+          @click="handleConnectBtnClick"
+        >
+          {{loading || $t('connect.btn')}}
+        </div>
+        <p class="connect-tip">{{$t('connect.tip')}}</p>
+        <a class="connect-link" href="https://laixi.app/wsapi" target="_blank"
+          >{{$t('connect.link')}}</a
+        >
+      </div>
+
+      <div v-else class="wsapi">
+        <div class="wsapi-header">
+          <div class="wsapi-radio" :data-locale="locale">
+            <div class="radio-wrap">
+              <input
+                id="screenshot"
+                type="radio"
+                name="operate"
+                value="1"
+                checked
+                @change="handleRadioChnage"
+              />
+              <label for="screenshot">{{$t('wsapi.screenshot')}}</label>
+            </div>
+            <div class="radio-wrap">
+              <input
+                id="sendText"
+                type="radio"
+                name="operate"
+                value="2"
+                @change="handleRadioChnage"
+              />
+              <label for="sendText">{{$t('wsapi.sendText')}}</label>
+            </div>
+          </div>
+          <div
+            :class="['btn', 'wsapi-btn', {'is-disabled': loading}]"
+            @click="handleSendBtnClick"
+          >
+            {{loading || $t('wsapi.btn')}}
+          </div>
+        </div>
+        <div class="wsapi-textareas">
+          <div class="wsapi-textarea">
+            <p class="textarea-label">{{$t('wsapi.valLabel')}}:</p>
+            <textarea
+              v-model="wsapiVal"
+              class="textarea-input"
+              :placeholder="$t('wsapi.valLabel')"
+            ></textarea>
+          </div>
+          <div class="wsapi-textarea">
+            <p class="textarea-label">{{$t('wsapi.resultLabel')}}:</p>
+            <p class="textarea-input is-result">
+              {{ wsapiResult || $t('wsapi.resultLabel') }}
+            </p>
+          </div>
+        </div>
+        <div v-show="deviceList.length" class="wsapi-devices">
+          <div
+            v-for="item in deviceList"
+            :key="item.deviceId"
+            :data-device-id="item.deviceId"
+            class="wsapi-device"
+          >
+            <p class="device-name">{{ item.name }}</p>
+            <img class="device-screen" :src="item.screen" />
+          </div>
+        </div>
+        <p v-show="!deviceList.length" class="wsapi-empty">
+          {{$t('wsapi.empty')}}
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+      const baseScreenPath =
+        window.location.href
+          .split('///')[1]
+          .split('wsapi.html')[0]
+          .replace(/\//g, '//') + 'screen';
+      const baseCommand = JSON.stringify({
+        action: 'screen',
+        comm: {
+          deviceIds: 'all',
+          savePath: baseScreenPath
+        }
+      });
+      let ws = null;
+
+      const messages = {
+        zh: {
+          connect: {
+            title: '请输入来喜电脑端IP',
+            subtitle: '需要先启动来喜PC端',
+            loading: '连接中...',
+            btn: '连接',
+            tip: '此Demo简单演示如何调用 来喜 WS API',
+            link: '点此查看源代码'
+          },
+          wsapi: {
+            screenshot: '截图',
+            sendText: '发送文字',
+            loading: '执行中...',
+            btn: '执行命令',
+            valLabel: '请输入需要执行的WS API指令',
+            resultLabel: 'WS API返回结果',
+            empty: '没有找的相关设备'
+          },
+          message: {
+            error1: '抱歉，您的浏览器不支持WebSocket协议!',
+            error2: '{ip}连接失败，请检查连接地址，尝试重新连接!',
+            error3: '请检查要执行的指令是否填写正确'
+          }
+        },
+        en: {
+          connect: {
+            title: 'Please enter the Laixi IP',
+            subtitle: 'Need to start Laixi',
+            loading: 'Connecting...',
+            btn: 'Connect',
+            tip: 'This Demo briefly demonstrates how to call Laixi WS API',
+            link: 'Source code'
+          },
+          wsapi: {
+            screenshot: 'Screenshot',
+            sendText: 'Send text',
+            loading: 'Executing...',
+            btn: 'Execute',
+            valLabel: 'Please enter the WS API command',
+            resultLabel: 'WS API result',
+            empty: 'No related devices found'
+          },
+          message: {
+            close: 'WebSocket is closed!',
+            error1:
+              'Sorry, your browser does not support the WebSocket protocol!',
+            error2:
+              '{ip} connection failed. Please check the connection address and try connecting again!',
+            error3:
+              'Please check whether the command to be executed is filled in correctly!'
+          }
+        }
+      };
+      const i18n = VueI18n.createI18n({
+        locale: 'zh',
+        fallbackLocale: 'en',
+        messages
+      });
+      const $t = i18n.global.t;
+
+      if (!window.WebSocket) {
+        alert($t('message.error1'));
+      }
+
+      const app = createApp({
+        data() {
+          return {
+            locale: 'zh',
+            loading: '',
+            connectVal: '127.0.0.1',
+            connected: false,
+            wsapiVal: baseCommand,
+            wsapiResult: '',
+            deviceList: []
+          };
+        },
+        methods: {
+          handleLocalChange(locale = '') {
+            i18n.global.locale = locale;
+            this.locale = locale;
+          },
+
+          async handleConnectBtnClick() {
+            if (!window.WebSocket) {
+              return alert($t('message.error1'));
+            }
+            this.loading = $t('connect.loading');
+            try {
+              ws = new WebSocket(`ws://${this.connectVal}:22221/`);
+
+              ws.addEventListener('open', async () => {
+                await this.initDeviceList();
+                this.loading = '';
+                this.connected = true;
+              });
+
+              ws.addEventListener('close', () => {
+                alert($t('message.close'));
+              });
+
+              ws.addEventListener('error', evt => {
+                alert($t('message.error2', { ip: evt.target.url }));
+                this.loading = '';
+              });
+            } catch (error) {
+              alert(error.message);
+            }
+          },
+
+          handleRadioChnage(evt) {
+            const val = evt.target.value;
+            switch (val) {
+              case '1':
+                this.wsapiVal = baseCommand;
+                break;
+              case '2':
+                this.wsapiVal = JSON.stringify({
+                  action: 'writeclipboard',
+                  comm: {
+                    deviceIds: 'all',
+                    content: 'Hi,laixi.app'
+                  }
+                });
+                break;
+            }
+          },
+
+          wsapiResultFormat(resText = '') {
+            return resText.replace(/\\r\\n/g, '\n').replace(/\\"/g, '"');
+          },
+
+          async handleSendBtnClick() {
+            const { wsapiVal } = this;
+            this.loading = $t('wsapi.loading');
+            try {
+              let deviceIds = wsapiVal.match(/"deviceIds":(.)+",/);
+              if (!deviceIds || !deviceIds[0]) {
+                deviceIds = 'all';
+              } else {
+                deviceIds = deviceIds[0].split('":"')[1].replace('",', '');
+              }
+
+              const res = await new Promise(resolve => {
+                ws.send(wsapiVal);
+                ws.addEventListener(
+                  'message',
+                  evt => {
+                    resolve([evt.data, JSON.parse(evt.data)]);
+                  },
+                  { once: true }
+                );
+              });
+
+              if (res[1].StatusCode !== 200) {
+                this.wsapiResult = this.wsapiResultFormat(res[0]);
+                return;
+              }
+
+              await this.initDeviceList(deviceIds);
+              this.wsapiResult = this.wsapiResultFormat(res[0]);
+            } catch (error) {
+              alert($t('message.error3'));
+              console.log(error.message);
+            } finally {
+              this.loading = '';
+            }
+          },
+
+          async initDeviceList(deviceIds = 'all') {
+            const list = await this.getDeviceList(deviceIds);
+            if (!list.length) return (this.deviceList = []);
+            const screenshotRes = await this.getDeviceScreenshot(deviceIds);
+            list.forEach(e => {
+              e.screen =
+                screenshotRes.StatusCode === 200
+                  ? `${baseScreenPath}//${e.deviceId
+                      .replace(/\./g, '')
+                      .replace(':', '')}.png?${Date.now()}`
+                  : '';
+            });
+            this.deviceList = list;
+          },
+
+          getDeviceList(deviceIds = 'all') {
+            return new Promise(resolve => {
+              let command = null;
+              if (deviceIds !== 'all') {
+                command = {
+                  action: 'Detail',
+                  comm: {
+                    deviceIds
+                  }
+                };
+              } else {
+                command = { action: 'list' };
+              }
+              ws.send(JSON.stringify(command));
+              ws.addEventListener(
+                'message',
+                evt => {
+                  const resData = JSON.parse(evt.data);
+                  if (resData.StatusCode !== 200) return resolve([]);
+                  const data = JSON.parse(resData.result);
+                  resolve(data);
+                },
+                { once: true }
+              );
+            });
+          },
+
+          getDeviceScreenshot(deviceIds = 'all') {
+            return new Promise(resolve => {
+              ws.send(
+                JSON.stringify({
+                  action: 'screen',
+                  comm: {
+                    deviceIds,
+                    savePath: baseScreenPath
+                  }
+                })
+              );
+              ws.addEventListener(
+                'message',
+                evt => {
+                  const resData = JSON.parse(evt.data);
+                  resolve(resData);
+                },
+                { once: true }
+              );
+            });
+          }
+        }
+      });
+
+      app.use(i18n);
+
+      app.mount('#app');
+    </script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+# DoAi.Me MCP Configuration
+# 환경변수가 설정되어 있으면 환경변수가 우선 적용됩니다.
+
+api:
+  # API Server (FastAPI backend)
+  server: "http://158.247.210.152:8001"
+  # Cloud Gateway (Node.js WebSocket gateway)
+  gateway: "http://158.247.210.152:8000"
+  # HTTP 요청 타임아웃 (초)
+  timeout: 30
+
+tools:
+  # 실행 전 확인이 필요한 위험한 Tool 목록
+  confirm_required:
+    - "recovery.execute"
+
+limits:
+  # API 응답 최대 결과 수
+  max_results: 100
+  # 스크린샷 전용 타임아웃 (초)
+  screenshot_timeout: 10

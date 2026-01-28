@@ -1,0 +1,28 @@
+{
+  "name": "gateway-runner",
+  "version": "1.0.0",
+  "description": "Standalone execution package for DoAi Gateway - YouTube automation and device control",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:dev": "node index.js --dev",
+    "health": "node scripts/health-check.js",
+    "status": "node scripts/status.js",
+    "install-gateway": "cd ../../local/gateway && npm install",
+    "setup": "node scripts/setup.js"
+  },
+  "keywords": [
+    "gateway",
+    "doai",
+    "youtube",
+    "automation",
+    "laixi",
+    "device-control"
+  ],
+  "author": "DoAi.Me Team",
+  "license": "MIT",
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,6 @@
+复制一份语言模板,使用文本编辑器打开.在左上角可以切换查看效果
+
+Make a copy of the language template and open it in a text editor.
+In the upper left corner you can switch to see the effect
+
+en-US.json
