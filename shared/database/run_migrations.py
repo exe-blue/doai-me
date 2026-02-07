@@ -11,6 +11,7 @@
 
     또는 Supabase 대시보드 > Settings > Database > Connection string 에서 복사
 """
+
 import os
 import sys
 from pathlib import Path
