@@ -11,7 +11,7 @@ DoAi.Me Backend API Routers
 - laixi: Laixi 로컬 디바이스 제어
 """
 
-from . import commissions, maintenance, personas, youtube, wifi, nocturne, laixi
+from . import commissions, laixi, maintenance, nocturne, personas, wifi, youtube
 
 __all__ = [
     "commissions",
@@ -22,4 +22,3 @@ __all__ = [
     "nocturne",
     "laixi",
 ]
-

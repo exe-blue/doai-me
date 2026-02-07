@@ -9,11 +9,11 @@
  */
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import clsx from 'clsx';
+import { clsx } from 'clsx';
 import { getScreenshot } from '@/services/api';
 import { Button } from '@/components/atoms';
 
-interface StreamViewProps {
+export interface StreamViewProps {
   deviceId: string;
   isExpanded: boolean;
   className?: string;

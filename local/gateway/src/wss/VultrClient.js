@@ -355,10 +355,12 @@ class VultrClient extends EventEmitter {
     }
     
     async _send(message) {
-        if (!this.isConnected) {
+        // HELLO는 CONNECTING 상태에서도 보낼 수 있어야 함
+        const wsReady = this._ws && this._ws.readyState === WebSocket.OPEN;
+        if (!wsReady) {
             throw new Error('연결되지 않음');
         }
-        
+
         // 서명 추가
         if (this.secretKey && message.payload) {
             message.signature = this._generateSignature(message.payload);

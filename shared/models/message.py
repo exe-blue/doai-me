@@ -14,11 +14,16 @@ Agent 간 통신에 사용되는 메시지 정의
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+def _utc_now() -> datetime:
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class MessageType(str, Enum):
@@ -63,7 +68,7 @@ class AgentMessage(BaseModel):
     message_type: MessageType
     from_agent: str
     to_agent: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=_utc_now)
     payload: Dict[str, Any]
     context: Dict[str, Any] = Field(default_factory=dict)
     priority: Priority = Priority.MEDIUM
@@ -71,15 +76,13 @@ class AgentMessage(BaseModel):
     reply_to: Optional[str] = None
     ttl_seconds: Optional[int] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def is_expired(self) -> bool:
         """메시지 만료 여부"""
         if self.ttl_seconds is None:
             return False
-        elapsed = (datetime.utcnow() - self.timestamp).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self.timestamp).total_seconds()
         return elapsed > self.ttl_seconds
 
     def create_response(

@@ -2,8 +2,19 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias['@'] = path.resolve(__dirname);
+
+    // Vercel에서 사용 불가능한 모듈들을 external로 처리
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        '@onkernel/sdk': 'commonjs @onkernel/sdk',
+        'playwright': 'commonjs playwright',
+        'playwright-core': 'commonjs playwright-core',
+      });
+    }
+
     return config;
   },
   reactStrictMode: true,
@@ -22,13 +33,31 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   
-  // 폰트 최적화
-  optimizeFonts: true,
-  
   // 실험적 기능
   experimental: {
     // App Router 최적화
     optimizePackageImports: ['framer-motion'],
+  },
+  
+  // URL 리다이렉트 (기존 라우트 호환성)
+  async redirects() {
+    return [
+      {
+        source: '/market',
+        destination: '/consume',
+        permanent: true,
+      },
+      {
+        source: '/market/:path*',
+        destination: '/consume/:path*',
+        permanent: true,
+      },
+      {
+        source: '/infra',
+        destination: '/channel',
+        permanent: true,
+      },
+    ];
   },
 };
 

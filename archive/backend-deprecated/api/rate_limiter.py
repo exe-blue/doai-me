@@ -10,14 +10,14 @@ Production Domain: doai.me
 Production Server: 158.247.210.152 (Vultr)
 """
 
-from typing import Callable, Optional
+import logging
+from typing import Callable
+
 from fastapi import Request, Response
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from starlette.responses import JSONResponse
-import logging
 
 from .config import settings
 
@@ -72,7 +72,7 @@ def get_identifier(request: Request) -> str:
 _storage_uri = None
 if settings.rate_limit_storage == "redis" and settings.rate_limit_redis_url:
     _storage_uri = settings.rate_limit_redis_url
-    logger.info(f"Rate Limiter using Redis storage")
+    logger.info("Rate Limiter using Redis storage")
 else:
     logger.info("Rate Limiter using in-memory storage")
 
@@ -87,6 +87,7 @@ limiter = Limiter(
 # =============================================================================
 # Rate Limit 데코레이터 (라우터에서 사용)
 # =============================================================================
+
 
 def limit_default(func: Callable) -> Callable:
     """기본 Rate Limit 데코레이터 (100/minute)"""
@@ -122,14 +123,17 @@ def limit_custom(limit_string: str) -> Callable:
         async def expensive_operation():
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         return limiter.limit(limit_string)(func)
+
     return decorator
 
 
 # =============================================================================
 # 예외 핸들러
 # =============================================================================
+
 
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:
     """
@@ -139,12 +143,11 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
     """
     client_id = get_identifier(request)
     logger.warning(
-        f"Rate limit exceeded: {client_id} on {request.url.path} "
-        f"(limit: {exc.detail})"
+        f"Rate limit exceeded: {client_id} on {request.url.path} " f"(limit: {exc.detail})"
     )
 
     # Retry-After 헤더 계산
-    retry_after = getattr(exc, 'retry_after', 60)
+    retry_after = getattr(exc, "retry_after", 60)
 
     return JSONResponse(
         status_code=429,
@@ -158,7 +161,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
         headers={
             "Retry-After": str(retry_after),
             "X-RateLimit-Limit": str(exc.detail),
-        }
+        },
     )
 
 
@@ -168,9 +171,9 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
 
 # Rate Limit을 적용하지 않을 IP 목록
 RATE_LIMIT_WHITELIST_IPS = {
-    "127.0.0.1",      # localhost
-    "::1",             # localhost IPv6
-    "158.247.210.152", # Vultr 서버 자체
+    "127.0.0.1",  # localhost
+    "::1",  # localhost IPv6
+    "158.247.210.152",  # Vultr 서버 자체
 }
 
 # Rate Limit을 적용하지 않을 경로
@@ -199,6 +202,7 @@ def is_whitelisted(request: Request) -> bool:
 # Rate Limit 상태 조회 (모니터링용)
 # =============================================================================
 
+
 def get_rate_limit_status(request: Request) -> dict:
     """
     현재 Rate Limit 상태 조회
@@ -217,5 +221,5 @@ def get_rate_limit_status(request: Request) -> dict:
             "read": settings.rate_limit_read,
             "write": settings.rate_limit_write,
             "health": settings.rate_limit_health,
-        }
+        },
     }

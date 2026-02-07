@@ -149,10 +149,14 @@ class HealthChecker:
                     details=result.get("details"),
                 )
             else:
-                # 예상치 못한 반환값
+                # 예상치 못한 반환값 - DEGRADED로 표시하고 경고 로그
+                logger.warning(
+                    f"헬스체크 예상치 못한 반환값: {name}, type={type(result).__name__}, value={result}"
+                )
                 return ComponentHealth(
                     name=name,
-                    status=HealthStatus.HEALTHY,
+                    status=HealthStatus.DEGRADED,
+                    message=f"Unexpected return type: {type(result).__name__}",
                     latency_ms=latency,
                 )
 
@@ -240,9 +244,33 @@ async def check_supabase() -> Dict[str, Any]:
         client = get_client()
         # 간단한 쿼리로 연결 확인
         result = client.table("devices").select("id").limit(1).execute()
+
+        # 결과 검증: result.data가 None이거나 에러가 있는지 확인
+        if hasattr(result, "error") and result.error is not None:
+            return {
+                "status": "unhealthy",
+                "message": f"Supabase query error: {result.error}",
+            }
+
+        # result.data가 None인 경우도 unhealthy로 처리
+        if not hasattr(result, "data") or result.data is None:
+            return {
+                "status": "unhealthy",
+                "message": "Supabase query returned no data attribute",
+            }
+
         return {"status": "healthy", "message": "Supabase connected"}
+
     except Exception as e:
-        return {"status": "unhealthy", "message": str(e)}
+        # Supabase/PostgREST APIError 등 모든 예외 처리
+        error_message = str(e)
+        # APIError에서 더 상세한 정보 추출
+        if hasattr(e, "message"):
+            error_message = e.message
+        elif hasattr(e, "details"):
+            error_message = f"{e}: {e.details}"
+
+        return {"status": "unhealthy", "message": error_message}
 
 
 def check_memory() -> Dict[str, Any]:

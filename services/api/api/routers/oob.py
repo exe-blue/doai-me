@@ -3,25 +3,60 @@ DoAi.Me OOB (Out-of-Band) API Router
 원격 복구 및 박스 제어 API
 
 Strategos Security Design v1
+M4: Redis caching for node health (scaling to 100+ nodes)
 """
 
 import logging
-from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
-from ..services.oob import (
-    HealthCollector,
-    NodeHealth,
-    RuleEngine,
-    RecoveryAction,
-    RecoveryDispatcher,
-    BoxClient,
-)
+from shared.cache import CacheKey, get_cache
+
+try:
+    from ..services.oob import (
+        BoxClient,
+        HealthCollector,
+        NodeHealth,
+        RecoveryAction,
+        RecoveryDispatcher,
+        RuleEngine,
+    )
+except ImportError:
+    from services.oob import (
+        BoxClient,
+        HealthCollector,
+        RecoveryAction,
+        RecoveryDispatcher,
+        RuleEngine,
+    )
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/oob", tags=["OOB Management"])
+
+# M4: Cache Configuration
+NODE_HEALTH_CACHE_TTL = 60
+
+
+def _node_to_dict(node) -> Dict[str, Any]:
+    """Serialize NodeHealth for caching"""
+    return {
+        "node_id": node.node_id,
+        "status": node.status.value,
+        "tailscale_ip": node.tailscale_ip,
+        "device_count_adb": node.metrics.device_count_adb,
+        "device_count_expected": node.metrics.device_count_expected,
+        "device_loss_pct": node.metrics.device_loss_pct,
+        "adb_server_ok": node.metrics.adb_server_ok,
+        "unauthorized_count": node.metrics.unauthorized_count,
+        "heartbeat_age_sec": node.metrics.node_heartbeat_age_sec,
+        "recovery_count_soft": node.recovery_count_soft,
+        "recovery_count_restart": node.recovery_count_restart,
+        "recovery_count_box": node.recovery_count_box,
+        "last_recovery_at": node.last_recovery_at.isoformat() if node.last_recovery_at else None,
+    }
+
 
 # === 싱글톤 인스턴스 ===
 _health_collector: Optional[HealthCollector] = None
@@ -52,8 +87,10 @@ def get_recovery_dispatcher() -> RecoveryDispatcher:
 
 # === Request/Response Models ===
 
+
 class NodeMetricsUpdate(BaseModel):
     """노드 메트릭 업데이트 요청"""
+
     node_id: str
     device_count: int = 0
     laixi_connected: bool = False
@@ -65,6 +102,7 @@ class NodeMetricsUpdate(BaseModel):
 
 class NodeHealthResponse(BaseModel):
     """노드 건강 상태 응답"""
+
     node_id: str
     status: str
     tailscale_ip: Optional[str] = None
@@ -82,6 +120,7 @@ class NodeHealthResponse(BaseModel):
 
 class RecoveryRequest(BaseModel):
     """복구 실행 요청"""
+
     node_id: str
     action: str = Field(..., description="soft, restart, or box")
     dry_run: bool = False
@@ -90,6 +129,7 @@ class RecoveryRequest(BaseModel):
 
 class RecoveryResponse(BaseModel):
     """복구 실행 응답"""
+
     node_id: str
     action: str
     status: str
@@ -102,6 +142,7 @@ class RecoveryResponse(BaseModel):
 
 class BoxTestRequest(BaseModel):
     """박스 프로토콜 테스트 요청"""
+
     box_ip: str
     box_port: int = 56666
     test_command: str = "AA 01 88 84 01 00 DD"
@@ -109,14 +150,18 @@ class BoxTestRequest(BaseModel):
 
 class BoxCommandRequest(BaseModel):
     """박스 명령 실행 요청"""
+
     box_ip: str
     box_port: int = 56666
-    command: str = Field(..., description="all_power_on, all_power_off, power_cycle, slot_power_on, slot_power_off")
+    command: str = Field(
+        ..., description="all_power_on, all_power_off, power_cycle, slot_power_on, slot_power_off"
+    )
     slot_number: Optional[int] = None
 
 
 class EvaluationResponse(BaseModel):
     """노드 상태 평가 응답"""
+
     node_id: str
     failure_level: str
     recommended_action: str
@@ -127,17 +172,24 @@ class EvaluationResponse(BaseModel):
 
 # === Health Endpoints ===
 
+
 @router.post("/metrics", response_model=NodeHealthResponse)
 async def update_node_metrics(update: NodeMetricsUpdate):
     """
     노드 메트릭 업데이트 (NodeRunner HEARTBEAT에서 호출)
+    M4: Also updates Redis cache for dashboard performance
     """
     collector = get_health_collector()
     node = await collector.update_node_metrics(
-        node_id=update.node_id,
-        metrics_data=update.model_dump()
+        node_id=update.node_id, metrics_data=update.model_dump()
     )
-    
+
+    # M4: Cache node health
+    cache = get_cache()
+    await cache.set(
+        CacheKey.NODE_HEALTH, update.node_id, _node_to_dict(node), ttl=NODE_HEALTH_CACHE_TTL
+    )
+
     return NodeHealthResponse(
         node_id=node.node_id,
         status=node.status.value,
@@ -151,7 +203,7 @@ async def update_node_metrics(update: NodeMetricsUpdate):
         recovery_count_soft=node.recovery_count_soft,
         recovery_count_restart=node.recovery_count_restart,
         recovery_count_box=node.recovery_count_box,
-        last_recovery_at=node.last_recovery_at.isoformat() if node.last_recovery_at else None
+        last_recovery_at=node.last_recovery_at.isoformat() if node.last_recovery_at else None,
     )
 
 
@@ -160,7 +212,7 @@ async def get_all_nodes():
     """모든 노드 건강 상태 조회"""
     collector = get_health_collector()
     nodes = collector.get_all_nodes()
-    
+
     return [
         NodeHealthResponse(
             node_id=node.node_id,
@@ -175,7 +227,7 @@ async def get_all_nodes():
             recovery_count_soft=node.recovery_count_soft,
             recovery_count_restart=node.recovery_count_restart,
             recovery_count_box=node.recovery_count_box,
-            last_recovery_at=node.last_recovery_at.isoformat() if node.last_recovery_at else None
+            last_recovery_at=node.last_recovery_at.isoformat() if node.last_recovery_at else None,
         )
         for node in nodes.values()
     ]
@@ -183,13 +235,19 @@ async def get_all_nodes():
 
 @router.get("/nodes/{node_id}", response_model=NodeHealthResponse)
 async def get_node_health(node_id: str):
-    """특정 노드 건강 상태 조회"""
+    """특정 노드 건강 상태 조회 (M4: cache-first)"""
+    # M4: Try cache first
+    cache = get_cache()
+    cached = await cache.get(CacheKey.NODE_HEALTH, node_id)
+    if cached:
+        return NodeHealthResponse(**cached)
+
     collector = get_health_collector()
     node = collector.get_node(node_id)
-    
+
     if not node:
         raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
-    
+
     return NodeHealthResponse(
         node_id=node.node_id,
         status=node.status.value,
@@ -203,35 +261,36 @@ async def get_node_health(node_id: str):
         recovery_count_soft=node.recovery_count_soft,
         recovery_count_restart=node.recovery_count_restart,
         recovery_count_box=node.recovery_count_box,
-        last_recovery_at=node.last_recovery_at.isoformat() if node.last_recovery_at else None
+        last_recovery_at=node.last_recovery_at.isoformat() if node.last_recovery_at else None,
     )
 
 
 # === Evaluation Endpoints ===
 
+
 @router.get("/evaluate/{node_id}", response_model=EvaluationResponse)
 async def evaluate_node(node_id: str):
     """
     노드 상태 평가 및 복구 추천
-    
+
     RuleEngine을 통해 threshold 판단 및 복구 액션 결정
     """
     collector = get_health_collector()
     rule_engine = get_rule_engine()
-    
+
     node = collector.get_node(node_id)
     if not node:
         raise HTTPException(status_code=404, detail=f"Node {node_id} not found")
-    
+
     result = rule_engine.evaluate(node)
-    
+
     return EvaluationResponse(
         node_id=result.node_id,
         failure_level=result.failure_level.value,
         recommended_action=result.recommended_action.value,
         reasons=result.reasons,
         can_execute=result.can_execute,
-        cooldown_remaining_sec=result.cooldown_remaining_sec
+        cooldown_remaining_sec=result.cooldown_remaining_sec,
     )
 
 
@@ -240,9 +299,9 @@ async def get_unhealthy_nodes():
     """비정상 노드 목록 및 평가 결과"""
     collector = get_health_collector()
     rule_engine = get_rule_engine()
-    
+
     unhealthy = collector.get_unhealthy_nodes()
-    
+
     return [
         EvaluationResponse(
             node_id=result.node_id,
@@ -250,7 +309,7 @@ async def get_unhealthy_nodes():
             recommended_action=result.recommended_action.value,
             reasons=result.reasons,
             can_execute=result.can_execute,
-            cooldown_remaining_sec=result.cooldown_remaining_sec
+            cooldown_remaining_sec=result.cooldown_remaining_sec,
         )
         for node in unhealthy
         for result in [rule_engine.evaluate(node)]
@@ -259,14 +318,12 @@ async def get_unhealthy_nodes():
 
 # === Recovery Endpoints ===
 
+
 @router.post("/recover", response_model=RecoveryResponse)
-async def execute_recovery(
-    request: RecoveryRequest,
-    background_tasks: BackgroundTasks
-):
+async def execute_recovery(request: RecoveryRequest, background_tasks: BackgroundTasks):
     """
     복구 실행
-    
+
     Actions:
     - soft: ADB/에이전트 재시작
     - restart: 서비스 전체 재시작
@@ -275,70 +332,59 @@ async def execute_recovery(
     collector = get_health_collector()
     rule_engine = get_rule_engine()
     dispatcher = get_recovery_dispatcher()
-    
+
     node = collector.get_node(request.node_id)
     if not node:
         raise HTTPException(status_code=404, detail=f"Node {request.node_id} not found")
-    
+
     if not node.tailscale_ip:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Node {request.node_id} has no Tailscale IP configured"
+            status_code=400, detail=f"Node {request.node_id} has no Tailscale IP configured"
         )
-    
+
     # 액션 매핑
     action_map = {
         "soft": RecoveryAction.SOFT,
         "restart": RecoveryAction.RESTART,
-        "box": RecoveryAction.BOX_RESET
+        "box": RecoveryAction.BOX_RESET,
     }
     action = action_map.get(request.action)
     if not action:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid action: {request.action}. Must be soft, restart, or box"
+            status_code=400,
+            detail=f"Invalid action: {request.action}. Must be soft, restart, or box",
         )
-    
+
     # 쿨다운 체크
     can_execute = await collector.can_execute_recovery(
         node_id=request.node_id,
         recovery_type=request.action,
-        cooldown_minutes={
-            "soft": 3,
-            "restart": 15,
-            "box": 30
-        }.get(request.action, 3)
+        cooldown_minutes={"soft": 3, "restart": 15, "box": 30}.get(request.action, 3),
     )
-    
+
     if not can_execute and not request.dry_run:
         raise HTTPException(
-            status_code=429,
-            detail=f"Recovery cooldown active for node {request.node_id}"
+            status_code=429, detail=f"Recovery cooldown active for node {request.node_id}"
         )
-    
+
     # 노드별 박스 IP 조회 (노드 설정에서 가져옴)
-    box_ip = node.box_ip if hasattr(node, 'box_ip') and node.box_ip else None
+    box_ip = node.box_ip if hasattr(node, "box_ip") and node.box_ip else None
     if action == RecoveryAction.BOX_RESET and not box_ip:
         raise HTTPException(
             status_code=400,
-            detail=f"Box IP not configured for node {request.node_id}. Please set box_ip in node configuration."
+            detail=f"Box IP not configured for node {request.node_id}. Please set box_ip in node configuration.",
         )
-    
+
     # 복구 실행
     if action == RecoveryAction.BOX_RESET and request.slot_number is not None:
         # 박스 슬롯별 복구
         result = await dispatcher.execute_box_reset(
-            node_id=request.node_id,
-            box_ip=box_ip,
-            box_port=56666,
-            slot_number=request.slot_number
+            node_id=request.node_id, box_ip=box_ip, box_port=56666, slot_number=request.slot_number
         )
     elif action == RecoveryAction.BOX_RESET:
         # 박스 전체 복구
         result = await dispatcher.execute_box_reset(
-            node_id=request.node_id,
-            box_ip=box_ip,
-            box_port=56666
+            node_id=request.node_id, box_ip=box_ip, box_port=56666
         )
     else:
         # SSH 복구 (soft/restart)
@@ -346,14 +392,14 @@ async def execute_recovery(
             node_id=request.node_id,
             tailscale_ip=node.tailscale_ip,
             action=action,
-            dry_run=request.dry_run
+            dry_run=request.dry_run,
         )
-    
+
     # 복구 기록
     if not request.dry_run:
         await collector.record_recovery(request.node_id, request.action)
         rule_engine.record_recovery_attempt(request.node_id, action)
-    
+
     return RecoveryResponse(
         node_id=result.node_id,
         action=result.action.value,
@@ -362,7 +408,7 @@ async def execute_recovery(
         stdout=result.stdout,
         stderr=result.stderr,
         error_message=result.error_message,
-        duration_sec=result.duration_sec
+        duration_sec=result.duration_sec,
     )
 
 
@@ -371,7 +417,7 @@ async def get_recovery_history(node_id: Optional[str] = None, limit: int = 20):
     """복구 히스토리 조회"""
     dispatcher = get_recovery_dispatcher()
     history = dispatcher.get_history(node_id=node_id, limit=limit)
-    
+
     return [
         RecoveryResponse(
             node_id=r.node_id,
@@ -381,7 +427,7 @@ async def get_recovery_history(node_id: Optional[str] = None, limit: int = 20):
             stdout=r.stdout,
             stderr=r.stderr,
             error_message=r.error_message,
-            duration_sec=r.duration_sec
+            duration_sec=r.duration_sec,
         )
         for r in history
     ]
@@ -389,17 +435,16 @@ async def get_recovery_history(node_id: Optional[str] = None, limit: int = 20):
 
 # === Box Control Endpoints ===
 
+
 @router.post("/box/test")
 async def test_box_protocol(request: BoxTestRequest):
     """
     박스 프로토콜 테스트 (30분 안에 확정하기 위한 테스트)
-    
+
     tcpdump 대신 Python으로 직접 테스트
     """
     result = await BoxClient.discover_protocol(
-        host=request.box_ip,
-        port=request.box_port,
-        test_command=request.test_command
+        host=request.box_ip, port=request.box_port, test_command=request.test_command
     )
     return result
 
@@ -408,7 +453,7 @@ async def test_box_protocol(request: BoxTestRequest):
 async def execute_box_command(request: BoxCommandRequest):
     """
     박스 명령 직접 실행
-    
+
     Commands:
     - all_power_on: 전체 전원 ON
     - all_power_off: 전체 전원 OFF
@@ -417,46 +462,46 @@ async def execute_box_command(request: BoxCommandRequest):
     - slot_power_off: 특정 슬롯 전원 OFF (slot_number 필요)
     """
     client = BoxClient(request.box_ip, request.box_port)
-    
+
     success = False
     message = ""
-    
+
     try:
         if request.command == "all_power_on":
             success = await client.power_on_all()
             message = "All power ON command sent"
-        
+
         elif request.command == "all_power_off":
             success = await client.power_off_all()
             message = "All power OFF command sent"
-        
+
         elif request.command == "power_cycle":
             success = await client.power_cycle_all()
             message = "Power cycle completed"
-        
+
         elif request.command == "slot_power_on":
             if request.slot_number is None:
                 raise HTTPException(status_code=400, detail="slot_number required")
             success = await client.slot_power_on(request.slot_number)
             message = f"Slot {request.slot_number} power ON command sent"
-        
+
         elif request.command == "slot_power_off":
             if request.slot_number is None:
                 raise HTTPException(status_code=400, detail="slot_number required")
             success = await client.slot_power_off(request.slot_number)
             message = f"Slot {request.slot_number} power OFF command sent"
-        
+
         else:
             raise HTTPException(status_code=400, detail=f"Unknown command: {request.command}")
-        
+
         return {
             "success": success,
             "command": request.command,
             "message": message,
             "box_ip": request.box_ip,
-            "box_port": request.box_port
+            "box_port": request.box_port,
         }
-        
+
     except Exception as e:
         logger.exception(f"Box command error: {request.command}")
         return {
@@ -464,7 +509,7 @@ async def execute_box_command(request: BoxCommandRequest):
             "command": request.command,
             "error": str(e),
             "box_ip": request.box_ip,
-            "box_port": request.box_port
+            "box_port": request.box_port,
         }
 
 
@@ -473,10 +518,27 @@ async def test_box_connection(box_ip: str, box_port: int = 56666):
     """박스 TCP 연결 테스트"""
     client = BoxClient(box_ip, box_port)
     connected = await client.test_connection()
-    
-    return {
-        "connected": connected,
-        "box_ip": box_ip,
-        "box_port": box_port
-    }
 
+    return {"connected": connected, "box_ip": box_ip, "box_port": box_port}
+
+
+# === M4: Cached Stats Endpoint ===
+
+
+@router.get("/stats/summary")
+async def get_oob_stats_summary():
+    """M4: Cached OOB statistics for dashboard (30s TTL)"""
+    cache = get_cache()
+
+    async def compute_stats():
+        collector = get_health_collector()
+        nodes = collector.get_all_nodes()
+        return {
+            "total_nodes": len(nodes),
+            "connected": sum(1 for n in nodes.values() if n.status.value == "connected"),
+            "degraded": sum(1 for n in nodes.values() if n.status.value == "degraded"),
+            "disconnected": sum(1 for n in nodes.values() if n.status.value == "disconnected"),
+            "total_devices": sum(n.metrics.device_count_adb for n in nodes.values()),
+        }
+
+    return await cache.get_or_set(CacheKey.SYSTEM_STATS, "oob", ttl=30, factory=compute_stats)

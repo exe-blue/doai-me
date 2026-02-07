@@ -10,7 +10,9 @@
 const express = require('express');
 const router = express.Router();
 const YouTubeParser = require('../../services/youtube/YouTubeParser');
-const logger = require('../../utils/logger');
+const Logger = require('../../utils/logger');
+
+const logger = new Logger();
 
 // YouTubeParser 인스턴스
 const youtubeParser = new YouTubeParser({
@@ -74,6 +76,63 @@ router.post('/parse', async (req, res) => {
             success: false,
             error: 'API_ERROR',
             message: 'Failed to parse YouTube URL'
+        });
+    }
+});
+
+/**
+ * GET /api/youtube/video?url=...
+ * URL 쿼리 파라미터로 비디오 정보 조회
+ * (InjectionPanel 호환용)
+ */
+router.get('/video', async (req, res) => {
+    try {
+        const { url } = req.query;
+
+        if (!url) {
+            return res.status(400).json({
+                success: false,
+                error: 'MISSING_URL',
+                message: 'YouTube URL is required as query parameter'
+            });
+        }
+
+        // URL에서 비디오 ID 추출
+        const videoId = youtubeParser.extractVideoId(url);
+        if (!videoId) {
+            return res.status(400).json({
+                success: false,
+                error: 'INVALID_URL',
+                message: 'Could not extract video ID from URL'
+            });
+        }
+
+        const result = await youtubeParser.parseById(videoId);
+
+        if (!result.success) {
+            return res.status(400).json(result);
+        }
+
+        // InjectionPanel 기대 포맷으로 변환
+        res.json({
+            success: true,
+            data: {
+                videoId: result.data.video_id,
+                title: result.data.title,
+                channelTitle: result.data.channel_name,
+                channelId: result.data.channel_id,
+                thumbnail: result.data.thumbnail_url,
+                duration: result.data.duration_seconds,
+                viewCount: result.data.view_count
+            }
+        });
+
+    } catch (error) {
+        logger.error('[YouTube API] GET /video?url= failed', { error: error.message });
+        res.status(500).json({
+            success: false,
+            error: 'SERVER_ERROR',
+            message: error.message
         });
     }
 });

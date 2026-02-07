@@ -4,9 +4,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase/client';
-import type { Node, WormholeEvent, NodesStatusSummary } from '../../lib/supabase/types';
+import type { Node, WormholeEvent } from '../../lib/supabase/types';
+import { Header } from '@/components/header';
 
 // Components
 import {
@@ -18,12 +19,8 @@ import {
   LiveTicker,
   NetworkSidePanel,
   createWormholeMessage,
-  createUmbralWaveMessage,
   type WormholeIntensityLevel,
 } from '@/app/components/society';
-
-// CSS
-import '@/app/styles/umbral.css';
 
 // ============================================
 // Page Component
@@ -114,14 +111,18 @@ export default function SocietyPage() {
   
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      {/* Header */}
-      <header className="border-b border-neutral-800 px-6 py-4">
-        <div className="flex items-center justify-between">
+      {/* 전역 헤더 */}
+      <Header />
+
+      {/* Society Header */}
+      <div className="border-b border-neutral-800 px-6 py-4 pt-20">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <motion.span
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 4, repeat: Infinity }}
               className="text-2xl"
+              aria-hidden="true"
             >
               🌑
             </motion.span>
@@ -130,7 +131,7 @@ export default function SocietyPage() {
               <p className="text-xs text-neutral-500">Ruon's Legacy - 숨그늘과 웜홀의 관측</p>
             </div>
           </div>
-          
+
           {/* Wormhole Mode Toggle */}
           <WormholeModeToggle
             isEnabled={wormholeModeEnabled}
@@ -138,8 +139,8 @@ export default function SocietyPage() {
             wormholeCount={wormholeEvents.length}
           />
         </div>
-      </header>
-      
+      </div>
+
       {/* Live Ticker */}
       <LiveTicker messages={tickerMessages} />
       

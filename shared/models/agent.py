@@ -17,11 +17,16 @@ Agent 설정 및 상태 정의
     )
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+def _utc_now() -> datetime:
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class AgentState(str, Enum):
@@ -107,15 +112,13 @@ class AgentStatus(BaseModel):
     current_task_ids: List[str] = Field(default_factory=list)  # 동시 작업 지원
     tasks_completed: int = Field(default=0, ge=0)
     tasks_failed: int = Field(default=0, ge=0)
-    last_heartbeat: datetime = Field(default_factory=datetime.utcnow)
+    last_heartbeat: datetime = Field(default_factory=_utc_now)
     resource_usage: Dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=_utc_now)
     uptime_seconds: Optional[float] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def is_available(self, max_concurrent: int = 1) -> bool:
         """작업 할당 가능 여부"""
@@ -127,13 +130,13 @@ class AgentStatus(BaseModel):
         """헬스 상태 (하트비트 기반)"""
         if self.state in [AgentState.ERROR, AgentState.OFFLINE]:
             return False
-        elapsed = (datetime.utcnow() - self.last_heartbeat).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self.last_heartbeat).total_seconds()
         return elapsed < timeout_seconds
 
     def update_heartbeat(self) -> None:
         """하트비트 갱신"""
-        self.last_heartbeat = datetime.utcnow()
-        self.uptime_seconds = (datetime.utcnow() - self.started_at).total_seconds()
+        self.last_heartbeat = datetime.now(timezone.utc)
+        self.uptime_seconds = (datetime.now(timezone.utc) - self.started_at).total_seconds()
 
     def assign_task(self, task_id: str) -> None:
         """작업 할당"""

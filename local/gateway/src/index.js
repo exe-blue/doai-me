@@ -37,6 +37,9 @@ const { loadDiscoveryConfig } = require('./discovery/config');
 // WebSocket Multiplexer (v3.0)
 const WebSocketMultiplexer = require('./websocket/multiplexer');
 
+// Dashboard WebSocket Handler (NodeContext 프로토콜)
+const DashboardHandler = require('./websocket/dashboard-handler');
+
 // API 라우터
 const responseRouter = require('./api/routes/response');
 const healthRouter = require('./api/routes/health');
@@ -51,16 +54,47 @@ const streamRouter = require('./api/routes/stream');
 const discoveryRouter = require('./api/routes/discovery');
 
 // OpenAI Integration
+
+
+
 const aiRouter = require('./api/routes/ai');
 
 // Vultr WSS Integration (v2.1)
 const { initVultrConnection, shutdownVultrConnection } = require('./vultr-integration');
 
+// Laixi Adapter (Device Control via WebSocket)
+const LaixiAdapter = require('./adapters/laixi/LaixiAdapter');
+
 // Stream Server (Legacy, Iframe용)
 const StreamServer = require('./stream/server');
 
 // H.264 Stream Server (v2.0 - Real-time Screen Streaming)
+
+// Chrome Automation Service (Puppeteer + CDP over ADB)
+const { createChromeService } = require('./services/chrome');
+const ChromeTaskHandler = require('./services/chrome/ChromeTaskHandler');
+const chromeRouter = require('./api/routes/chrome');
+const { initializeChromeRoutes } = require('./api/routes/chrome');
+
+// YouTube API Router
+const youtubeRouter = require('./api/routes/youtube');
+
+// Video Queue API Router (Work 페이지 연동)
+const videoRouter = require('./api/routes/video');
+
+// Kernel API Router (YouTube app automation)
+const kernelRouter = require('./api/routes/kernel');
+const { initKernelRouter } = require('./api/routes/kernel');
+
+// Setup API Router (초기 설정 및 명령 템플릿)
+const setupRouter = require('./api/routes/setup');
+
 const H264StreamServer = require('./stream/h264-stream');
+
+// ==================== Laixi Adapter (Device Control) ====================
+let laixiAdapter = null; // start()에서 초기화
+let chromeService = null; // start()에서 초기화
+let chromeTaskHandler = null;
 
 // ==================== 초기화 ====================
 const logger = new Logger();
@@ -88,7 +122,7 @@ const heartbeat = new HeartbeatMonitor(logger, commander, deviceTracker);
 
 // ==================== 작업 큐 ====================
 const taskQueue = new TaskQueue(logger);
-const dispatcher = new Dispatcher(logger, commander, deviceTracker, taskQueue);
+const dispatcher = new Dispatcher(logger, commander, deviceTracker, taskQueue, discoveryManager);
 
 // ==================== WebSocket Multiplexer (v3.0) ====================
 const wsMultiplexer = new WebSocketMultiplexer(logger, adbClient, discoveryManager, commander);
@@ -99,8 +133,25 @@ const streamServer = new StreamServer(logger, adbClient, deviceTracker);
 // ==================== H.264 Stream Server (v2.0) ====================
 const h264StreamServer = new H264StreamServer({ logger, deviceTracker });
 
+// ==================== Dashboard Handler (NodeContext 프로토콜) ====================
+const dashboardHandler = new DashboardHandler({
+    logger,
+    discoveryManager,
+    deviceTracker,
+    commander,
+    laixiAdapter: null  // start()에서 설정
+});
+
 // ==================== Express 서버 ====================
 const app = express();
+
+// ==================== Localhost 전용 모드 (설치 환경) ====================
+const LOCALHOST_ONLY = process.env.LOCALHOST_ONLY === 'true';
+const AUTO_OPEN_DASHBOARD = process.env.AUTO_OPEN_DASHBOARD !== 'false';
+
+if (LOCALHOST_ONLY) {
+    logger.info('[Gateway] 🔒 Localhost 전용 모드 활성화');
+}
 
 // 미들웨어
 app.use(helmet({
@@ -108,11 +159,32 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
+// Localhost 제한 미들웨어 (설치 환경에서만)
+if (LOCALHOST_ONLY) {
+    app.use((req, res, next) => {
+        const clientIP = req.ip || req.connection.remoteAddress;
+        const isLocalhost = clientIP === '127.0.0.1'
+            || clientIP === '::1'
+            || clientIP === '::ffff:127.0.0.1'
+            || clientIP === 'localhost';
+
+        if (!isLocalhost) {
+            logger.warn(`[Security] 외부 접근 차단: ${clientIP}`);
+            return res.status(403).json({
+                error: 'Access Denied',
+                message: 'This server only accepts localhost connections'
+            });
+        }
+        next();
+    });
+}
+
 // CORS 설정 (통합 Control Room)
 app.use(cors({
     origin: [
         'http://localhost:3000',      // Vite dev server
         'http://localhost:3100',      // Gateway 자체
+        'http://localhost:5176',      // Dashboard dev server
         'https://doai.me',            // 프로덕션 도메인
         'https://gateway.doai.me',    // Gateway 서브도메인
         /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // 로컬 네트워크
@@ -163,11 +235,26 @@ app.use('/api/devices', devicesRouter);
 app.use('/api/control', controlRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/dispatch', dispatchRouter);
-app.use('/api/discovery', discoveryRouter);  // v3.0
+app.use('/api/discovery', discoveryRouter);
 app.use('/stream', streamRouter);
+
+// YouTube API
+app.use('/api/youtube', youtubeRouter);
+
+// Video Queue API (Work 페이지 연동)
+app.use('/api/v1/video', videoRouter);
+
+// Kernel API (placeholder for Chrome automation)
+app.use('/api/kernel', kernelRouter);
+
+// Chrome Automation API (Puppeteer + CDP over ADB)
+app.use('/api/chrome', chromeRouter);
 
 // OpenAI Integration
 app.use('/api/ai', aiRouter);
+
+// Setup API (초기 설정 및 명령 템플릿 - localhost 전용)
+app.use('/api/setup', setupRouter);
 
 // React SPA 라우팅 (클라이언트 사이드 라우팅 지원)
 const fs = require('fs');
@@ -331,19 +418,76 @@ async function start() {
         // 5. Dispatcher 시작
         dispatcher.start();
 
-        // 5.5. Vultr WSS 연결 (v2.1)
+        // 5.5. Laixi 연결 (Device Control)
+        if (process.env.LAIXI_ENABLED === 'true') {
+            logger.info('[Gateway] Laixi 연결 초기화...');
+            logger.info(`[Gateway]   URL: ${process.env.LAIXI_URL || 'ws://127.0.0.1:22221/'}`);
+
+            laixiAdapter = new LaixiAdapter({
+                url: process.env.LAIXI_URL || 'ws://127.0.0.1:22221/',
+                timeout: parseInt(process.env.LAIXI_TIMEOUT) || 10000,
+                heartbeatInterval: parseInt(process.env.LAIXI_HEARTBEAT_INTERVAL) || 5000,
+                logger
+            });
+
+            try {
+                await laixiAdapter.connect();
+                logger.info('[Gateway] ✅ Laixi 연결 성공');
+            } catch (err) {
+                logger.warn(`[Gateway] ⚠️ Laixi 연결 실패, ADB 모드로 폴백: ${err.message}`);
+                laixiAdapter = null;
+            }
+        } else {
+            logger.info('[Gateway] ⏭️ Laixi 비활성화 (ADB 모드)');
+        }
+
+        // Initialize Kernel Router with Laixi for YouTube app automation
+        initKernelRouter(deviceTracker, laixiAdapter);
+        logger.info('[Gateway] ✅ Kernel Router 초기화 완료 (YouTube app automation)');
+
+        // 5.6. Vultr WSS 연결 (v2.1)
         logger.info('[Gateway] Vultr 연결 초기화...');
         const vultrClient = await initVultrConnection({
             adbClient,
-            laixiAdapter: null, // Laixi 사용 시 laixiAdapter 인스턴스 전달
+            laixiAdapter,  // Laixi 인스턴스 또는 null
             logger,
             config
         });
-        
+
         if (vultrClient) {
             logger.info('[Gateway] 🌐 Vultr 연결 활성화됨');
         } else {
             logger.info('[Gateway] ⏭️ Vultr 연결 비활성화 (로컬 모드)');
+        }
+
+        // 5.7. Chrome Automation Service (Puppeteer + CDP over ADB)
+        if (process.env.CHROME_ENABLED === 'true') {
+            logger.info('[Gateway] Chrome Automation 초기화...');
+
+            chromeService = createChromeService({
+                logger,
+                basePort: parseInt(process.env.CHROME_BASE_PORT) || 9300,
+                maxConnections: parseInt(process.env.CHROME_MAX_CONNECTIONS) || 50,
+                idleTimeout: parseInt(process.env.CHROME_IDLE_TIMEOUT) || 300000
+            });
+
+            chromeTaskHandler = new ChromeTaskHandler({
+                chromeService,
+                logger,
+                maxConcurrent: parseInt(process.env.CHROME_MAX_CONCURRENT_TASKS) || 10
+            });
+
+            // Initialize Chrome API routes
+            initializeChromeRoutes({
+                chromeService,
+                chromeTaskHandler,
+                logger
+            });
+
+            chromeService.start();
+            logger.info('[Gateway] ✅ Chrome Automation 초기화 완료');
+        } else {
+            logger.info('[Gateway] ⏭️ Chrome Automation 비활성화');
         }
 
         // 6. HTTP 서버 및 WebSocket 시작
@@ -362,9 +506,31 @@ async function start() {
         // 참고: WSMultiplexer가 /ws/stream/{deviceId} 경로를 이미 처리하므로 비활성화
         // h264StreamServer.initialize(server, '/ws/stream');
         logger.info('[Gateway] 📺 H.264 Stream: WSMultiplexer 사용 (/ws/stream/{deviceId})');
-        
+
+        // Dashboard WebSocket Handler (NodeContext 프로토콜)
+        dashboardHandler.initialize(server);
+        if (laixiAdapter) {
+            dashboardHandler.setLaixiAdapter(laixiAdapter);
+        }
+        logger.info('[Gateway] 🖥️ Dashboard Handler 초기화 (/ws/dashboard)');
+
         server.listen(port, () => {
             logger.info(`[Gateway] 🚀 서버 시작: http://0.0.0.0:${port}`);
+
+            // 대시보드 자동 열기 (설치 환경에서만)
+            if (AUTO_OPEN_DASHBOARD && process.platform === 'win32') {
+                const dashboardUrl = `http://localhost:${port}`;
+                setTimeout(() => {
+                    const { exec } = require('child_process');
+                    exec(`start "" "${dashboardUrl}"`, (err) => {
+                        if (err) {
+                            logger.warn('[Gateway] 브라우저 자동 열기 실패:', err.message);
+                        } else {
+                            logger.info(`[Gateway] 🌐 대시보드 열림: ${dashboardUrl}`);
+                        }
+                    });
+                }, 1500); // 1.5초 딜레이 (서버 완전 시작 대기)
+            }
         });
 
         // 7. 완료 메시지
@@ -372,6 +538,7 @@ async function start() {
         logger.info('✅ DoAi-Gateway v2.0 Ready');
         logger.info(`📱 발견된 디바이스: ${deviceCount.total}대 (Online: ${deviceCount.online})`);
         logger.info(`🔗 WebSocket: ws://0.0.0.0:${port}/ws`);
+        logger.info(`🖥️ Dashboard WS: ws://0.0.0.0:${port}/ws/dashboard`);
         logger.info(`🌐 Dashboard: http://0.0.0.0:${port}/`);
         logger.info('═'.repeat(55));
 
@@ -387,8 +554,17 @@ async function shutdown(signal) {
     
     heartbeat.stop();
     dispatcher.stop();
+    if (laixiAdapter) {
+        laixiAdapter.disconnect();
+        logger.info('[Gateway] Laixi 연결 종료');
+    }
+    if (chromeService) {
+        await chromeService.stop();
+        logger.info('[Gateway] Chrome Automation 종료');
+    }
     shutdownVultrConnection(); // Vultr 연결 종료
     wsMultiplexer.shutdown();
+    dashboardHandler.shutdown();
     streamServer.shutdown();
     h264StreamServer.shutdown();
     discoveryManager.shutdown();

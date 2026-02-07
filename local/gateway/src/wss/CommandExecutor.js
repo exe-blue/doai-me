@@ -154,6 +154,86 @@ class CommandExecutor extends EventEmitter {
             });
         });
         
+        // WATCH_VIDEO_BY_TITLE (Work 페이지용 - 제목 검색으로 시청)
+        this._handlers.set('WATCH_VIDEO_BY_TITLE', async (devices, params) => {
+            return this._executeOnDevices(devices, async (device) => {
+                const {
+                    video_id,
+                    title,
+                    search_method = 'title',
+                    min_watch_seconds = 30,
+                    max_watch_seconds = 180,
+                    like_probability = 0.1,
+                    comment_probability = 0.02
+                } = params;
+
+                if (this.laixiAdapter?.isConnected) {
+                    // Laixi 사용 - AutoX.js 스크립트 실행 (제목 검색)
+                    try {
+                        const argsPayload = {
+                            videoId: video_id,
+                            title: title,
+                            searchMethod: search_method,
+                            minWatchSeconds: min_watch_seconds,
+                            maxWatchSeconds: max_watch_seconds,
+                            likeProbability: like_probability,
+                            commentProbability: comment_probability
+                        };
+                        const argsBase64 = Buffer.from(JSON.stringify(argsPayload)).toString('base64');
+
+                        // 스크립트 실행 (doai/youtube_watch_by_title.js)
+                        await this.laixiAdapter.executeAdb(
+                            device.serial,
+                            `am broadcast -a com.stardust.autojs.action.RUN_SCRIPT ` +
+                            `-e script "doai/youtube_watch_by_title.js" ` +
+                            `-e args_base64 "${argsBase64}"`
+                        );
+
+                        // 시청 시간 대기 (스크립트가 자체적으로 대기하므로 여유 시간 추가)
+                        const watchTime = this._randomBetween(min_watch_seconds, max_watch_seconds);
+                        await this._sleep((watchTime + 30) * 1000); // 검색 시간 포함 여유
+
+                        return {
+                            status: 'SUCCESS',
+                            actions: ['launch_youtube', 'search_by_title', 'select_video', 'watch']
+                        };
+
+                    } catch (err) {
+                        this.logger.warn(`[Executor] WATCH_VIDEO_BY_TITLE 실패: ${err.message}`);
+                        return {
+                            status: 'FAILED',
+                            actions: [],
+                            error: err.message
+                        };
+                    }
+                } else {
+                    // ADB 직접 모드 - URL로 폴백
+                    const url = video_id ? `vnd.youtube:${video_id}` : null;
+
+                    if (url) {
+                        await this.adbClient.shell(
+                            device.serial,
+                            `am start -a android.intent.action.VIEW -d "${url}"`
+                        );
+                    } else {
+                        await this.adbClient.shell(
+                            device.serial,
+                            'monkey -p com.google.android.youtube -c android.intent.category.LAUNCHER 1'
+                        );
+                    }
+
+                    const watchTime = this._randomBetween(min_watch_seconds, max_watch_seconds);
+                    await this._sleep(watchTime * 1000);
+
+                    return {
+                        status: 'SUCCESS',
+                        actions: ['open_video_url', 'watch'],
+                        note: 'Fallback to URL mode (Laixi not available)'
+                    };
+                }
+            });
+        });
+
         // RANDOM_WATCH
         this._handlers.set('RANDOM_WATCH', async (devices, params) => {
             return this._executeOnDevices(devices, async (device) => {

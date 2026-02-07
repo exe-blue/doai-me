@@ -1,11 +1,12 @@
 import asyncio
 import json
-import websockets
-import laixi
 
+import laixi
+import websockets
 
 # 프로토콜 종료 마커 (빈 문자열 대신 명시적인 종료 메시지 사용)
 CLOSE_MARKER = "__CLOSE__"
+
 
 async def command(url, cmdStr):
     try:
@@ -16,13 +17,13 @@ async def command(url, cmdStr):
                 try:
                     recv_text = await websocket.recv()
                     print(">{}".format(recv_text))
-                    
+
                     # 종료 조건: 명시적인 종료 마커 또는 JSON "type":"close" 메시지
                     # 빈 문자열은 유효한 메시지일 수 있으므로 종료 조건으로 사용하지 않음
                     if recv_text == CLOSE_MARKER:
                         print("Received close marker, terminating.")
                         break
-                    
+
                     # JSON 메시지의 경우 type 필드 확인
                     try:
                         msg = json.loads(recv_text)
@@ -32,7 +33,7 @@ async def command(url, cmdStr):
                     except (json.JSONDecodeError, TypeError):
                         # JSON이 아닌 메시지는 계속 처리
                         pass
-                        
+
                 except websockets.exceptions.ConnectionClosed:
                     print("WebSocket connection closed")
                     break
@@ -44,8 +45,7 @@ async def command(url, cmdStr):
 
 # 发送指定设备toast消息
 asyncio.get_event_loop().run_until_complete(
-    command('ws://127.0.0.1:22221',
-            laixi.toastMsg('This is wsapi-demo from Python.'))
+    command("ws://127.0.0.1:22221", laixi.toastMsg("This is wsapi-demo from Python."))
 )
 
 # 查询符合关键词包名

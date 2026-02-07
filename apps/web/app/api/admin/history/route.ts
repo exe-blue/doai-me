@@ -116,9 +116,15 @@ async function getSummary(limit: number) {
         existing.failed_count += watch.error_message ? 1 : 0;
         existing.total_watch_time += watch.watch_time || 0;
       } else {
+        // Handle both single object and array responses from Supabase join
+        const videos = watch.videos;
+        const videoTitle = Array.isArray(videos)
+          ? videos[0]?.title || 'Unknown'
+          : (videos as { title: string } | null)?.title || 'Unknown';
+
         watchesByVideo.set(videoId, {
           video_id: videoId,
-          video_title: (watch.videos as { title: string } | null)?.title || 'Unknown',
+          video_title: videoTitle,
           device_count: 1,
           success_count: watch.error_message ? 0 : 1,
           failed_count: watch.error_message ? 1 : 0,

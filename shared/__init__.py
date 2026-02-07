@@ -9,7 +9,8 @@ from .laixi_client import LaixiClient, LaixiConfig, get_laixi_client
 
 # Supabase Client는 선택적 (supabase 패키지 필요)
 try:
-    from .supabase_client import get_client, DeviceSync, JobSync
+    from .supabase_client import DeviceSync, JobSync, get_client
+
     HAS_SUPABASE = True
 except ImportError:
     # supabase 미설치 시 None으로 대체
@@ -20,12 +21,12 @@ except ImportError:
 
 __all__ = [
     # Laixi Client
-    'LaixiClient', 
-    'LaixiConfig', 
-    'get_laixi_client',
+    "LaixiClient",
+    "LaixiConfig",
+    "get_laixi_client",
     # Supabase Client (선택적)
-    'get_client',
-    'DeviceSync',
-    'JobSync',
-    'HAS_SUPABASE',
+    "get_client",
+    "DeviceSync",
+    "JobSync",
+    "HAS_SUPABASE",
 ]

@@ -10,10 +10,10 @@ const supabase = createClient(
 // Device Actions: mark-faulty, backup, restore-binding
 export async function POST(
   request: NextRequest,
-  { params }: { params: { deviceId: string } }
+  { params }: { params: Promise<{ deviceId: string }> }
 ) {
   try {
-    const { deviceId } = params;
+    const { deviceId } = await params;
     const body = await request.json();
     const { action, ...payload } = body;
 
@@ -53,10 +53,10 @@ export async function POST(
 // Device History
 export async function GET(
   request: NextRequest,
-  { params }: { params: { deviceId: string } }
+  { params }: { params: Promise<{ deviceId: string }> }
 ) {
   try {
-    const { deviceId } = params;
+    const { deviceId } = await params;
 
     const { data, error } = await supabase
       .from('device_history')

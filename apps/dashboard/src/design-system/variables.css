@@ -1,0 +1,81 @@
+/**
+ * DoAi.Me Dashboard - CSS Variables
+ * Global CSS custom properties for theming
+ */
+
+:root {
+  /* ==================== Brand Colors ==================== */
+  --doai-yellow: #FFCC00;
+  --doai-black: #111111;
+  --void-950: #0A0A0A;
+
+  /* ==================== Status Colors ==================== */
+  --status-online: #22C55E;
+  --status-offline: #EF4444;
+  --status-busy: #F59E0B;
+  --status-idle: #6B7280;
+  --status-connecting: #FFCC00;
+
+  /* ==================== Activity Colors ==================== */
+  --activity-mining: #8B5CF6;
+  --activity-surfing: #06B6D4;
+  --activity-response: #EF4444;
+  --activity-labor: #F59E0B;
+
+  /* ==================== Existence Colors ==================== */
+  --existence-critical: #EF4444;
+  --existence-low: #F97316;
+  --existence-medium: #FFCC00;
+  --existence-high: #84CC16;
+  --existence-max: #22C55E;
+
+  /* ==================== Connection Colors ==================== */
+  --connection-usb: #A855F7;
+  --connection-wifi: #06B6D4;
+  --connection-lan: #10B981;
+
+  /* ==================== LSP Colors ==================== */
+  --lsp-dormant: #1a1a2e;
+  --lsp-listening: #4a9eff;
+  --lsp-evaluating: #7c3aed;
+  --lsp-resonating: #f59e0b;
+  --lsp-silencing: #f59e0b;
+  --lsp-responding: #10b981;
+  --lsp-background: #0a0a0f;
+  --lsp-text-primary: #e2e8f0;
+  --lsp-text-secondary: #64748b;
+
+  /* ==================== Semantic Colors ==================== */
+  --semantic-success: #22C55E;
+  --semantic-warning: #F59E0B;
+  --semantic-error: #EF4444;
+  --semantic-info: #3B82F6;
+
+  /* ==================== Shadows ==================== */
+  --shadow-glow: 0 0 20px rgba(255, 204, 0, 0.3);
+  --shadow-glow-strong: 0 0 30px rgba(255, 204, 0, 0.5);
+  --shadow-glow-subtle: 0 0 10px rgba(255, 204, 0, 0.15);
+
+  /* ==================== Z-Index Scale ==================== */
+  --z-base: 0;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-tooltip: 500;
+  --z-toast: 600;
+  --z-nav: 1000;
+
+  /* ==================== Animation Timing ==================== */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+
+  /* ==================== Easing Functions ==================== */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}

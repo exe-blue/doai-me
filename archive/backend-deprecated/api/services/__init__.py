@@ -19,4 +19,3 @@ __all__ = [
     "WifiService",
     "get_wifi_service",
 ]
-

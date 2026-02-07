@@ -14,7 +14,7 @@ import React, { useCallback, useState } from 'react';
 import { LSPState, LSP_GLOW_SPECS } from '../../../types/lsp';
 import './styles.css';
 
-interface GlowOrbProps {
+export interface GlowOrbProps {
   state: LSPState;
   size?: number;  // 기본 120px
   onClick?: () => void;

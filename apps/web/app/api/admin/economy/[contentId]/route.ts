@@ -10,10 +10,10 @@ const supabase = createClient(
 // 콘텐츠 상세 + 랭킹
 export async function GET(
   request: NextRequest,
-  { params }: { params: { contentId: string } }
+  { params }: { params: Promise<{ contentId: string }> }
 ) {
   try {
-    const { contentId } = params;
+    const { contentId } = await params;
 
     // 콘텐츠 정보
     const { data: content, error: contentError } = await supabase
@@ -66,10 +66,10 @@ export async function GET(
 // Actions: distribute (정산), cancel
 export async function POST(
   request: NextRequest,
-  { params }: { params: { contentId: string } }
+  { params }: { params: Promise<{ contentId: string }> }
 ) {
   try {
-    const { contentId } = params;
+    const { contentId } = await params;
     const body = await request.json();
     const { action } = body;
 

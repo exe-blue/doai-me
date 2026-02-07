@@ -3,7 +3,7 @@
 shared/models/ 테스트
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -381,7 +381,7 @@ class TestKnowledgeModels:
         assert not knowledge.is_expired()
 
         # 이미 만료된 지식
-        knowledge.expires_at = datetime.utcnow() - timedelta(hours=1)
+        knowledge.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
         assert knowledge.is_expired()
 
     def test_knowledge_query(self):

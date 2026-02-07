@@ -1,14 +1,16 @@
 /**
  * StatusDot - Atomic Component
- * Status: online, offline, busy, idle
+ * Status: online, offline, busy, idle, connecting
  */
 import { clsx } from 'clsx';
+import type { StatusType, ComponentSize } from '@/types/design-system';
 
-export type StatusType = 'online' | 'offline' | 'busy' | 'idle' | 'connecting';
+// Re-export for backwards compatibility
+export type { StatusType };
 
 export interface StatusDotProps {
   status: StatusType;
-  size?: 'sm' | 'md' | 'lg';
+  size?: ComponentSize;
   animated?: boolean;
   className?: string;
 }

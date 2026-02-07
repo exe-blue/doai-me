@@ -14,13 +14,18 @@ Agent가 수행하는 작업 정의
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .message import Priority
+
+
+def _utc_now() -> datetime:
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class TaskType(str, Enum):
@@ -88,15 +93,13 @@ class Task(BaseModel):
     context: Dict[str, Any] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     result: Optional[TaskResult] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
+    updated_at: datetime = Field(default_factory=_utc_now)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     timeout_seconds: int = Field(default=3600, ge=60, le=86400)  # 1분 ~ 24시간
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     @field_validator("priority")
     @classmethod
@@ -108,21 +111,21 @@ class Task(BaseModel):
     def start(self) -> None:
         """작업 시작"""
         self.status = TaskStatus.IN_PROGRESS
-        self.started_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.started_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
 
     def complete(self, result: TaskResult) -> None:
         """작업 완료"""
         self.status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
         self.result = result
-        self.completed_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.completed_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
 
     def cancel(self, reason: str = "") -> None:
         """작업 취소"""
         self.status = TaskStatus.CANCELLED
         self.metadata["cancel_reason"] = reason
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def is_terminal(self) -> bool:
         """종료 상태 여부"""
@@ -132,7 +135,7 @@ class Task(BaseModel):
         """타임아웃 여부"""
         if self.started_at is None:
             return False
-        elapsed = (datetime.utcnow() - self.started_at).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self.started_at).total_seconds()
         return elapsed > self.timeout_seconds
 
     @property
@@ -140,5 +143,5 @@ class Task(BaseModel):
         """작업 소요 시간 (초)"""
         if self.started_at is None:
             return None
-        end_time = self.completed_at or datetime.utcnow()
+        end_time = self.completed_at or datetime.now(timezone.utc)
         return (end_time - self.started_at).total_seconds()

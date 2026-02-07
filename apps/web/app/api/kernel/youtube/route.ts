@@ -56,7 +56,8 @@ async function getKernelClient(): Promise<KernelClient | null> {
   }
   
   try {
-    // 동적 임포트
+    // 동적 임포트 - @onkernel/sdk는 선택적 의존성
+    // @ts-expect-error - @onkernel/sdk may not be installed
     const KernelModule = await import('@onkernel/sdk');
     const Kernel = KernelModule.default || KernelModule;
     return new Kernel({ apiKey: KERNEL_API_KEY });

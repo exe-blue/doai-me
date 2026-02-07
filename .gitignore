@@ -105,3 +105,46 @@ secrets/
 *.key
 credentials.json
 service-account*.json
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_ecdsa
+id_ecdsa.pub
+*_key
+*_key.pub
+vultr_key
+
+.vercel
+
+# ==================== Claude Code ====================
+tmpclaude-*
+*.cwd
+.claude/settings.local.json
+.sisyphus/
+
+# ==================== Temporary/WIP Projects ====================
+apps/layout.tsx
+apps/resonance/
+nextjs-doai.me/
+studio-hello-world/
+packages/
+
+# ==================== WIP Services ====================
+services/cloud-gateway/core/
+services/cloud-gateway/handlers/
+services/cloud-gateway/main_refactored.py
+services/doaime-mcp/
+
+# ==================== WIP Docs & Tests ====================
+docs/backlog/
+docs/v0-handoff.md
+load_tests/
+
+# ==================== WIP Schemas & Migrations ====================
+shared/schemas/gateway.py
+supabase/migrations/20260111_user_memberships.sql
+.hintrc
+*.tsbuildinfo

@@ -8,12 +8,11 @@
 - 프로덕션 환경에서는 모든 필수 값 명시적 설정 강제
 """
 
-import os
 from functools import lru_cache
 from typing import Optional
-from pydantic_settings import BaseSettings
-from pydantic import SecretStr, field_validator
 
+from pydantic import SecretStr, field_validator
+from pydantic_settings import BaseSettings
 
 # 안전하지 않은 기본값 상수 (프로덕션에서 거부됨)
 _INSECURE_DEFAULT_API_KEY = "dev-api-key-change-in-production"
@@ -21,7 +20,7 @@ _INSECURE_DEFAULT_API_KEY = "dev-api-key-change-in-production"
 
 class Settings(BaseSettings):
     """애플리케이션 설정"""
-    
+
     # ===========================================
     # Supabase Configuration (필수 - 기본값 없음)
     # ===========================================
@@ -29,10 +28,10 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_anon_key: SecretStr
     supabase_service_role_key: SecretStr
-    
+
     # PostgreSQL 직접 연결 (선택)
     database_url: Optional[str] = None
-    
+
     # ===========================================
     # Server Configuration
     # ===========================================
@@ -40,43 +39,41 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     env: str = "development"  # development, staging, production
     debug: bool = True
-    
+
     # ===========================================
     # API Configuration
     # ===========================================
     api_prefix: str = "/api/v1"
     api_key: Optional[str] = None  # 프로덕션에서는 반드시 명시적 설정 필요
-    
-    @field_validator('api_key', mode='after')
+
+    @field_validator("api_key", mode="after")
     @classmethod
     def validate_api_key_not_default_in_production(cls, v: Optional[str], info) -> Optional[str]:
         """
         프로덕션 환경에서 안전하지 않은 기본 API 키 사용 방지
-        
+
         왜 이렇게 작성했는가?
         - 개발 환경에서는 편의를 위해 기본값 허용
         - 프로덕션에서는 보안을 위해 명시적 설정 강제
         """
         # info.data에서 env 값을 가져옴
-        env = info.data.get('env', 'development')
-        
+        env = info.data.get("env", "development")
+
         if env == "production":
             if v is None:
-                raise ValueError(
-                    "프로덕션 환경에서는 API_KEY를 반드시 설정해야 합니다."
-                )
+                raise ValueError("프로덕션 환경에서는 API_KEY를 반드시 설정해야 합니다.")
             if v == _INSECURE_DEFAULT_API_KEY:
                 raise ValueError(
                     f"프로덕션 환경에서 안전하지 않은 기본 API 키 '{_INSECURE_DEFAULT_API_KEY}' 사용이 금지됩니다. "
                     "환경 변수 API_KEY를 안전한 값으로 설정하세요."
                 )
-        
+
         # 개발 환경에서 None이면 기본값 사용
         if v is None and env != "production":
             return _INSECURE_DEFAULT_API_KEY
-        
+
         return v
-    
+
     # ===========================================
     # Device Management
     # ===========================================
@@ -84,25 +81,27 @@ class Settings(BaseSettings):
     device_heartbeat_timeout: int = 30
     # 최대 동시 작업 수
     max_concurrent_tasks: int = 100
-    
+
     # ===========================================
     # CORS Configuration
     # ===========================================
     # 허용된 오리진 목록 (쉼표로 구분)
     # 개발: http://localhost:3000,http://localhost:5173
     # 프로덕션: https://doai.me,https://admin.doai.me
-    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    )
     cors_allow_credentials: bool = True
     cors_allow_methods: str = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
     cors_allow_headers: str = "Authorization,Content-Type,X-Requested-With,X-API-Key"
 
-    @field_validator('cors_origins', mode='after')
+    @field_validator("cors_origins", mode="after")
     @classmethod
     def validate_cors_origins_in_production(cls, v: str, info) -> str:
         """
         프로덕션 환경에서 와일드카드 CORS 사용 방지
         """
-        env = info.data.get('env', 'development')
+        env = info.data.get("env", "development")
 
         if env == "production":
             if v == "*" or "localhost" in v or "127.0.0.1" in v:
@@ -170,7 +169,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """
     설정 싱글톤 반환
-    
+
     @lru_cache로 한 번만 로딩하여 성능 최적화
     """
     return Settings()
@@ -178,5 +177,3 @@ def get_settings() -> Settings:
 
 # 편의를 위한 글로벌 인스턴스
 settings = get_settings()
-
-

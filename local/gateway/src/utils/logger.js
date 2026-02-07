@@ -46,20 +46,38 @@ class Logger {
         });
     }
 
+    /**
+     * Sanitize log message to prevent log injection
+     * Removes/escapes newlines and control characters
+     * @param {string} message - Message to sanitize
+     * @returns {string} Sanitized message
+     */
+    _sanitize(message) {
+        if (typeof message !== 'string') {
+            return String(message);
+        }
+        // Replace newlines with escaped representation, remove other control chars
+        return message
+            .replace(/\r\n/g, '\\r\\n')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    }
+
     info(message, meta = {}) {
-        this.logger.info(message, meta);
+        this.logger.info(this._sanitize(message), meta);
     }
 
     warn(message, meta = {}) {
-        this.logger.warn(message, meta);
+        this.logger.warn(this._sanitize(message), meta);
     }
 
     error(message, meta = {}) {
-        this.logger.error(message, meta);
+        this.logger.error(this._sanitize(message), meta);
     }
 
     debug(message, meta = {}) {
-        this.logger.debug(message, meta);
+        this.logger.debug(this._sanitize(message), meta);
     }
 }
 

@@ -4,8 +4,8 @@
 
 'use client';
 
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMemo } from 'react';
 
 // ============================================
 // Types
@@ -235,7 +235,7 @@ export function WormholeLayer({ wormholes, width, height }: WormholeLayerProps) 
       
       {wormholes.map((wormhole, index) => {
         // 모든 노드 쌍을 연결
-        const connections: JSX.Element[] = [];
+        const connections: React.ReactElement[] = [];
         
         for (let i = 0; i < wormhole.nodes.length; i++) {
           for (let j = i + 1; j < wormhole.nodes.length; j++) {

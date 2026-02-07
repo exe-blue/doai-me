@@ -2,25 +2,45 @@
 DoAi.Me Backend API - Models Package
 """
 
-from .nocturne import (
-    NocturneLine,
-    NocturneLineCreate,
-    NocturneLineResponse,
-    DailyMetrics,
-    PoeticElement,
-    MoodTone,
-)
-
-from .persona_search import (
-    IdleSearchRequest,
-    IdleSearchResponse,
-    SearchHistoryItem,
-    SearchHistoryResponse,
-    PersonaSearchProfile,
-    PersonaSearchProfileResponse,
-    BatchIdleSearchRequest,
-    BatchIdleSearchResponse,
-)
+# Docker/standalone 호환 import
+try:
+    from .nocturne import (
+        DailyMetrics,
+        MoodTone,
+        NocturneLine,
+        NocturneLineCreate,
+        NocturneLineResponse,
+        PoeticElement,
+    )
+    from .persona_search import (
+        BatchIdleSearchRequest,
+        BatchIdleSearchResponse,
+        IdleSearchRequest,
+        IdleSearchResponse,
+        PersonaSearchProfile,
+        PersonaSearchProfileResponse,
+        SearchHistoryItem,
+        SearchHistoryResponse,
+    )
+except ImportError:
+    from nocturne import (
+        DailyMetrics,
+        MoodTone,
+        NocturneLine,
+        NocturneLineCreate,
+        NocturneLineResponse,
+        PoeticElement,
+    )
+    from persona_search import (
+        BatchIdleSearchRequest,
+        BatchIdleSearchResponse,
+        IdleSearchRequest,
+        IdleSearchResponse,
+        PersonaSearchProfile,
+        PersonaSearchProfileResponse,
+        SearchHistoryItem,
+        SearchHistoryResponse,
+    )
 
 __all__ = [
     # Nocturne
@@ -40,4 +60,3 @@ __all__ = [
     "BatchIdleSearchRequest",
     "BatchIdleSearchResponse",
 ]
-

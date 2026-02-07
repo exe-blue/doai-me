@@ -11,27 +11,85 @@ class YouTubeAutomation {
     }
 
     /**
-     * YouTube 앱 실행
+     * YouTube 앱 실행 (다중 폴백 지원)
+     * 4가지 방법을 순차적으로 시도하여 안정적인 실행 보장
      */
     launchYouTube() {
         this.logger.info('YouTube 앱 실행 중...');
 
-        try {
-            app.launch('com.google.android.youtube');
-            sleep(3000);
+        const MAX_RETRIES = 3;
+        const YOUTUBE_PACKAGE = 'com.google.android.youtube';
 
-            // 앱 실행 확인
-            if (currentPackage() === 'com.google.android.youtube') {
-                this.logger.info('YouTube 앱 실행 성공');
-                return true;
-            } else {
-                this.logger.error('YouTube 앱 실행 실패');
-                return false;
+        const launchMethods = [
+            { name: 'app.launch', fn: () => this._launchByAppLaunch() },
+            { name: 'Intent', fn: () => this._launchByIntent() },
+            { name: 'Shell', fn: () => this._launchByShell() },
+            { name: 'URL', fn: () => this._launchByUrl() }
+        ];
+
+        for (let retry = 0; retry < MAX_RETRIES; retry++) {
+            this.logger.info(`실행 시도 ${retry + 1}/${MAX_RETRIES}`);
+
+            for (const method of launchMethods) {
+                try {
+                    this.logger.debug(`${method.name} 방법 시도 중...`);
+                    method.fn();
+                    sleep(3000);
+
+                    if (currentPackage() === YOUTUBE_PACKAGE) {
+                        this.logger.info(`YouTube 앱 실행 성공 (${method.name})`);
+                        return true;
+                    }
+                } catch (e) {
+                    this.logger.debug(`${method.name} 방법 실패`, { error: e.message });
+                }
             }
-        } catch (e) {
-            this.logger.error('YouTube 앱 실행 예외', { error: e.message });
-            return false;
+
+            // 재시도 전 대기
+            if (retry < MAX_RETRIES - 1) {
+                this.logger.warn(`모든 방법 실패, ${retry + 2}번째 시도 준비 중...`);
+                sleep(2000);
+            }
         }
+
+        this.logger.error('YouTube 앱 실행 최종 실패 (모든 방법 시도 완료)');
+        return false;
+    }
+
+    /**
+     * 방법 1: app.launch() 사용
+     * @private
+     */
+    _launchByAppLaunch() {
+        app.launch('com.google.android.youtube');
+    }
+
+    /**
+     * 방법 2: Intent 기반 실행
+     * @private
+     */
+    _launchByIntent() {
+        const intent = new Intent();
+        intent.setPackage('com.google.android.youtube');
+        intent.setAction('android.intent.action.MAIN');
+        intent.addCategory('android.intent.category.LAUNCHER');
+        app.startActivity(intent);
+    }
+
+    /**
+     * 방법 3: Shell 명령어 사용 (am start)
+     * @private
+     */
+    _launchByShell() {
+        shell('am start -n com.google.android.youtube/.HomeActivity', true);
+    }
+
+    /**
+     * 방법 4: URL Scheme 사용
+     * @private
+     */
+    _launchByUrl() {
+        app.openUrl('https://www.youtube.com');
     }
 
     /**
@@ -368,6 +426,195 @@ class YouTubeAutomation {
             this.logger.info('YouTube 앱 종료 완료');
         } catch (e) {
             this.logger.warn('앱 종료 중 예외', { error: e.message });
+        }
+    }
+
+    // ==================== Work 페이지 전용 함수 (제목 검색) ====================
+
+    /**
+     * 제목으로 검색하여 영상 시청 (인간적인 패턴)
+     * Work 페이지에서 사용하는 핵심 메서드
+     *
+     * @param {Object} options - 시청 옵션
+     * @param {string} options.title - 검색할 영상 제목
+     * @param {string} options.videoId - 영상 ID (검증용)
+     * @param {number} options.minWatchSeconds - 최소 시청 시간
+     * @param {number} options.maxWatchSeconds - 최대 시청 시간
+     * @param {number} options.likeProbability - 좋아요 확률
+     * @param {number} options.commentProbability - 댓글 확률
+     * @returns {Object} 결과 { success, watchDuration, actions }
+     */
+    searchByTitleAndWatch(options = {}) {
+        const {
+            title,
+            videoId,
+            minWatchSeconds = 30,
+            maxWatchSeconds = 180,
+            likeProbability = 0.1,
+            commentProbability = 0.02
+        } = options;
+
+        this.logger.info('=== 제목 검색 시청 시작 ===', { title, videoId });
+
+        const result = {
+            success: false,
+            watchDuration: 0,
+            actions: [],
+            error: null
+        };
+
+        try {
+            // Step 1: 랜덤 대기 (인간적인 시작 시간)
+            const initialDelay = this.human.calculateWatchTime(3, 10);
+            this.logger.info('초기 랜덤 대기', { seconds: initialDelay });
+            sleep(initialDelay * 1000);
+            result.actions.push('initial_delay');
+
+            // Step 2: YouTube 앱 실행
+            if (!this.launchYouTube()) {
+                result.error = 'Failed to launch YouTube';
+                return result;
+            }
+            result.actions.push('launch_youtube');
+
+            // Step 3: 앱 로딩 대기
+            const loadDelay = this.human.calculateWatchTime(2, 5);
+            sleep(loadDelay * 1000);
+
+            // Step 4: 제목으로 검색
+            if (!this.searchByKeyword(title)) {
+                result.error = 'Failed to search by title';
+                return result;
+            }
+            result.actions.push('search_by_title');
+
+            // Step 5: 검색 결과 로딩 대기
+            const searchResultDelay = this.human.calculateWatchTime(2, 4);
+            sleep(searchResultDelay * 1000);
+
+            // Step 6: 검색 결과에서 영상 선택 (상위 3개 중 랜덤, 또는 제목 매칭)
+            const selectedRank = this._selectVideoByTitleMatch(title) || this._selectRandomTopVideo();
+            if (!selectedRank) {
+                result.error = 'Failed to select video from search results';
+                return result;
+            }
+            result.actions.push('select_video');
+            this.logger.info('영상 선택 완료', { rank: selectedRank });
+
+            // Step 7: 영상 로딩 대기
+            const videoLoadDelay = this.human.calculateWatchTime(3, 6);
+            sleep(videoLoadDelay * 1000);
+
+            // Step 8: 영상 시청
+            const watchTime = this.human.calculateWatchTime(minWatchSeconds, maxWatchSeconds);
+            this.logger.info('영상 시청 시작', { duration: watchTime });
+
+            // 시청 중 자연스러운 행동
+            const totalSteps = Math.floor(watchTime / 15);
+            for (let i = 0; i < totalSteps; i++) {
+                sleep(15000);
+
+                // 가끔 화면 터치 (살아있는 것처럼)
+                if (Math.random() < 0.1) {
+                    this.human.randomTouch();
+                }
+
+                // 가끔 스크롤 (댓글 확인하는 척)
+                if (Math.random() < 0.05) {
+                    this.human.naturalScroll('down');
+                    sleep(this.human.calculateWatchTime(1, 3) * 1000);
+                    this.human.naturalScroll('up');
+                }
+            }
+
+            // 나머지 시간
+            const remainingTime = watchTime - (totalSteps * 15);
+            if (remainingTime > 0) {
+                sleep(remainingTime * 1000);
+            }
+
+            result.watchDuration = watchTime;
+            result.actions.push('watch_video');
+            this.logger.info('영상 시청 완료', { duration: watchTime });
+
+            // Step 9: 좋아요 (확률적)
+            if (Math.random() < likeProbability) {
+                if (this.clickLike()) {
+                    result.actions.push('like');
+                }
+            }
+
+            // Step 10: 댓글 (확률적)
+            if (Math.random() < commentProbability) {
+                if (this.writeComment()) {
+                    result.actions.push('comment');
+                }
+            }
+
+            // Step 11: 앱 종료
+            sleep(this.human.calculateWatchTime(1, 3) * 1000);
+            this.closeYouTube();
+            result.actions.push('close_youtube');
+
+            result.success = true;
+            this.logger.info('=== 제목 검색 시청 완료 ===', result);
+
+        } catch (e) {
+            result.error = e.message;
+            this.logger.error('제목 검색 시청 중 오류', { error: e.message });
+        }
+
+        return result;
+    }
+
+    /**
+     * 제목과 일치하는 영상 선택
+     * @private
+     */
+    _selectVideoByTitleMatch(targetTitle) {
+        try {
+            this.logger.debug('제목 매칭 영상 검색 중...', { targetTitle });
+
+            // 검색 결과에서 제목 텍스트 찾기
+            const titleElements = className('android.widget.TextView').find();
+
+            for (let i = 0; i < Math.min(titleElements.length, 10); i++) {
+                const element = titleElements[i];
+                const text = element.text();
+
+                // 제목 유사도 체크 (간단한 포함 체크)
+                if (text && targetTitle && text.includes(targetTitle.substring(0, 20))) {
+                    this.logger.info('제목 매칭 영상 발견', { found: text });
+
+                    const bounds = element.bounds();
+                    this.human.naturalClick(bounds.centerX(), bounds.centerY());
+                    sleep(2000);
+
+                    return i + 1;
+                }
+            }
+
+            this.logger.debug('정확한 제목 매칭 실패, 상위 영상 선택으로 폴백');
+            return null;
+
+        } catch (e) {
+            this.logger.warn('제목 매칭 검색 중 오류', { error: e.message });
+            return null;
+        }
+    }
+
+    /**
+     * 상위 3개 중 랜덤 영상 선택
+     * @private
+     */
+    _selectRandomTopVideo() {
+        try {
+            // 상위 1~3위 중 랜덤 선택 (광고 회피)
+            const rank = Math.floor(Math.random() * 3) + 1;
+            return this.selectVideoByRank(rank);
+        } catch (e) {
+            this.logger.warn('랜덤 영상 선택 실패', { error: e.message });
+            return null;
         }
     }
 
