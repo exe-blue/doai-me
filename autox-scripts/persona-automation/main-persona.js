@@ -33,7 +33,6 @@ const ErrorHandler = require('./modules/error-handler.js');
 const ResourceManager = require('./modules/resource-manager.js');
 
 // ==================== 설정 로드 ====================
-const ENV = 'dev';
 let config;
 
 try {
