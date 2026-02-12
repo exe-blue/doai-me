@@ -39,12 +39,12 @@ export async function POST(req: Request) {
 
     return result.toTextStreamResponse();
   } catch (error) {
-    const err = error as Error;
+    const err = error instanceof Error ? error : new Error(String(error));
     console.error("[AI Commentary] Error:", {
-      name: err?.name,
-      message: err?.message,
+      name: err.name,
+      message: err.message,
     });
-    if (process.env.NODE_ENV !== "production" && err?.stack) {
+    if (process.env.NODE_ENV !== "production") {
       console.error("[AI Commentary] Stack:", err.stack);
     }
     return new Response(
