@@ -95,7 +95,7 @@ const personaManager = new PersonaManager(config, logger, api);
 const contentExplorer = new ContentExplorer(config, logger, youtube);
 const openaiHelper = new OpenAIHelper(config, logger);
 const interaction = new InteractionEngine(config, logger, youtube, openaiHelper);
-const scheduler = new Scheduler(config, logger);
+new Scheduler(config, logger);
 const errorHandler = new ErrorHandler(logger);
 const resourceManager = new ResourceManager(logger);
 
