@@ -4,9 +4,19 @@
  */
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
+// Google Generative AI API 키 검증
+const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+
+if (!googleApiKey || googleApiKey.trim() === "") {
+  throw new Error(
+    "Missing GOOGLE_AI_API_KEY environment variable. " +
+      "Please set a valid Google Generative AI API key before starting the application."
+  );
+}
+
 // Google Generative AI 프로바이더 생성
 export const gemini = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_AI_API_KEY,
+  apiKey: googleApiKey,
 });
 
 // 기본 모델: Gemini 2.0 Flash (빠른 응답, 비용 효율)
