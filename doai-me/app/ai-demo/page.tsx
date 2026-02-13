@@ -9,12 +9,13 @@ import { AICommentary } from "@/components/ai/AICommentary";
 import type { Phase, AICommentaryContext } from "@/lib/ai/prompts";
 
 // 샘플 컨텍스트 데이터
+const sampleTimestamp = new Date("2024-01-01T00:00:00.000Z").toISOString();
 const sampleContexts: Record<Phase, AICommentaryContext> = {
   BOARD: {
     signals: [
-      { symbol: "BTCUSDT", direction: "long", strength: 85, timestamp: new Date().toISOString() },
-      { symbol: "ETHUSDT", direction: "long", strength: 72, timestamp: new Date().toISOString() },
-      { symbol: "SOLUSDT", direction: "short", strength: 68, timestamp: new Date().toISOString() },
+      { symbol: "BTCUSDT", direction: "long", strength: 85, timestamp: sampleTimestamp },
+      { symbol: "ETHUSDT", direction: "long", strength: 72, timestamp: sampleTimestamp },
+      { symbol: "SOLUSDT", direction: "short", strength: 68, timestamp: sampleTimestamp },
     ],
     customData: {
       activeSection: "유효진입",
