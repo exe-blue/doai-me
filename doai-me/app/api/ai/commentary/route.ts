@@ -39,7 +39,14 @@ export async function POST(req: Request) {
 
     return result.toTextStreamResponse();
   } catch (error) {
-    console.error("[AI Commentary] Error:", error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("[AI Commentary] Error:", {
+      name: err.name,
+      message: err.message,
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[AI Commentary] Stack:", err.stack);
+    }
     return new Response(
       JSON.stringify({
         error: "AI 응답 생성 중 오류가 발생했습니다.",
