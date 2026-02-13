@@ -5,8 +5,12 @@
 "use client";
 
 import { useCompletion } from "@ai-sdk/react";
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useMemo } from "react";
 import type { Phase, AICommentaryContext } from "@/lib/ai/prompts";
+
+// Delay to avoid firing AI completion immediately on initial mount.
+// This gives React a moment to settle and prevents unintended early requests.
+const AUTO_GENERATE_DELAY_MS = 100;
 
 interface UseAICommentaryOptions {
   autoGenerate?: boolean;
@@ -32,7 +36,10 @@ export function useAICommentary(
   const contextKeyRef = useRef<string>("");
 
   // 컨텍스트 변경 감지를 위한 키 생성
-  const currentContextKey = JSON.stringify({ phase, context, cacheKey });
+  const currentContextKey = useMemo(
+    () => JSON.stringify({ phase, context, cacheKey }),
+    [phase, context, cacheKey]
+  );
 
   const {
     completion,
@@ -63,7 +70,7 @@ export function useAICommentary(
     // 딜레이를 두고 생성 (컴포넌트 마운트 직후 방지)
     const timer = setTimeout(() => {
       complete("");
-    }, 100);
+    }, AUTO_GENERATE_DELAY_MS);
 
     return () => clearTimeout(timer);
   }, [autoGenerate, currentContextKey, complete]);
